@@ -113,7 +113,7 @@ local function VectorTo(mapID, mx, my)
 		end
 	end
 	-- fallback: map-unit math when the player resolves on the waypoint's map
-	if C_Map.GetPlayerMapPosition then
+	if C_Map and C_Map.GetPlayerMapPosition then
 		local ppos = C_Map.GetPlayerMapPosition(mapID, "player")
 		local w, h = MapWorldSize(mapID)
 		if ppos and ppos.GetXY and w and h and w > 0 and h > 0 then
@@ -172,8 +172,15 @@ end
 function NAV:RemoveWaypoint(mapID, index)
 	local list = WaypointDB()[mapID]
 	if not list then return end
+	local removed = list[index]
 	tremove(list, index)
 	if not next(list) then WaypointDB()[mapID] = nil end
+	-- removing the ACTIVE waypoint must drop the arrow too, otherwise the
+	-- arrow keeps tracking a dead object (invisible "ghost" waypoint)
+	if removed and self.active and self.active.wp == removed then
+		self.active = nil
+		if self.arrow then self.arrow:Hide() end
+	end
 	self:RefreshPins()
 end
 
@@ -210,6 +217,7 @@ function NAV:ClearWaypoints(mapID)
 		wipe(WaypointDB())
 	end
 	self.active = nil
+	if self.arrow then self.arrow:Hide() end
 	self:RefreshPins()
 end
 
@@ -338,7 +346,7 @@ function NAV:BuildArrow()
 			format("xy=%.3f,%.3f", active.wp.x or -1, active.wp.y or -1) }
 		local cur = CurrentMap()
 		dbg[#dbg + 1] = "cur=" .. tostring(cur)
-		if cur and C_Map.GetPlayerMapPosition then
+		if cur and C_Map and C_Map.GetPlayerMapPosition then
 			local p = C_Map.GetPlayerMapPosition(cur, "player")
 			if p and p.GetXY then local a, b = p:GetXY() dbg[#dbg + 1] = format("pMap=%.3f,%.3f", a or -1, b or -1) end
 		end
@@ -351,7 +359,6 @@ function NAV:BuildArrow()
 		dbg[#dbg + 1] = format("=> dist=%s bear=%.2f face=%.2f", tostring(dist and floor(dist)), bearing or -1, GetPlayerFacing and GetPlayerFacing() or -1)
 		local line = table.concat(dbg, " | ")
 		S:LogInfo("nav", line)
-		S:Print("|cff88ff88nav:|r " .. line)
 	end
 		if not dist then
 			if otherZone then
@@ -607,7 +614,7 @@ function NAV:HookWorldMap()
 			if not ModifierDown(NAV.db.createModifier or "CTRL") then return end
 			local x, y = CursorToMap()
 			if not x or x < 0 or x > 1 or y < 0 or y > 1 then return end
-			local mapID = wmf:GetMapID()
+			local mapID = wmf.GetMapID and wmf:GetMapID()
 			if mapID then
 				local now = GetTime()
 				if NAV.lastMapClick and now - NAV.lastMapClick < 0.5 then return end -- double-fire guard
@@ -1192,7 +1199,20 @@ function NAV:CorpseWaypoint()
 	local ok, pos = pcall(C_DeathInfo.GetCorpseMapPosition, mapID)
 	if ok and pos and pos.GetXY then
 		local x, y = pos:GetXY()
-		if x and y and x > 0 then self:AddWaypoint(mapID, x, y, L["Corpse"], { corpse = true }) end
+		if x and y and x > 0 then
+			-- replace any previous corpse marker: every death would otherwise
+			-- stack another stale corpse waypoint into the db
+			for mID, list in pairs(WaypointDB()) do
+				for i = #list, 1, -1 do
+					if list[i].corpse then
+						if self.active and self.active.wp == list[i] then self.active = nil end
+						tremove(list, i)
+					end
+				end
+				if not next(list) then WaypointDB()[mID] = nil end
+			end
+			self:AddWaypoint(mapID, x, y, L["Corpse"], { corpse = true })
+		end
 	end
 end
 
@@ -1267,6 +1287,15 @@ function NAV:Initialize()
 	self:BuildArrow()
 	self:BuildMinimapPin()
 	self:HookWorldMap()
+	-- the world map / quest log load on demand on some clients: without a
+	-- retry the whole map feature set (pins, coords, route, click-create,
+	-- quest-row hooks) would silently never hook
+	self:RegisterEvent("ADDON_LOADED", function(_, _, addon)
+		if addon == "Blizzard_WorldMap" then NAV:HookWorldMap() NAV:RefreshPins() end
+		if addon == "Blizzard_QuestLog" or addon == "Blizzard_WorldMap" then
+			S:SafeCall("Nav:QuestLog", function() NAV:HookQuestLog() end)
+		end
+	end)
 	self:HookQuestLog()
 	self:HookTracker()
 	-- rescan rows whenever the quest log shows (rows may be created lazily);
@@ -1294,7 +1323,6 @@ function NAV:Initialize()
 			tostring(px), tostring(py), tostring(pi))
 	end
 	S:LogInfo("nav", hbdInfo)
-	S:Print("|cff88ff88nav:|r " .. hbdInfo)
 	local externalNav = (C_AddOns and C_AddOns.IsAddOnLoaded and C_AddOns.IsAddOnLoaded("TomTom")) or (IsAddOnLoaded and IsAddOnLoaded("TomTom"))
 	if not externalNav then
 		S:RegisterChatCommand("way", function(msg) NAV:Slash(msg) end)
