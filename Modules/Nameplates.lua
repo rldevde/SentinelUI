@@ -202,7 +202,7 @@ function NP:UpdateColor(f)
 	end
 	if not r and UnitIsTapDenied and UnitIsTapDenied(unit) then r, g, b = 0.55, 0.55, 0.55 end
 	if not r and db.threat and UnitAffectingCombat(unit) and UnitCanAttack("player", unit) then
-		local status = UnitThreatSituation("player", unit)
+		local status = UnitThreatSituation and UnitThreatSituation("player", unit)
 		if status and not IsSecret(status) then
 			local tank = IsTank()
 			local tc = db.threatColors

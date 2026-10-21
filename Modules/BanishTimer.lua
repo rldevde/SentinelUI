@@ -7,7 +7,7 @@ local L = S.L
 local BT = S:NewModule("BanishTimer", "banishtimer")
 
 local CreateFrame = CreateFrame
-local UnitAura, UnitExists = UnitAura, UnitExists
+local UnitExists = UnitExists
 local GetTime = GetTime
 local BANISH = { [710] = true, [18647] = true }
 local ICON = 30

@@ -36,6 +36,7 @@ standalone RLBetterItem release.
 - **Flight Timer never ended on classic taxi rides** — `PLAYER_CONTROL_GAINED` does not fire on legacy flights and the `UNIT_FLAGS` fallback bound the wrong argument, so the bar stayed up after landing; the tracker now polls `UnitOnTaxi` once airborne
 - **More combat-safety on movers** — shift-click hide and handle-drag now respect protected movers (unit frames, secure bars) instead of throwing ADDON_ACTION_BLOCKED mid-combat
 - **UI scattered after fullscreen/windowed switch** — the client reports transient `UIParent` scales during display-mode transitions; the scale event handler adopted them as the user's permanent scale (autoScale off, uiScale = mid-transition value), leaving every element wrongly positioned until manual fix. External scales are now only adopted once stable (0.4 s settle re-check) and `DISPLAY_SIZE_CHANGED` waits longer before re-applying
+- **Audit: nil-API captures across modules** — `local X = X` snapshots of globals removed on this client (GetSpellInfo, IsSpellKnown, GetItemInfoInstant, UnitAura, UnitDebuff, UnitThreatSituation) made whole modules crash or silently dead: Decurse, MageBar, ProcAlert, Trainer, RaidCheck now bind the `S.*` compat variants; BossWatch range radar, RaidGrid aggro dot, UnitFrames threat glow and Nameplates threat coloring guard the calls; `S.GetAura`/`S.GetMouseFocus`/`S.GetContainerItemInfo`/`S.GetNumOnlineFriends` fallbacks are now nil-safe when both APIs are gone
 
 ## [1.2.0]
 

@@ -488,7 +488,7 @@ end
 
 function UF:UpdateThreat(f)
 	if not f.Threat then return end
-	local status = UnitThreatSituation(f.unit)
+	local status = UnitThreatSituation and UnitThreatSituation(f.unit)
 	if f.db.threatGlow and status and not IsSecret(status) and status > 1 then
 		local r, g, b = GetThreatStatusColor(status)
 		f.Threat:SetBackdropBorderColor(r, g, b, 1)

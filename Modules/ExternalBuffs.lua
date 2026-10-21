@@ -9,7 +9,7 @@ local EB = S:NewModule("ExternalBuffs", "externalbuffs")
 
 local ipairs = ipairs
 local CreateFrame = CreateFrame
-local UnitAura, UnitName, UnitClass = UnitAura, UnitName, UnitClass
+local UnitName, UnitClass = UnitName, UnitClass
 local IsInGroup, IsInRaid = IsInGroup, IsInRaid
 local GetNumGroupMembers, GetNumSubgroupMembers = GetNumGroupMembers, GetNumSubgroupMembers
 local GetTime = GetTime

@@ -9,7 +9,7 @@ local PA = S:NewModule("ProcAlert", "procalert")
 
 local CreateFrame = CreateFrame
 local GetAuraByID = C_UnitAuras and C_UnitAuras.GetAuraDataBySpellID
-local GetSpellInfo = GetSpellInfo
+local GetSpellInfo = S.GetSpellInfo
 local IsUsableSpell = IsUsableSpell
 
 -- aura procs: show while the buff is up

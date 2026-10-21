@@ -16,7 +16,7 @@ local format, floor, max = format, floor, math.max
 local select, strmatch, tostring = select, strmatch, tostring
 local unpack = unpack
 local CreateFrame, GetTime = CreateFrame, GetTime
-local GetMoney, UnitLevel, GetSpellInfo = GetMoney, UnitLevel, GetSpellInfo
+local GetMoney, UnitLevel, GetSpellInfo = GetMoney, UnitLevel, S.GetSpellInfo
 local type = type
 local IsSecret = S.IsSecret
 

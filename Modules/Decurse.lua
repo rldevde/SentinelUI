@@ -12,10 +12,10 @@ local ipairs, pairs, select = ipairs, pairs, select
 local unpack = unpack
 local floor = floor
 local CreateFrame = CreateFrame
-local UnitClass, UnitExists, UnitName, UnitDebuff = UnitClass, UnitExists, UnitName, UnitDebuff
+local UnitClass, UnitExists, UnitName = UnitClass, UnitExists, UnitName
 local IsInRaid, IsInGroup, InCombatLockdown = IsInRaid, IsInGroup, InCombatLockdown
-local GetSpellInfo = GetSpellInfo
-local IsSpellKnown, IsPlayerSpell = IsSpellKnown, IsPlayerSpell
+local GetSpellInfo = S.GetSpellInfo
+local IsSpellKnown, IsPlayerSpell = S.IsSpellKnown, IsPlayerSpell
 local IsSpellInRange = IsSpellInRange
 local GetRaidRosterInfo = GetRaidRosterInfo
 

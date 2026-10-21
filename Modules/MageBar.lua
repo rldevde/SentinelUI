@@ -8,8 +8,8 @@ local MB = S:NewModule("MageBar", "magebar")
 
 local _G = _G
 local ipairs, tinsert, wipe = ipairs, table.insert, wipe
-local GetSpellInfo = GetSpellInfo
-local IsSpellKnown = IsSpellKnown
+local GetSpellInfo = S.GetSpellInfo
+local IsSpellKnown = S.IsSpellKnown
 local IsPlayerSpell = IsPlayerSpell
 local InCombatLockdown = InCombatLockdown
 local IsAltKeyDown = IsAltKeyDown

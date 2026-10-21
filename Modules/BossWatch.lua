@@ -667,9 +667,12 @@ end
 
 -- range radar (/bw range N) ----------------------------------------------------
 local function InRange(unit, yards)
-	if yards <= 11 then return CheckInteractDistance(unit, 3)      -- ~9.9y duel
-	elseif yards <= 28 then return CheckInteractDistance(unit, 1)  -- ~28y inspect
-	else return UnitInRange(unit) end                              -- ~40y heal
+	if CheckInteractDistance then
+		if yards <= 11 then return CheckInteractDistance(unit, 3)      -- ~9.9y duel
+		elseif yards <= 28 then return CheckInteractDistance(unit, 1)  -- ~28y inspect
+		end
+	end
+	return UnitInRange and UnitInRange(unit)                      -- ~40y heal
 end
 
 function BW:RangeTick()

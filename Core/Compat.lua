@@ -39,7 +39,7 @@ function S.GetSpellInfo(spell)
 		if info then return info.name, nil, info.iconID, info.castTime, info.minRange, info.maxRange, info.spellID end
 		return
 	end
-	return GetSpellInfo(spell)
+	if GetSpellInfo then return GetSpellInfo(spell) end
 end
 
 function S.GetSpellCooldown(spell)
@@ -48,7 +48,7 @@ function S.GetSpellCooldown(spell)
 		if info then return info.startTime, info.duration, info.isEnabled, info.modRate end
 		return
 	end
-	return GetSpellCooldown(spell)
+	if GetSpellCooldown then return GetSpellCooldown(spell) end
 end
 
 -- Items
@@ -74,6 +74,7 @@ function S.GetContainerItemInfo(bag, slot)
 	if C and C.GetContainerItemInfo then
 		return C.GetContainerItemInfo(bag, slot)
 	end
+	if not GetContainerItemInfo then return nil end
 	local icon, count, locked, quality, readable, lootable, link, filtered, noValue, itemID = GetContainerItemInfo(bag, slot)
 	if not icon then return nil end
 	return { iconFileID = icon, stackCount = count, isLocked = locked, quality = quality, isReadable = readable, hasLoot = lootable, hyperlink = link, isFiltered = filtered, hasNoValue = noValue, itemID = itemID }
@@ -100,13 +101,15 @@ function S.GetAura(unit, index, filter)
 		-- some clients (e.g. hostile NPCs) - fall through to UnitAura then
 		if a then return a end
 	end
-	local name, icon, count, debuffType, duration, expirationTime, source, isStealable, _, spellId = UnitAura(unit, index, filter)
-	if not name then return nil end
-	local a = auraCache
-	a.name, a.icon, a.applications, a.dispelName, a.duration, a.expirationTime = name, icon, count, debuffType, duration, expirationTime
-	a.sourceUnit, a.isStealable, a.spellId, a.auraInstanceID = source, isStealable, spellId, nil
-	a.isHelpful = filter and filter:find("HELPFUL") and true or false
-	return a
+	if UnitAura then
+		local name, icon, count, debuffType, duration, expirationTime, source, isStealable, _, spellId = UnitAura(unit, index, filter)
+		if not name then return nil end
+		local a = auraCache
+		a.name, a.icon, a.applications, a.dispelName, a.duration, a.expirationTime = name, icon, count, debuffType, duration, expirationTime
+		a.sourceUnit, a.isStealable, a.spellId, a.auraInstanceID = source, isStealable, spellId, nil
+		a.isHelpful = filter and filter:find("HELPFUL") and true or false
+		return a
+	end
 end
 
 -- legacy-tuple drop-in for modules written against the old UnitAura() API
@@ -122,12 +125,13 @@ function S.UnitAura(unit, index, filter)
 end
 
 -- Mouse focus
+S.GetMouseFoci = GetMouseFoci
 function S.GetMouseFocus()
 	if GetMouseFoci then
 		local foci = GetMouseFoci()
-		return foci and foci[1]
+		if foci and foci[1] then return foci[1] end
 	end
-	return GetMouseFocus()
+	if GetMouseFocus then return GetMouseFocus() end
 end
 
 -- Specialization / talents
@@ -184,6 +188,7 @@ function S.GetNumOnlineFriends()
 	if C_FriendList and C_FriendList.GetNumOnlineFriends then
 		return C_FriendList.GetNumOnlineFriends() or 0, C_FriendList.GetNumFriends() or 0
 	end
+	if not GetNumFriends then return 0, 0 end
 	local total, online = GetNumFriends()
 	return online or 0, total or 0
 end

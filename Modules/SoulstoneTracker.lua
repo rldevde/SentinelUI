@@ -8,7 +8,7 @@ local ST = S:NewModule("SoulstoneTracker", "soulstonetracker")
 
 local ipairs = ipairs
 local CreateFrame = CreateFrame
-local UnitAura, UnitName, UnitClass = UnitAura, UnitName, UnitClass
+local UnitName, UnitClass = UnitName, UnitClass
 local IsInGroup = IsInGroup
 local ICON, MAX = 22, 5
 local SS = { [20707] = true, [47883] = true, [47884] = true } -- soulstone resurrection aura

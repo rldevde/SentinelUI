@@ -513,7 +513,7 @@ function RG:Paint(cell, m)
 	end
 
 	-- aggro dot
-	cell.aggro:SetShown(not dead and (UnitThreatSituation(unit) or 0) >= 2)
+	cell.aggro:SetShown(not dead and (UnitThreatSituation and UnitThreatSituation(unit) or 0) >= 2)
 
 	-- raid marker
 	local ri = GetRaidTargetIndex and GetRaidTargetIndex(unit)
