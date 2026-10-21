@@ -1,0 +1,127 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<Button name="SentinelUIAuraTemplate16" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="16" y="16"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate18" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="18" y="18"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate20" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="20" y="20"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate22" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="22" y="22"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate24" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="24" y="24"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate26" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="26" y="26"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate28" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="28" y="28"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate30" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="30" y="30"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate32" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="32" y="32"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate34" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="34" y="34"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate36" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="36" y="36"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate38" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="38" y="38"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate40" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="40" y="40"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate42" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="42" y="42"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate44" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="44" y="44"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate46" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="46" y="46"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate48" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="48" y="48"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate50" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="50" y="50"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate52" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="52" y="52"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate54" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="54" y="54"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate56" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="56" y="56"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate58" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="58" y="58"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate60" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="60" y="60"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate62" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="62" y="62"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+	<Button name="SentinelUIAuraTemplate64" inherits="SecureActionButtonTemplate" virtual="true" registerForClicks="RightButtonUp, RightButtonDown">
+		<Size x="64" y="64"/>
+		<Attributes><Attribute name="type" value="cancelaura"/></Attributes>
+		<Scripts><OnLoad>SentinelUI:InitAuraButton(self)</OnLoad></Scripts>
+	</Button>
+</Ui>
