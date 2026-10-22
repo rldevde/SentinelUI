@@ -17,6 +17,9 @@ standalone RLBetterItem release.
 - **Reputation data text right-click** — right-clicking the Rep slot now cycles the watched faction to the next one in the faction list
 - **Quest progress announce** — posts "Quest: objective (5/8)" to party chat when a quest objective advances (General → questAnnounce, on by default)
 - **Auction House background scan** — opening the AH automatically re-runs the getAll scan when the price DB is stale (>15 min) and the query cooldown allows it (auctionhouse.autoScan, on by default)
+- **Quest log search** — the search box now also sits in the quest log: non-matching titles and zone headers are dimmed to 15% (module: Spell Search)
+- **Anti-AFK** — clears the AFK flag as soon as the server sets it so the 30-minute idle logout never starts (General → antiAFK, on by default)
+- **Auto-fill delete confirm** — the required word is typed into the item-delete popup automatically, you only confirm the button (General → autoDelete, on by default)
 
 ## [1.3.0]
 

@@ -69,6 +69,8 @@ S.defaults = {
 			autoDismount = true,
 			autoWatch = true,
 			questAnnounce = true,
+			antiAFK = true,
+			autoDelete = true,
 			maxCamera = true,
 
 			autoAcceptInvite = false,

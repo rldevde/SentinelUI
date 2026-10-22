@@ -171,6 +171,38 @@ local function ScanQuestObjectives()
 	return out
 end
 
+-- Anti-AFK -------------------------------------------------------------------
+-- clears the AFK flag the moment it appears so the idle logout never starts
+function M:PLAYER_FLAGS_CHANGED()
+	if self.db.antiAFK == false or not UnitIsAFK or not SendChatMessage then return end
+	if UnitIsAFK("player") then SendChatMessage("", "AFK") end -- toggles the flag off
+end
+
+-- Auto-fill delete confirm ----------------------------------------------------
+-- types the required word into the item-delete popup's editbox automatically
+local function FillDelete(popup)
+	if M.db and M.db.autoDelete == false then return end
+	local eb = popup and (popup.editBox or _G[popup:GetName() .. "EditBox"])
+	if eb and eb:IsShown() then eb:SetText(DELETE_ITEM_CONFIRM_STRING or "DELETE") end
+end
+local deleteHooked
+local function HookDeletePopup()
+	if deleteHooked or not StaticPopup_Show then return end
+	deleteHooked = true
+	hooksecurefunc("StaticPopup_Show", function(which)
+		if not which or not which:find("DELETE_") then return end
+		for i = 1, 4 do
+			local popup = _G["StaticPopup" .. i]
+			if popup and popup.which == which and popup:IsShown() then FillDelete(popup) break end
+		end
+	end)
+	-- editboxes can be created lazily: fill on their OnShow too
+	for i = 1, 4 do
+		local popup = _G["StaticPopup" .. i]
+		if popup then popup:HookScript("OnShow", function(f) if f.which and f.which:find("DELETE_") then FillDelete(f) end end) end
+	end
+end
+
 function M:QUEST_LOG_UPDATE()
 	local fresh = ScanQuestObjectives()
 	if objReady and self.db.questAnnounce and IsInGroup() then
@@ -1282,6 +1314,8 @@ function M:Initialize()
 	self:RegisterEvent("UI_ERROR_MESSAGE")
 	self:RegisterEvent("UPDATE_FACTION")
 	self:RegisterEvent("QUEST_LOG_UPDATE")
+	self:RegisterEvent("PLAYER_FLAGS_CHANGED")
+	HookDeletePopup()
 	self:RegisterEvent("MINIMAP_PING", function(_, unit)
 		if not M.db.pingAlert then return end
 		local name = UnitName(unit)
