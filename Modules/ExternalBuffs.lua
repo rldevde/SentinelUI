@@ -100,7 +100,7 @@ function EB:Initialize()
 	self.db = S.db.profile.externalbuffs
 	Ensure()
 	self:RegisterEvent("GROUP_ROSTER_UPDATE", function() EB:Refresh() end)
-	self:RegisterEvent("UNIT_AURA", function(_, unit)
+	self:RegisterEvent("UNIT_AURA", function(_, _, unit)
 		if unit and (unit == "player" or unit:find("^party") or unit:find("^raid")) then EB:Refresh() end
 	end)
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", function() EB:Refresh() end)

@@ -79,7 +79,7 @@ function PA:Initialize()
 	if not CAN_PURGE then return end
 	Ensure()
 	self:RegisterEvent("PLAYER_TARGET_CHANGED", function() PA:Refresh() end)
-	self:RegisterEvent("UNIT_AURA", function(_, unit) if unit == "target" then PA:Refresh() end end)
+	self:RegisterEvent("UNIT_AURA", function(_, _, unit) if unit == "target" then PA:Refresh() end end)
 end
 
 function PA:Update()

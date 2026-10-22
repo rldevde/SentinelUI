@@ -10,6 +10,7 @@ standalone RLBetterItem release.
 ## [1.4.0]
 
 ### Fixed
+- **Event-arg off-by-one in 12 handlers** — anonymous `RegisterEvent` handlers receive `(owner, event, payload…)`, but 12 sites bound the payload to the 2nd parameter, so they got the event name instead of real data. Silently killed: loot-roll summary (`GetLootRollItemLink` usage error), minimap ping names, aggro warning, banish timer, external-buff icons, fishing skill-ups, hunter ammo-on-aura check, nameplate quest refresh, purge icon, session XP/kill tracking, soulstone tracking
 - **Quest Items crash on load** — the module file was missing its `ns`/`S` bootstrap lines, so it errored 6x at startup and the whole module never initialized
 - **Outfit bar drag error** — dragging the outfit bar while docked to the bottom bar threw "Frame is not movable"; the drag handler now checks movability first
 - **Raid check inspect crash** — `INSPECT_READY` called `ShortName` before its local declaration, so every inspect reply errored and enchant/gem data never populated

@@ -57,7 +57,7 @@ function FH:Initialize()
 			GameTooltip:Show()
 		end,
 	})
-	self:RegisterEvent("CHAT_MSG_SKILL", function(_, msg)
+	self:RegisterEvent("CHAT_MSG_SKILL", function(_, _, msg)
 		-- "Your skill in Fishing has increased to 226."
 		if type(msg) ~= "string" or (S.IsSecret and S.IsSecret(msg)) then return end
 		if msg:find("Fishing") or msg:find("Angeln") or msg:find("Pêche")

@@ -51,7 +51,7 @@ function BT:Initialize()
 	if S.myClass ~= "WARLOCK" then return end
 	self.db = S.db.profile.banishtimer
 	Ensure()
-	self:RegisterEvent("UNIT_AURA", function(_, unit)
+	self:RegisterEvent("UNIT_AURA", function(_, _, unit)
 		if unit == "target" or unit == "focus" then BT:Refresh() end
 	end)
 	self:RegisterEvent("PLAYER_TARGET_CHANGED", function() BT:Refresh() end)

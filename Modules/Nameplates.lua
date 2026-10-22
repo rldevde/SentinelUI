@@ -643,7 +643,7 @@ function NP:Initialize()
 	self:RegisterEvent("PLAYER_REGEN_DISABLED", function() for _, f in pairs(NP.plates) do NP:UpdateColor(f) end end)
 	self:RegisterEvent("PLAYER_REGEN_ENABLED", function() for _, f in pairs(NP.plates) do NP:UpdateColor(f) end end)
 	self:RegisterEvent("QUEST_LOG_UPDATE", function() NP:RefreshQuests() end)
-	self:RegisterEvent("UNIT_QUEST_LOG_CHANGED", function(_, unit)
+	self:RegisterEvent("UNIT_QUEST_LOG_CHANGED", function(_, _, unit)
 		if unit == "player" then NP:RefreshQuests() end
 	end)
 	local ef = CreateFrame("Frame")

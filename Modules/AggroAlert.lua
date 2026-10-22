@@ -32,7 +32,7 @@ end
 function AA:Initialize()
 	self.db = S.db.profile.aggroalert
 	if not UnitThreatSituation then return end
-	self:RegisterEvent("UNIT_THREAT_SITUATION_UPDATE", function(_, unit)
+	self:RegisterEvent("UNIT_THREAT_SITUATION_UPDATE", function(_, _, unit)
 		if unit ~= "player" then return end
 		local status = UnitThreatSituation("player")
 		if status and status >= 3 then Warn() end

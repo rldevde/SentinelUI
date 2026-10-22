@@ -76,7 +76,7 @@ function ST:Initialize()
 	self.db = S.db.profile.soulstonetracker
 	Ensure()
 	self:RegisterEvent("GROUP_ROSTER_UPDATE", function() ST:Refresh() end)
-	self:RegisterEvent("UNIT_AURA", function(_, unit)
+	self:RegisterEvent("UNIT_AURA", function(_, _, unit)
 		if unit and (unit == "player" or unit:find("^party") or unit:find("^raid")) then ST:Refresh() end
 	end)
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", function() ST:Refresh() end)

@@ -61,7 +61,7 @@ function HT:Initialize()
 	if S.myClass ~= "HUNTER" then return end
 	self.db = S.db.profile.huntertools
 	self:RegisterEvent("PLAYER_REGEN_DISABLED", function() HT:CheckCheetah() end)
-	self:RegisterEvent("UNIT_AURA", function(_, unit) if unit == "player" then HT:CheckAmmo() end end)
+	self:RegisterEvent("UNIT_AURA", function(_, _, unit) if unit == "player" then HT:CheckAmmo() end end)
 	self:RegisterEvent("BAG_UPDATE", function() HT:CheckAmmo() end)
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", function() HT:CheckAmmo() end)
 end

@@ -982,7 +982,7 @@ function M:SkinLoot()
 			end)
 		end
 		-- roll frames are created lazily - skin them when the first roll arrives
-		self:RegisterEvent("START_LOOT_ROLL", function(_, rollID)
+		self:RegisterEvent("START_LOOT_ROLL", function(_, _, rollID)
 			M:TrackRoll(rollID)
 			C_Timer.After(0.1, function()
 				for i = 1, (NUM_GROUP_LOOT_FRAMES or 4) do
@@ -1648,7 +1648,7 @@ function M:Initialize()
 		M._bt = 0
 		BuffExpireScan()
 	end)
-	self:RegisterEvent("MINIMAP_PING", function(_, unit)
+	self:RegisterEvent("MINIMAP_PING", function(_, _, unit)
 		if not M.db.pingAlert then return end
 		local name = UnitName(unit)
 		if name and not IsSecret(name) then

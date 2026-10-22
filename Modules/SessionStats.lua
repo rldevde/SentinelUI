@@ -59,12 +59,12 @@ function SS:Initialize()
 
 	-- XP gain amount only exists inside the localized combat text
 	-- ("You gain 320 experience." / "Ihr erhaltet 320 Erfahrung.")
-	self:RegisterEvent("CHAT_MSG_COMBAT_XP_GAIN", function(_, msg)
+	self:RegisterEvent("CHAT_MSG_COMBAT_XP_GAIN", function(_, _, msg)
 		if type(msg) ~= "string" or (S.IsSecret and S.IsSecret(msg)) then return end
 		local n = tonumber(msg:match("(%d[%d%.]*)"))
 		if n then st.xp = st.xp + n end
 	end)
-	self:RegisterEvent("PARTY_KILL", function(_, unit)
+	self:RegisterEvent("PARTY_KILL", function(_, _, unit)
 		-- PARTY_KILL fires for every group member; count kill-blow credit only
 		if not unit then st.kills = st.kills + 1 return end
 		if UnitIsUnit and (UnitIsUnit(unit, "player") or unit == "player") then st.kills = st.kills + 1 end
