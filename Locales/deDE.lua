@@ -608,6 +608,7 @@ local T = {
 	["No map position for quest '%s'."] = "Keine Kartenposition für Quest '%s'.",
 	["Unknown zone: %s"] = "Unbekannte Zone: %s",
 	["Usage: /sway x y [name] - or /sway help"] = "Nutzung: /sway x y [Name] - oder /sway help",
+	["Usage: /sway conv 1-4"] = "Benutzung: /sway conv 1-4",
 	["Left-click: navigate | Right-click: remove"] = "Links: navigieren | Rechts: entfernen",
 	["Right-click: clear waypoint"] = "Rechtsklick: Wegpunkt löschen",
 	["Right-click: next faction"] = "Rechtsklick: nächste Fraktion",
