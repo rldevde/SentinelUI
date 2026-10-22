@@ -8,7 +8,7 @@ SentinelUI is written from scratch. It only ships the free, embedded
 libraries it needs (Ace3, LibSharedMedia, AceGUI SharedMedia widgets) — no
 external dependencies, no required companion addons.
 
-**Version:** 1.3.0 · **Author:** xRL-Dev.de · **Locales:** English, Deutsch
+**Version:** 1.4.0 · **Author:** xRL-Dev.de · **Locales:** English, Deutsch
 
 - Website: <https://xrl-dev.de/>
 - CurseForge: <https://www.curseforge.com/wow/addons/sentinelui>

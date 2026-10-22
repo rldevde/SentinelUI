@@ -7,6 +7,13 @@ Note on versions: `## Version` is SentinelUI's own release number. The embedded
 BetterItem module reports `## X-BetterItem-Version` and must always equal the
 standalone RLBetterItem release.
 
+## [1.4.0]
+
+### Added
+- **XP per hour + level ETA** — the "Experience" data text now tracks gains over the session and appends "(12.3k/h · ~45m)" once a minute of data exists
+- **Auto-watch reputation** — the watched-faction bar follows whichever faction gained reputation last (General → autoWatch, on by default)
+- **Auto dismount** — casting while mounted drops the mount instead of just showing "You are mounted", so the next press casts (General → autoDismount, on by default)
+
 ## [1.3.0]
 
 ### Added
@@ -37,9 +44,6 @@ standalone RLBetterItem release.
 - **Session Stats** — new "Session" data text: session time, kills (kill-blow credit), gold earned, deaths; tooltip with details, click resets the session
 - **Fishing data text** — "Fishing" slot: current fishing skill (rank/max) plus remaining lure time on the weapon (temporary enchant); tooltip tracks skill-ups this session
 - **Auction House suite** (`Modules/AuctionHouse/`, module disabled by default — opt-in via Modules) — Auctionator-style "S-AH" tab on the Blizzard auction house with three sub-tabs: **Shopping** (named shopping lists stored account-wide, sequential list searches at AH query pace, merged results sorted by unit price, item tooltips, buy with stale-entry verification), **Selling** (bag item list, competition query on selection, undercut-aware price suggestion from lowest competitor or scan DB, duration 12/24/48h, deposit via `GetAuctionDeposit`, **multisell stack size/count** via `PostAuction(bid, stackBuyout, dur, stackSize, numStacks)` — verified against Auctionator's legacy-AH selling path, posting history shown as "last posted" hint), **Cancelling** (own auctions with bid/buyout/time-left, undercut marker, sold flag, verified cancel, **live undercut check** button that queries each owned item sequentially, **mass-cancel button** that chains through all undercut rows until none remain) — plus a **Full Scan** button that digests the entire AH in chunks (no freeze) into a per-realm/faction price DB that also feeds the PriceHistory tooltip. **Auctionator-compatible import/export** (`ListName^item^item` per line, both directions) via a shared multi-line text dialog, and a **recent-searches strip** in the Shopping tab (click to re-run)
-- **XP per hour + level ETA** — the "Experience" data text now tracks gains over the session and appends "(12.3k/h · ~45m)" once a minute of data exists
-- **Auto-watch reputation** — the watched-faction bar follows whichever faction gained reputation last (General → autoWatch, on by default)
-- **Auto dismount** — casting while mounted drops the mount instead of just showing "You are mounted", so the next press casts (General → autoDismount, on by default)
 
 ### Fixed
 - **ADDON_ACTION_BLOCKED on movers in combat** — mover frames anchored to secure bars (e.g. action-bar movers) inherit protected status, so `RefreshMovers`/`PositionMover` calls from scale events during combat threw `SentinelUIMover_bar3:ClearAllPoints()` errors; protected movers are now deferred to the next out-of-combat tick
