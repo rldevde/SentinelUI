@@ -119,7 +119,11 @@ function CT:Initialize()
 			if type(id) == "number" then
 				local c = Count(id)
 				if c <= low then
-					local name = S.GetItemInfo and S.GetItemInfo(id)
+					local name, link = S.GetItemInfo and S.GetItemInfo(id)
+					if not name and C_Item and C_Item.RequestLoadItemDataByID then
+						C_Item.RequestLoadItemDataByID(id)
+					end
+					local label = link or ("|cffffffff|Hitem:" .. id .. "|h[item:" .. id .. "]|h|r")
 					local bought = 0
 					if CT.db.autoBuy and GetMerchantNumItems then
 						local want = (def[3] or low * 2) - c
@@ -137,9 +141,9 @@ function CT:Initialize()
 						end
 					end
 					if bought > 0 then
-						S:Print(format(L["Bought %dx %s"], bought, name or ("item:" .. id)))
+						S:Print(format(L["Bought %dx %s"], bought, label))
 					elseif CT.db.restockNote ~= false then
-						S:Print(format(L["Low on %s (%d) - restock at vendor"], name or ("item:" .. id), c))
+						S:Print(format(L["Low on %s (%d) - restock at vendor"], label, c))
 					end
 				end
 			end
