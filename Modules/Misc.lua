@@ -203,6 +203,51 @@ local function HookDeletePopup()
 	end
 end
 
+-- Raid consumables check ------------------------------------------------------
+-- /suiconsume: lists who is missing food and flask/elixir buffs
+local FOOD_PAT = GetLocale() == "deDE" and "Satt" or "Well Fed|Satt|Bien nourri|Saciado"
+local FLASK_PAT = GetLocale() == "deDE" and "Fläschchen|Elixier" or "Flask|Elixir|Fläschchen|Elixier"
+
+local function GroupUnits()
+	local units = {}
+	if IsInRaid() then
+		for i = 1, GetNumGroupMembers() do units[#units + 1] = "raid" .. i end
+	elseif IsInGroup() then
+		units[#units + 1] = "player"
+		for i = 1, GetNumGroupMembers() - 1 do units[#units + 1] = "party" .. i end
+	else
+		units[#units + 1] = "player"
+	end
+	return units
+end
+
+local function ConsumeCheck()
+	local missFood, missFlask = {}, {}
+	for _, unit in ipairs(GroupUnits()) do
+		if UnitExists(unit) and not UnitIsDeadOrGhost(unit) then
+			local food, flask
+			for i = 1, 40 do
+				local name = S.UnitAura(unit, i, "HELPFUL")
+				if not name then break end
+				if not (S.IsSecret and S.IsSecret(name)) then
+					if name:find(FOOD_PAT) then food = true end
+					if name:find(FLASK_PAT) then flask = true end
+				end
+			end
+			local n = UnitName(unit) or unit
+			if not food then missFood[#missFood + 1] = n end
+			if not flask then missFlask[#missFlask + 1] = n end
+		end
+	end
+	S:Print("|cff" .. S.accentHex .. L["Consumables check"] .. "|r")
+	if #missFood == 0 and #missFlask == 0 then
+		S:Print(L["Everyone has food + flask"])
+	else
+		if #missFood > 0 then S:Print(format("|cffff8040" .. L["No food buff (%d):"] .. "|r %s", #missFood, table.concat(missFood, ", "))) end
+		if #missFlask > 0 then S:Print(format("|cffff8040" .. L["No flask/elixir (%d):"] .. "|r %s", #missFlask, table.concat(missFlask, ", "))) end
+	end
+end
+
 function M:QUEST_LOG_UPDATE()
 	local fresh = ScanQuestObjectives()
 	if objReady and self.db.questAnnounce and IsInGroup() then
@@ -1316,6 +1361,8 @@ function M:Initialize()
 	self:RegisterEvent("QUEST_LOG_UPDATE")
 	self:RegisterEvent("PLAYER_FLAGS_CHANGED")
 	HookDeletePopup()
+	S:RegisterChatCommand("suiconsume", ConsumeCheck)
+	S:RegisterChatCommand("consume", ConsumeCheck)
 	self:RegisterEvent("MINIMAP_PING", function(_, unit)
 		if not M.db.pingAlert then return end
 		local name = UnitName(unit)

@@ -25,6 +25,10 @@ standalone RLBetterItem release.
 - **AH price lines in item tooltips** — the price tooltip now shows the freshest scanned unit price ("AH" + age) alongside the existing min/avg history, plus the vendor sell price
 - **Cursor Ring** — subtle accent-colored ring that follows the mouse cursor so it stays findable during raid clutter (module: Cursor Ring; size/alpha under General → cursorRingSize/cursorRingAlpha)
 - **Price history time series** — every scan (browse and getAll) now records a price sample per ~6h window (40 samples, 14-day retention, account-wide SavedVariables); tooltips gain a "Trend Nd" line comparing newest vs. oldest stored price (+x% red / -x% green)
+- **Price chart** — `/suiprice [itemlink]` opens a movable bar chart of the item's stored price history (min/max/last labels, latest bar highlighted, ESC closes)
+- **Price alerts** — `/suialert [itemlink] <price>` sets a target unit price (e.g. `40g`, `2g50s`); every browse or getAll scan at or below the target prints a chat alert (once per 12h per item), `/suialert` lists, `/suialert [itemlink]` removes
+- **Consumables check** — `/suiconsume` scans party/raid for food (Well Fed/Satt) and flask/elixir buffs and lists who is missing what (locale-aware buff matching)
+- **Player notes** — `/suinote <name> <text>` stores an account-wide note shown as a gold line in that player's unit tooltip; `/suinote` lists, `/suinote <name>` removes (module: Notes)
 
 ## [1.3.0]
 

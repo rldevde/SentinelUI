@@ -8,7 +8,7 @@ local L = S.L
 local PH = S:NewModule("PriceHistory", "pricehistory")
 
 local ipairs, pairs = ipairs, pairs
-local floor, format, tremove = math.floor, format, tremove
+local floor, format, tremove, tinsert = math.floor, format, tremove, tinsert
 local GetNumAuctionItems, GetAuctionItemInfo, GetAuctionItemLink =
 	GetNumAuctionItems, GetAuctionItemInfo, GetAuctionItemLink
 
@@ -32,9 +32,26 @@ local function ItemID(link)
 	return tonumber(link:match("item:(%d+)"))
 end
 
+-- watchlist: itemID -> target unit price; alerted once per 12h per item
+local function Alerts()
+	S.db.global.ahAlerts = S.db.global.ahAlerts or {}
+	return S.db.global.ahAlerts
+end
+
+local function CheckAlert(id, per, now)
+	local a = Alerts()[id]
+	if not a or not a.p or per > a.p then return end
+	if a.last and (now - a.last) < 43200 then return end
+	a.last = now
+	local name = (GetItemInfo and select(1, GetItemInfo(id))) or ("item:" .. id)
+	S:Print(format(L["Price alert: %s is at %s (target %s)"], name or ("item:" .. id), Money(per), Money(a.p)))
+	if PlaySound and SOUNDKIT and SOUNDKIT.AUCTION_WINDOW_CLOSE then pcall(PlaySound, SOUNDKIT.AUCTION_WINDOW_CLOSE) end
+end
+
 -- time series: one sample per ~6h window, entries older than MAX_AGE pruned.
 -- exported so the AH full scan can feed the same history.
-function PH:RecordPrice(e, per, now)
+function PH:RecordPrice(e, per, now, id)
+	if id then CheckAlert(id, per, now) end
 	if not e.hist then e.hist = {} end
 	local last = e.hist[#e.hist]
 	if not last or (now - (last.t or 0)) > 21600 then
@@ -72,7 +89,7 @@ function PH:Scan()
 				e.n = (e.n or 1) + 1
 				e.t = now
 			end
-			PH:RecordPrice(e, per, now)
+			PH:RecordPrice(e, per, now, id)
 		end
 	end
 end
@@ -129,10 +146,104 @@ local function TooltipLine(tt)
 	if added then tt:Show() end
 end
 
+local function AlertCmd(msg)
+	msg = (msg or ""):gsub("^%s+", ""):gsub("%s+$", "")
+	local alerts = Alerts()
+	if msg == "" then
+		local n = 0
+		for id, a in pairs(alerts) do
+			n = n + 1
+			local name = select(1, S.GetItemInfo(id)) or ("item:" .. id)
+			S:Print(format("|cffffd700%s|r: %s", name, Money(a.p)))
+		end
+		if n == 0 then S:Print(L["No price alerts set"]) end
+		return
+	end
+	local link, rest = msg:match("(|c%x+|Hitem:.-|h%[.-%]|h|r)%s*(.*)")
+	if not link then link, rest = msg:match("(|Hitem:%d+[^|]*|h%[.-%]|h)%s*(.*)") end
+	local id = link and ItemID(link)
+	if not id then S:Print(L["Usage: /suialert [itemlink] <price|off>"]) return end
+	if rest == "off" or rest == "" then
+		alerts[id] = nil
+		S:Print(L["Price alert removed"])
+		return
+	end
+	local g, s, c = rest:match("(%d+)%s*g"), rest:match("(%d+)%s*s"), rest:match("(%d+)%s*c")
+	local copper = (tonumber(g) or 0) * 10000 + (tonumber(s) or 0) * 100 + (tonumber(c) or 0)
+	if copper == 0 and not (g or s or c) then copper = (tonumber(rest) or 0) * 10000 end -- bare number = gold
+	if copper <= 0 then S:Print(L["Usage: /suialert [itemlink] <price|off>"]) return end
+	alerts[id] = { p = copper }
+	S:Print(format(L["Price alert set: %s at %s"], link, Money(copper)))
+end
+
+-- price chart: bar graph of the stored time series ---------------------------
+local chart
+local function ShowChart(itemID, link)
+	local e = Store()[itemID]
+	local hist = e and e.hist
+	if not hist or #hist == 0 then S:Print(L["No price data for that item"]) return end
+	if not chart then
+		chart = CreateFrame("Frame", "SentinelUIPriceChart", UIParent, S.BackdropTemplate)
+		chart:SetSize(290, 180)
+		chart:SetPoint("CENTER")
+		S:SetTemplate(chart, "Default")
+		chart:SetMovable(true)
+		chart:EnableMouse(true)
+		chart:RegisterForDrag("LeftButton")
+		chart:SetScript("OnDragStart", chart.StartMoving)
+		chart:SetScript("OnDragStop", chart.StopMovingOrSizing)
+		chart:SetClampedToScreen(true)
+		chart:SetFrameStrata("DIALOG")
+		chart.title = S:FontString(chart, 12, "OUTLINE", S.media.unitFont)
+		chart.title:SetPoint("TOP", 0, -10)
+		chart.plot = CreateFrame("Frame", nil, chart)
+		chart.plot:SetPoint("TOPLEFT", 16, -30)
+		chart.plot:SetPoint("BOTTOMRIGHT", -16, 26)
+		chart.minmax = S:FontString(chart, 10, "OUTLINE", S.media.numberFont)
+		chart.minmax:SetPoint("BOTTOM", 0, 8)
+		local close = CreateFrame("Button", nil, chart, "UIPanelCloseButton")
+		close:SetPoint("TOPRIGHT", -4, -4)
+		chart.bars = {}
+		tinsert(UISpecialFrames, "SentinelUIPriceChart")
+	end
+	local W, H = chart.plot:GetWidth(), chart.plot:GetHeight()
+	local n = #hist
+	local lo, hi = math.huge, 0
+	for _, s in ipairs(hist) do if s.p < lo then lo = s.p end if s.p > hi then hi = s.p end end
+	local range = math.max(hi - lo, 1)
+	local bw = W / n
+	for i, s in ipairs(hist) do
+		local bar = chart.bars[i] or chart.plot:CreateTexture(nil, "ARTWORK")
+		chart.bars[i] = bar
+		local bh = math.max(2, (s.p - lo) / range * (H - 16) + 4)
+		bar:ClearAllPoints()
+		bar:SetSize(math.max(1, bw - 1), bh)
+		bar:SetPoint("BOTTOMLEFT", chart.plot, "BOTTOMLEFT", (i - 1) * bw, 4)
+		bar:SetColorTexture(S.accent.r, S.accent.g, S.accent.b, i == n and 1 or 0.7)
+		bar:Show()
+	end
+	for i = n + 1, #chart.bars do chart.bars[i]:Hide() end
+	local name = link or select(1, S.GetItemInfo(itemID)) or ("item:" .. itemID)
+	chart.title:SetText(name)
+	chart.minmax:SetText(format("min %s   max %s   last %s", Money(lo), Money(hi), Money(hist[#hist].p)))
+	chart:Show()
+end
+
+local function ChartCmd(msg)
+	msg = (msg or ""):gsub("^%s+", "")
+	local link = msg:match("(|c%x+|Hitem:.-|h%[.-%]|h|r)") or msg:match("(|Hitem:%d+[^|]*|h%[.-%]|h)")
+	if not link then S:Print(L["Usage: /suiprice [itemlink]"]) return end
+	local id = ItemID(link)
+	if id then ShowChart(id, link) end
+end
+
 function PH:Initialize()
 	self.db = S.db.profile.pricehistory
 	if not self.db.enable then return end
 	self:RegisterEvent("AUCTION_ITEM_LIST_UPDATE", function() S:SafeCall("PriceHistory:Scan", PH.Scan, PH) end)
+	S:RegisterChatCommand("suialert", AlertCmd)
+	S:RegisterChatCommand("ahalert", AlertCmd)
+	S:RegisterChatCommand("suiprice", ChartCmd)
 	-- prune stale prices once per session
 	local store = Store()
 	for id, e in pairs(store) do

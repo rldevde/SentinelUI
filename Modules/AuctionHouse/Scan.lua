@@ -53,7 +53,7 @@ local function Track(update)
 			if not h then store[id] = { min = per, avg = per, n = 1, t = now } h = store[id]
 			else h.min = math.min(h.min or per, per); h.t = now end
 			local ph = S.GetModule and S:GetModule("PriceHistory", true)
-			if ph and ph.RecordPrice then ph:RecordPrice(h, per, now) end
+			if ph and ph.RecordPrice then ph:RecordPrice(h, per, now, id) end
 		end
 		scan.running = false
 		scan.ticker = nil

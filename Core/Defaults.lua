@@ -835,6 +835,7 @@ S.privateDefaults = {
 		weaponskill = { enable = false },
 		questitems = { enable = true },
 		cursorring = { enable = true },
+		notes = { enable = true },
 		spellsearch = { enable = true },
 		combatlog = { enable = true },
 		groupbulletin = { enable = true },
