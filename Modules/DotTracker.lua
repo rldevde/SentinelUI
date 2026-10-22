@@ -33,6 +33,11 @@ function DT:Scan()
 		if UnitExists(unit) then
 			local guid = UnitGUID(unit)
 			if guid and not IsSecret(guid) then
+				-- dead mobs keep reporting auras for a while -> drop the entry
+				-- immediately instead of letting timers tick on a corpse
+				if UnitIsDeadOrGhost and UnitIsDeadOrGhost(unit) then
+					self.tracked[guid] = nil
+				else
 				local entry = self.tracked[guid]
 				for i = 1, 40 do
 					local a = S.GetAura(unit, i, "HARMFUL|PLAYER")
@@ -53,6 +58,7 @@ function DT:Scan()
 						}
 						seen[guid] = true
 					end
+				end
 				end
 			end
 		end
