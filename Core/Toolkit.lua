@@ -439,10 +439,16 @@ function S:RegisterCooldown(cd)
 	if cd.SetSwipeColor then cd:SetSwipeColor(0, 0, 0, 0.7) end
 	hooksecurefunc(cd, "SetCooldown", function(...) S:SafeCall("Cooldown", CooldownSet, ...) end)
 	if cd.SetCooldownFromDurationObject then
-		hooksecurefunc(cd, "SetCooldownFromDurationObject", function(self) self.suiHolder:Hide() self:SetHideCountdownNumbers(false) end)
+		hooksecurefunc(cd, "SetCooldownFromDurationObject", function(self)
+			if not self then return end
+			if self.suiHolder then self.suiHolder:Hide() end
+			if self.SetHideCountdownNumbers then self:SetHideCountdownNumbers(false) end
+		end)
 	end
-	if cd.Clear then hooksecurefunc(cd, "Clear", function(self) self.suiHolder:Hide() end) end
-	cd:HookScript("OnHide", function(self) self.suiHolder:Hide() end)
+	if cd.Clear then
+		hooksecurefunc(cd, "Clear", function(self) if self and self.suiHolder then self.suiHolder:Hide() end end)
+	end
+	cd:HookScript("OnHide", function(self) if self and self.suiHolder then self.suiHolder:Hide() end end)
 end
 
 -- Widget skins ---------------------------------------------------------------

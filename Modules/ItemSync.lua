@@ -282,8 +282,9 @@ local function RefreshSearch()
 		end
 	end
 	sort(rows, function(x, y)
-		if x.total ~= y.total then return x.total > y.total end
-		return strlower(x.name) < strlower(y.name)
+		local xt, yt = x.total or 0, y.total or 0
+		if xt ~= yt then return xt > yt end
+		return strlower(x.name or "") < strlower(y.name or "")
 	end)
 
 	local n = #rows
@@ -302,7 +303,11 @@ local function RefreshSearch()
 			btn.name:SetText(r.name)
 			if r.quality and S.GetItemQualityColor then
 				local qr, qg, qb = S.GetItemQualityColor(r.quality)
-				btn.name:SetTextColor(qr or 1, qg or 1, qb or 1)
+				if type(qr) == "table" then
+					btn.name:SetTextColor(qr)
+				else
+					btn.name:SetTextColor(tonumber(qr) or 1, tonumber(qg) or 1, tonumber(qb) or 1)
+				end
 			else
 				btn.name:SetTextColor(1, 1, 1)
 			end

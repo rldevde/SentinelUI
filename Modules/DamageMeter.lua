@@ -340,13 +340,14 @@ end
 
 -- resolve a window's segment key: "current" | "overall" | "fight:<n>"
 local function SegFor(w)
-	local segKey = w.segment
+	local segKey = w and w.segment
+	local segs = DM.segments
+	if not segs then return nil end
 	if type(segKey) == "string" and segKey:sub(1, 6) == "fight:" then
 		local n = tonumber(segKey:sub(7)) or 1
-		local hist = DM.segments.history
-		return hist and hist[n]
+		return segs.history and segs.history[n]
 	end
-	return DM.segments[segKey] or DM.segments.current
+	return segs[segKey] or segs.current
 end
 -- short label for the segment header button
 local function SegShort(w)

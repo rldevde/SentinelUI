@@ -652,10 +652,10 @@ local function SkinParchmentButton(button)
 		if n > 0 then b:SetFormattedText("%s", newText, true) end
 	end
 	hooksecurefunc(button, "SetText", FixText)
-	hooksecurefunc(button, "SetFormattedText", function(b, fmt, text, skip)
-		if skip or not fmt then return end
+	hooksecurefunc(button, "SetFormattedText", function(b, fmt, ...)
+		if not fmt then return end
 		local newFmt, n = gsub(fmt, "|c[fF][fF](%x%x%x%x%x%x)", ReplaceParchmentColor)
-		if n > 0 then b:SetFormattedText(newFmt, text, true) end
+		if n > 0 then b:SetFormattedText(newFmt, ...) end
 	end)
 	local cur = button.GetText and button:GetText()
 	if cur then FixText(button, cur) end
@@ -991,8 +991,7 @@ function SK:SkinTalents(frame)
 					name, pts = n, p
 				end
 				if name then
-					spent:SetFormattedText(MASTERY_POINTS_SPENT or "%s: %s", name,
-						HIGHLIGHT_FONT_COLOR_CODE .. tostring(tonumber(pts) or 0) .. FONT_COLOR_CODE_CLOSE)
+					spent:SetFormattedText(MASTERY_POINTS_SPENT or "%s: %d", name, tonumber(pts) or 0)
 				end
 			end
 			C_Timer.After(0, FillSpent)
