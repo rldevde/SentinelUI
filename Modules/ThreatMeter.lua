@@ -17,6 +17,7 @@ local GetThreatStatusColor = GetThreatStatusColor
 local IsSecret = S.IsSecret
 
 local frame, rows, list = nil, {}, {}
+local measure -- unconstrained FontString used for text-width measurement
 local units = {}
 
 local function CollectUnits()
@@ -108,21 +109,21 @@ function TM:UpdateList()
 
 	local tname = UnitName("target")
 	frame.title:SetText(format("%s: %s", L["Threat"], (tname and not IsSecret(tname)) and tname or "?"))
+	if not measure then measure = S:FontString(UIParent, 10, "OUTLINE", S.media.unitFont) end
 
 	local maxB = min(self.db.maxBars or 5, #list)
 	local h, gap = self.db.barHeight or 14, 2
 	local w = self.db.width or 180
+	local need = 0
 	for i = 1, maxB do
 		local d, r = list[i], GetRow(i)
 		local tag = d.tanking and "|cffff8040*|r " or ""
 		r.name:SetText(tag .. (d.isMe and ("|cff7fff9f" .. d.name .. "|r") or d.name))
 		r.val:SetFormattedText("%.0f%%", d.pct)
+		measure:SetText(tag .. d.name)
+		need = max(need, measure:GetStringWidth() + 50)
 	end
-	local need = (frame.title:GetStringWidth() or 0) + 16
-	for i = 1, maxB do
-		local r = rows[i]
-		need = max(need, r.name:GetStringWidth() + r.val:GetStringWidth() + 30)
-	end
+	need = max(need, (frame.title:GetStringWidth() or 0) + 16)
 	if need > 0 then w = min(400, max(110, need)) end
 	for i = 1, maxB do
 		local d, r = list[i], GetRow(i)
