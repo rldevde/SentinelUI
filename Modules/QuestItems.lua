@@ -1,8 +1,10 @@
 -- QuestItems: clickable button bar for usable quest items in the bags.
 -- Quest-class items (GetItemInfoInstant class 12) with a use effect get a
 -- secure item button so they can be clicked straight from the bar.
-local QI = S:NewModule("QuestItems", "questitems")
+local _, ns = ...
+local S = ns.S
 local L = S.L
+local QI = S:NewModule("QuestItems", "questitems")
 
 local SIZE, SPACING, MAX = 34, 4, 8
 local f

@@ -176,7 +176,7 @@ function addon:RefreshOutfitBar()
             insets = { left = 3, right = 3, top = 3, bottom = 3 },
         })
         bar:SetBackdropColor(0, 0, 0, 0.8)
-        bar:SetScript("OnDragStart", function(self) self:StartMoving() end)
+        bar:SetScript("OnDragStart", function(self) if self:IsMovable() then self:StartMoving() end end)
         bar:SetScript("OnDragStop", function(self)
             self:StopMovingOrSizing()
             local p, rel, rp, x, y = self:GetPoint()

@@ -10,6 +10,8 @@ standalone RLBetterItem release.
 ## [1.4.0]
 
 ### Fixed
+- **Quest Items crash on load** — the module file was missing its `ns`/`S` bootstrap lines, so it errored 6x at startup and the whole module never initialized
+- **Outfit bar drag error** — dragging the outfit bar while docked to the bottom bar threw "Frame is not movable"; the drag handler now checks movability first
 - **Raid check inspect crash** — `INSPECT_READY` called `ShortName` before its local declaration, so every inspect reply errored and enchant/gem data never populated
 - **Friends-list notes hook** — falls back to `FriendsFrame_UpdateFriends` on clients where `FriendsList_Update` does not exist
 - **Nameplate cast bar overlap** — the "-> target" cast-target text sat on the same right edge as the cast timer, so spell name / timer / target painted on top of each other; the target text now anchors left of the timer and the spell name is clipped before it
