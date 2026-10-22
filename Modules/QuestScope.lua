@@ -382,13 +382,21 @@ function QS:BuildObjectives()
 	local npcData = QD.Npc or {}
 	local objData = QD.Object or {}
 	local itemData = QD.Item or {}
+	local nav = S:GetModule("Navigation")
 	for qid, qs in pairs(LogQuests()) do
 		local qd = quests[qid]
 		if not qd then
 			-- unknown quest in the log: skip it, do not abort the whole build
 		elseif qs.complete then
 			if db.showTurnIn then
-				local fin = qd[Q_FINISH]
+				-- Blizzard's own quest POI is the authoritative "?" spot;
+				-- our spawn DB can drift a few meters off (patrol NPCs,
+				-- stale crowd-sourced coords), so prefer it when present
+				local pm, px, py = nav and nav.QuestPosition and nav:QuestPosition(qid)
+				if pm then
+					tinsert(out, { qid = qid, title = qs.title, level = qs.level, mapID = pm, x = px, y = py, kind = "turnin" })
+				end
+				local fin = (not pm) and qd[Q_FINISH]
 				if fin and fin[1] then
 					for _, npcId in ipairs(fin[1]) do
 						local nd = npcData[npcId]
