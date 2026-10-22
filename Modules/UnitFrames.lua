@@ -269,6 +269,47 @@ function UF:SetBarValue(bar, value)
 	end
 end
 
+-- Cutaway ------------------------------------------------------------------
+-- recently-lost health lingers as a fading red slice behind the fill so big
+-- hits read at a glance. Fades over CUT_DUR seconds then hides.
+local CUT_DUR = 0.6
+local cutaways = {}
+local cutFrame = CreateFrame("Frame")
+cutFrame:SetScript("OnUpdate", function(_, elapsed)
+	for tex, t in pairs(cutaways) do
+		t = t - elapsed
+		if t <= 0 or not tex:IsShown() then
+			cutaways[tex] = nil
+			tex:Hide()
+		else
+			cutaways[tex] = t
+			tex:SetAlpha(min(1, t / CUT_DUR))
+		end
+	end
+end)
+
+local function ShowCutaway(health, prev, cur, mx)
+	if mx <= 0 or cur >= prev then return end
+	local tex = health.cutaway
+	if not tex then
+		tex = health:CreateTexture(nil, "ARTWORK", nil, 2)
+		tex:SetColorTexture(0.85, 0.25, 0.2)
+		health.cutaway = tex
+	end
+	local w = health:GetWidth()
+	if w <= 0 then return end
+	local lost = min(prev - cur, mx - cur)
+	local cw = lost / mx * w
+	if cw < 2 then return end
+	tex:ClearAllPoints()
+	tex:SetPoint("TOPLEFT", health, "TOPLEFT", cur / mx * w, 0)
+	tex:SetPoint("BOTTOM", health, "BOTTOM", 0, 0)
+	tex:SetWidth(cw)
+	tex:SetAlpha(1)
+	tex:Show()
+	cutaways[tex] = CUT_DUR
+end
+
 -- Elements ------------------------------------------------------------------
 local powerColors = {}
 -- softer Sentinel tones for the most common resources (Blizzard mana is pure blue)
@@ -344,9 +385,14 @@ function UF:UpdateHealth(f)
 	if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
 		smoothing[health] = nil
 		health:SetValue(0)
+		if health.cutaway then health.cutaway:Hide() cutaways[health.cutaway] = nil end
 	else
+		if self.db.cutaway and f._prevHealth and not IsSecret(cur) and not IsSecret(mx) then
+			ShowCutaway(health, f._prevHealth, cur, mx)
+		end
 		self:SetBarValue(health, cur)
 	end
+	f._prevHealth = cur
 	if f.HealthText then self:SetTagText(f.HealthText, f.db.health.text, unit) end
 	self:UpdateHealthColor(f)
 	if f.HealPrediction then self:UpdateHealPrediction(f) end

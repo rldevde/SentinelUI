@@ -4,6 +4,7 @@ if GetLocale() ~= "deDE" then return end
 local L = S.L
 
 local T = {
+	["cutaway"] = "Schaden-Überhang",
 	["%s Castbar"] = "%s Zauberleiste",
 	["%s bound to %s"] = "%s auf %s gelegt",
 	["AFK Screen"] = "AFK-Bildschirm",

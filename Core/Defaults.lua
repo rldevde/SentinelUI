@@ -113,7 +113,7 @@ S.defaults = {
 			bagbar = { enable = false, buttonSize = 26, spacing = 3, mouseover = false },
 		},
 		unitframes = {
-			smoothBars = true, statusbar = "Sentinel", font = "Sentinel Sans", fontOutline = "OUTLINE",
+			smoothBars = true, cutaway = true, statusbar = "Sentinel", font = "Sentinel Sans", fontOutline = "OUTLINE",
 			clickCast = { enable = false, bindings = {} },
 			-- aura filter lists: spells = { [spellID or lower-case name] = true }
 			filters = {

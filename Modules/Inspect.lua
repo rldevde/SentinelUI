@@ -261,34 +261,52 @@ end
 function IN:ClearGearInfo()
 	for _, gs in pairs(gearSlots) do
 		if gs.warn then gs.warn:Hide() end
+		if gs.ilvl then gs.ilvl:Hide() end
 		if gs.gems then for _, t in ipairs(gs.gems) do t:Hide() end end
 	end
 end
 
-function IN:UpdateGearInfo()
-	if not InspectFrame or not InspectFrame:IsShown() then return end
-	local unit = InspectFrame.unit or "target"
+-- paints enchant-warning (!), gem icons and (optional) item level onto one
+-- paperdoll slot. btnPrefix is "Inspect" or "Character", unit the paperdoll's
+function IN:PaintSlots(btnPrefix, unit, showIlvl)
 	if not UnitExists(unit) or not GetInventoryItemLink then return end
 	for slotName, slotId in pairs(SLOT_ID) do
-		local btn = _G["Inspect" .. slotName .. "Slot"]
+		local btn = _G[btnPrefix .. slotName .. "Slot"]
 		if btn then
-			local gs = gearSlots[slotName]
+			local key = btnPrefix .. slotName
+			local gs = gearSlots[key]
 			if not gs then
 				gs = { gems = {} }
 				gs.warn = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 				gs.warn:SetPoint("TOPRIGHT", btn, "TOPRIGHT", -1, -2)
 				gs.warn:SetText("|cffff4040!|r")
+				gs.ilvl = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+				gs.ilvl:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", -1, 1)
 				for i = 1, 4 do
 					local t = btn:CreateTexture(nil, "OVERLAY")
 					t:SetSize(10, 10)
 					t:SetPoint("BOTTOMLEFT", btn, "BOTTOMLEFT", 2 + (i - 1) * 11, 2)
 					gs.gems[i] = t
 				end
-				gearSlots[slotName] = gs
+				gearSlots[key] = gs
 			end
 			local link = GetInventoryItemLink(unit, slotId)
 			local ench, g1, g2, g3, g4 = ParseLink(link)
 			gs.warn:SetShown(link and ENCH_SLOT[slotId] and ench == 0)
+			if showIlvl and gs.ilvl then
+				local ilvl = link and ((S.GetDetailedItemLevelInfo and S.GetDetailedItemLevelInfo(link))
+					or (S.GetItemInfo and select(4, S.GetItemInfo(link))))
+				if ilvl and ilvl > 1 then
+					gs.ilvl:SetText(ilvl)
+					local qr, qg, qb = S.GetItemQualityColor and S.GetItemQualityColor(select(3, S.GetItemInfo(link)) or 1)
+					if type(qr) == "table" then qr, qg, qb = qr.r, qr.g, qr.b end
+					gs.ilvl:SetTextColor(qr or 1, qg or 1, qb or 1)
+				else
+					gs.ilvl:SetText("")
+				end
+			elseif gs.ilvl then
+				gs.ilvl:SetText("")
+			end
 			local n = 0
 			for _, gem in ipairs({ g1, g2, g3, g4 }) do
 				if gem and gem > 0 then
@@ -304,10 +322,25 @@ function IN:UpdateGearInfo()
 	end
 end
 
+function IN:UpdateGearInfo()
+	if InspectFrame and InspectFrame:IsShown() then
+		self:PaintSlots("Inspect", InspectFrame.unit or "target", false)
+	end
+	if CharacterFrame and CharacterFrame:IsShown() then
+		self:PaintSlots("Character", "player", true)
+	end
+end
+
 function IN:Initialize()
 	-- InspectUI/TalentUI are load-on-demand; hook them when they arrive
 	self:RegisterEvent("ADDON_LOADED", function(_, _, name)
 		if name == "Blizzard_InspectUI" then IN:Setup() end
 	end)
 	if S.IsAddOnLoaded and S.IsAddOnLoaded("Blizzard_InspectUI") then self:Setup() end
+	-- own character sheet: same overlay plus item level per slot
+	if CharacterFrame then
+		CharacterFrame:HookScript("OnShow", function() IN:UpdateGearInfo() end)
+	end
+	self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", function() IN:UpdateGearInfo() end)
+	self:RegisterEvent("SOCKET_INFO_UPDATE", function() IN:UpdateGearInfo() end)
 end
