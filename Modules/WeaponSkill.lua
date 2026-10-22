@@ -62,7 +62,9 @@ function WS:Refresh()
 		local t = f.lines[i]
 		if not t then
 			t = S:FontString(f.inner, 10, "OUTLINE", S.media.numberFont)
-			t:SetPoint("TOPLEFT", f.inner, "TOPLEFT", 36, -26 - (i - 1) * 13)
+			-- chain under the previous line so text can never drift out of the box
+			if i == 1 then t:SetPoint("TOPLEFT", f.title, "BOTTOMLEFT", 0, -6)
+			else t:SetPoint("TOPLEFT", f.lines[i - 1], "BOTTOMLEFT", 0, -2) end
 			f.lines[i] = t
 		end
 		t:SetFormattedText("%s: |cff80ff80%s|r/|cffff4040%s|r",
@@ -70,7 +72,7 @@ function WS:Refresh()
 		t:Show()
 	end
 	for i = shown + 1, #f.lines do f.lines[i]:Hide() end
-	f:SetSize(170, shown > 0 and (32 + shown * 13) or 40)
+	f:SetSize(170, shown > 0 and (30 + shown * 15) or 40)
 	f:SetShown(shown > 0)
 end
 

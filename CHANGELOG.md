@@ -26,6 +26,7 @@ standalone RLBetterItem release.
 - **Cutaway health bars** — recently lost health lingers as a fading red slice on unit frames (Unitframes → Cutaway)
 - **Party frame buffs on by default** — party members now show their own buffs above the frame (18px, up to 4), like the target frame already did
 - **Crafting cost line** — profession windows show mats cost vs. expected sale price vs. profit from the AH price DB (Craft Queue → Show Cost)
+- **Weapon Skills module now opt-in** — disabled by default (Modules → Weapon Skills to re-enable); its frame layout was reworked so text lines can no longer render outside the box
 - **Click Cast** — Clique-style click bindings on the unit frames: each shift/ctrl/alt + left/right/middle combo can run a configured spell (name or ID) on the frame's unit while plain clicks still target. Attributes are applied out of combat to every unit frame and existing group-header child; roster changes re-apply them
 - **Aura Watch** — generic weakauras-lite: up to 3 movable watcher frames, each configured with spell (name or ID), unit (target/player/focus/pet) and kind (buff/debuff); shows icon, name, stack count and remaining duration while the aura is up (module: Aura Watch)
 - **Price History** — passive auction tracking: every browse-list update records each item's lowest per-unit buyout account-wide; item tooltips show "AH min" + age and running "AH avg". Entries older than 14 days are pruned

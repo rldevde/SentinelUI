@@ -823,7 +823,7 @@ S.privateDefaults = {
 		diminishing = { enable = true },
 		potionreminder = { enable = true },
 		foodreminder = { enable = true },
-		weaponskill = { enable = true },
+		weaponskill = { enable = false },
 		spellsearch = { enable = true },
 		combatlog = { enable = true },
 		groupbulletin = { enable = true },
