@@ -703,7 +703,7 @@ S.defaults = {
 			enable = true, chat = "self", sound = true,
 		},
 		aggroalert = {
-			enable = true, chat = true, sound = true, flash = true,
+			enable = false, chat = true, sound = true, flash = true,
 		},
 		threatmeter = {
 			enable = true, maxBars = 5, width = 180, barHeight = 14,
@@ -876,7 +876,7 @@ S.privateDefaults = {
 		huntertools = { enable = true },
 		ccbreak = { enable = true },
 		tauntresist = { enable = true },
-		aggroalert = { enable = true },
+		aggroalert = { enable = false },
 		threatmeter = { enable = true },
 		purgealert = { enable = true },
 		soulstonetracker = { enable = true },
