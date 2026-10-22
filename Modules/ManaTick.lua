@@ -17,7 +17,7 @@ function MT:BuildBar()
 	if self.frame then return end
 	local f = CreateFrame("Frame", "SentinelUIManaTick", UIParent)
 	f:SetSize(180, 18)
-	f:SetPoint("CENTER", UIParent, "CENTER", 0, -160)
+	f:SetPoint("CENTER", UIParent, "CENTER", 0, -185)
 	f:SetFrameStrata("MEDIUM")
 	local bar = S:CreateStatusBar(f)
 	bar:SetAllPoints()
@@ -34,7 +34,7 @@ function MT:BuildBar()
 	title:SetTextColor(0.7, 0.7, 0.7)
 	f.bar, f.label, f.title = bar, label, title
 	f:Hide()
-	S:CreateMover(f, "ManaTick", L["Mana Tick"], { "CENTER", UIParent, "CENTER", 0, -160 }, "manatick")
+	S:CreateMover(f, "ManaTick", L["Mana Tick"], { "CENTER", UIParent, "CENTER", 0, -185 }, "manatick")
 	self.frame, self.bar, self.label = f, bar, label
 end
 

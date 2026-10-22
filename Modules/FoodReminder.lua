@@ -50,7 +50,7 @@ function FR:BuildFrame()
 	if self.frame then return end
 	local f = CreateFrame("Frame", "SentinelUIFoodReminder", UIParent)
 	f:SetSize(46, 46)
-	f:SetPoint("CENTER", UIParent, "CENTER", 0, -190)
+	f:SetPoint("CENTER", UIParent, "CENTER", 210, -160)
 	S:CreateBackdrop(f, "Default")
 	f.tex = f:CreateTexture(nil, "ARTWORK")
 	f.tex:SetAllPoints()
@@ -66,7 +66,7 @@ function FR:BuildFrame()
 	end)
 	f:SetAlpha(0)
 	f:Hide()
-	S:CreateMover(f, "foodReminder", L["Food Reminder"], { "CENTER", UIParent, "CENTER", 0, -190 }, "general")
+	S:CreateMover(f, "foodReminder", L["Food Reminder"], { "CENTER", UIParent, "CENTER", 210, -160 }, "general")
 	self.frame = f
 end
 

@@ -29,7 +29,7 @@ function WS:BuildFrame()
 	if self.frame then return end
 	local f = CreateFrame("Frame", "SentinelUIWeaponSkill", UIParent)
 	f:SetSize(170, 40)
-	f:SetPoint("CENTER", UIParent, "CENTER", 0, -240)
+	f:SetPoint("CENTER", UIParent, "CENTER", 210, -230)
 	S:CreateBackdrop(f, "Default")
 	f.icon = f:CreateTexture(nil, "ARTWORK")
 	f.icon:SetSize(24, 24)
@@ -41,7 +41,7 @@ function WS:BuildFrame()
 	f.title:SetText("|cffebad33" .. (L["Weapon Skills"] or "Weapon Skills") .. "|r")
 	f.lines = {}
 	f:Hide()
-	S:CreateMover(f, "weaponSkill", L["Weapon Skills"], { "CENTER", UIParent, "CENTER", 0, -240 }, "general")
+	S:CreateMover(f, "weaponSkill", L["Weapon Skills"], { "CENTER", UIParent, "CENTER", 210, -230 }, "general")
 	self.frame = f
 end
 

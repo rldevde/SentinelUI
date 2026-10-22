@@ -13,7 +13,7 @@ function SW:BuildBar()
 	if self.frame then return end
 	local f = CreateFrame("Frame", "SentinelUISwingTimer", UIParent)
 	f:SetSize(200, (self.db and self.db.height) or 12)
-	f:SetPoint("CENTER", UIParent, "CENTER", 0, -190)
+	f:SetPoint("CENTER", UIParent, "CENTER", 0, -210)
 	f:SetFrameStrata("MEDIUM")
 	local bar = S:CreateStatusBar(f)
 	bar:SetAllPoints()
@@ -33,7 +33,7 @@ function SW:BuildBar()
 	title:SetTextColor(0.7, 0.7, 0.7)
 	f.bar, f.label, f.title = bar, label, title
 	f:Hide()
-	S:CreateMover(f, "SwingTimer", L["Swing Timer"], { "CENTER", UIParent, "CENTER", 0, -190 }, "swingtimer")
+	S:CreateMover(f, "SwingTimer", L["Swing Timer"], { "CENTER", UIParent, "CENTER", 0, -210 }, "swingtimer")
 	self.frame, self.bar, self.label = f, bar, label
 end
 
