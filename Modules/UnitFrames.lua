@@ -1001,6 +1001,11 @@ local function CastbarOnUpdate(cb, elapsed)
 	if cb.timerObject then return end
 	if cb.casting or cb.channeling then
 		local now = GetTime()
+		if cb.pushMarkFade then
+			cb.pushMarkFade = cb.pushMarkFade - elapsed
+			if cb.pushMarkFade <= 0 then cb.pushMarkFade = nil cb.PushMark:Hide()
+			else cb.PushMark:SetAlpha(0.9 * cb.pushMarkFade / 0.6) end
+		end
 		local value = cb.casting and (now - cb.startTime) or (cb.endTime - now)
 		if (cb.casting and value >= cb.duration) or (cb.channeling and value <= 0) then
 			cb.casting, cb.channeling = nil, nil
@@ -1043,6 +1048,12 @@ function UF:CreateCastbar(f)
 	cb.Spark:SetVertexColor(1, 1, 1, 0.6)
 	cb.Spark:SetSize(2, 10)
 	cb.Spark:SetBlendMode("ADD")
+	-- pushback marker: red tick where the fill jumped back to after a delay
+	cb.PushMark = cb:CreateTexture(nil, "OVERLAY", nil, 5)
+	cb.PushMark:SetTexture(BLANK)
+	cb.PushMark:SetVertexColor(1, 0.25, 0.25)
+	cb.PushMark:SetWidth(2)
+	cb.PushMark:Hide()
 	local iconHolder = CreateFrame("Frame", nil, cb)
 	S:CreateBackdrop(iconHolder, "Default")
 	cb.Icon = iconHolder:CreateTexture(nil, "ARTWORK")
@@ -1074,6 +1085,8 @@ function UF:CastStart(f, channel)
 	cb.Text:SetText(type(label) == "string" and label:gsub("%s*%-?%s*No Text$", "") or label)
 	cb.delay = 0
 	cb.fade = nil
+	cb.pushMarkFade = nil
+	if cb.PushMark then cb.PushMark:Hide() end
 	cb:SetAlpha(1)
 	local secretInterrupt = IsSecret(notInterruptible)
 	local c = (not secretInterrupt and notInterruptible) and colors.castNoInterrupt or colors.castbar
@@ -1165,6 +1178,18 @@ function UF:CastUpdate(f, channel)
 		cb.endTime = endMS / 1000
 		cb.duration = cb.endTime - cb.startTime
 		cb:SetMinMaxValues(0, cb.duration)
+		if cb.PushMark then
+			local backPct = (GetTime() - newStart) / cb.duration
+			if backPct > 0 and backPct < 1 then
+				local x = cb:GetWidth() * backPct
+				cb.PushMark:ClearAllPoints()
+				cb.PushMark:SetPoint("TOP", cb, "TOPLEFT", x, 0)
+				cb.PushMark:SetPoint("BOTTOM", cb, "BOTTOMLEFT", x, 0)
+				cb.PushMark:SetAlpha(0.9)
+				cb.PushMark:Show()
+				cb.pushMarkFade = 0.6
+			end
+		end
 	end
 end
 

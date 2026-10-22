@@ -767,16 +767,70 @@ local function RevealExploredSet(mapID)
 	return seen
 end
 
+-- explored areas as rect list (needed for the dynamic tile path)
+local function RevealExploredRects(mapID)
+	local out = {}
+	local list = C_MapExplorationInfo.GetExploredMapTextures(mapID)
+	if list then
+		for _, t in ipairs(list) do
+			out[#out + 1] = { w = t.textureWidth, h = t.textureHeight, x = t.offsetX, y = t.offsetY }
+		end
+	end
+	return out
+end
+
+-- dynamic path: pull the zone's art tiles straight from the client so the
+-- reveal works on flavors we have no baked tile table for (WotLK, Cata, retail)
+local function NextPow2(n)
+	local p = 16
+	while p < n do p = p * 2 end
+	return p
+end
+
+local function PaintTile(pin, ids, idx, pxW, pxH, x, y, tint, fullUpdate)
+	local texture = pin.overlayTexturePool:Acquire()
+	texture:SetSize(pxW, pxH)
+	texture:SetTexCoord(0, pxW / NextPow2(pxW), 0, pxH / NextPow2(pxH))
+	texture:SetPoint("TOPLEFT", x, -y)
+	texture:SetTexture(ids[idx], nil, nil, "TRILINEAR")
+	texture:SetDrawLayer("ARTWORK", -1)
+	texture:SetVertexColor(tint.r, tint.g, tint.b)
+	texture:SetAlpha(tint.a or 0.4)
+	if fullUpdate and pin.textureLoadGroup then pin.textureLoadGroup:AddTexture(texture) end
+	texture:Show()
+end
+
+local function RevealDynamic(pin, mapID, layerIndex, layerInfo, exploredRects, tint, fullUpdate)
+	if not C_Map.GetMapArtLayerTextures then return false end
+	local ids = C_Map.GetMapArtLayerTextures(mapID, layerIndex)
+	local tileW, tileH = layerInfo.tileWidth, layerInfo.tileHeight
+	if not (ids and tileW and tileH) or #ids == 0 then return false end
+	local layerW = layerInfo.layerWidth or tileW
+	local layerH = layerInfo.layerHeight or tileH
+	local numWide, numTall = ceil(layerW / tileW), ceil(layerH / tileH)
+	for j = 1, numTall do
+		for k = 1, numWide do
+			local idx = (j - 1) * numWide + k
+			if ids[idx] then
+				local x, y = (k - 1) * tileW, (j - 1) * tileH
+				local pxW, pxH = min(tileW, layerW - x), min(tileH, layerH - y)
+				local cx, cy = x + pxW / 2, y + pxH / 2
+				local covered = false
+				for _, r in ipairs(exploredRects) do
+					if cx >= r.x and cx < r.x + r.w and cy >= r.y and cy < r.y + r.h then covered = true break end
+				end
+				if not covered then PaintTile(pin, ids, idx, pxW, pxH, x, y, tint, fullUpdate) end
+			end
+		end
+	end
+	return true
+end
+
 function WM:RevealOverlays(pin, fullUpdate)
-	local data = ns.MapReveal
-	if not data or not self.db.mapReveal then return end
+	if not self.db.mapReveal then return end
 	local mapID = pin:GetMap():GetMapID()
 	if not mapID then return end
-	local artID = C_Map.GetMapArtID(mapID)
-	local artData = artID and data[artID]
-	if not artData then return end
 
-	local explored = RevealExploredSet(mapID)
 	local canvas = pin:GetMap():GetCanvasContainer()
 	pin.layerIndex = canvas and canvas:GetCurrentLayerIndex() or 1
 	local layers = C_Map.GetMapArtLayers(mapID)
@@ -786,6 +840,15 @@ function WM:RevealOverlays(pin, fullUpdate)
 	if not (tileW and tileH) then return end
 
 	local tint = self.db.revealTint or { r = 0.4, g = 0.6, b = 1, a = 0.4 }
+
+	-- dynamic path first: client-provided tile list works on every flavor
+	if RevealDynamic(pin, mapID, pin.layerIndex, layerInfo, RevealExploredRects(mapID), tint, fullUpdate) then return end
+
+	local data = ns.MapReveal
+	local artID = C_Map.GetMapArtID(mapID)
+	local artData = data and artID and data[artID]
+	if not artData then return end
+	local explored = RevealExploredSet(mapID)
 	for key, fileDataIDs in pairs(artData) do
 		if not explored[key] then
 			local w, h, ox, oy = strsplit(":", key)

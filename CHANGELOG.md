@@ -20,6 +20,8 @@ standalone RLBetterItem release.
 - **Quest log search** — the search box now also sits in the quest log: non-matching titles and zone headers are dimmed to 15% (module: Spell Search)
 - **Anti-AFK** — clears the AFK flag as soon as the server sets it so the 30-minute idle logout never starts (General → antiAFK, on by default)
 - **Auto-fill delete confirm** — the required word is typed into the item-delete popup automatically, you only confirm the button (General → autoDelete, on by default)
+- **Map reveal on every flavor** — the fog reveal now pulls the zone's art tiles straight from the client via `C_Map.GetMapArtLayerTextures` when available, so unexplored areas reveal on WotLK/Cata/retail maps too; the baked Classic/TBC tile table remains as fallback
+- **Castbar pushback marker** — when a cast is delayed by damage a red tick marks the point the bar jumped back to (fades over 0.6s), on top of the existing "+0.4s" delay text
 
 ## [1.3.0]
 
