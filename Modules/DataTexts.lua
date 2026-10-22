@@ -709,9 +709,30 @@ DT:Register("Reputation", {
 		tt:AddLine(name, S.accent.r, S.accent.g, S.accent.b)
 		local standingText = _G["FACTION_STANDING_LABEL" .. standing] or tostring(standing)
 		tt:AddDoubleLine(standingText, format("%d / %d (%.1f%%)", cur - mn, mx - mn, (mx - mn) > 0 and (cur - mn) / (mx - mn) * 100 or 0), 1, 1, 1, 1, 1, 1)
+		tt:AddLine(" ")
+		tt:AddLine(L["Right-click: next faction"], 0.6, 0.6, 0.65)
 		tt:Show()
 	end,
-	click = function() ToggleCharacter("ReputationFrame") end,
+	click = function(_, button)
+		if button == "RightButton" and SetWatchedFactionIndex and GetNumFactions and GetFactionInfo then
+			local wname = GetWatchedFactionInfo and GetWatchedFactionInfo()
+			local watched, n = 0, GetNumFactions()
+			for i = 1, n do
+				local name, _, _, _, _, _, _, _, isHeader, _, _, isWatched = GetFactionInfo(i)
+				if name == wname or isWatched then watched = i break end
+				if not name then break end
+			end
+			-- walk to the next non-header, non-child faction after the watched one
+			for step = 1, n do
+				local i = (watched + step - 1) % n + 1
+				local name, _, _, _, _, _, _, _, isHeader, _, _, _, isChild = GetFactionInfo(i)
+				if name and not isHeader and not isChild then SetWatchedFactionIndex(i) return end
+				if not name then break end
+			end
+			return
+		end
+		ToggleCharacter("ReputationFrame")
+	end,
 })
 
 DT:Register("Quests", {

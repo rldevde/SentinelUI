@@ -13,6 +13,10 @@ standalone RLBetterItem release.
 - **XP per hour + level ETA** — the "Experience" data text now tracks gains over the session and appends "(12.3k/h · ~45m)" once a minute of data exists
 - **Auto-watch reputation** — the watched-faction bar follows whichever faction gained reputation last (General → autoWatch, on by default)
 - **Auto dismount** — casting while mounted drops the mount instead of just showing "You are mounted", so the next press casts (General → autoDismount, on by default)
+- **Quest Items bar** — movable strip of clickable buttons for usable quest items found in the bags (secure item buttons, count labels, tooltips; updates on bag/quest changes, combat-safe; module: Quest Items)
+- **Reputation data text right-click** — right-clicking the Rep slot now cycles the watched faction to the next one in the faction list
+- **Quest progress announce** — posts "Quest: objective (5/8)" to party chat when a quest objective advances (General → questAnnounce, on by default)
+- **Auction House background scan** — opening the AH automatically re-runs the getAll scan when the price DB is stale (>15 min) and the query cooldown allows it (auctionhouse.autoScan, on by default)
 
 ## [1.3.0]
 

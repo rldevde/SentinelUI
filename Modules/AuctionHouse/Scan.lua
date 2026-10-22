@@ -55,6 +55,7 @@ local function Track(update)
 		end
 		scan.running = false
 		scan.ticker = nil
+		scan.lastDone = now
 		if AH.scanBtn then AH.scanBtn:Enable() end
 		AH:Status(format(L["Scan complete: %d items"], n))
 		return true -- done

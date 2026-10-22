@@ -239,6 +239,17 @@ function AH:Initialize()
 		or { lists = { { name = L["Default List"], items = {} } }, current = 1 }
 	self:RegisterEvent("AUCTION_HOUSE_SHOW", function()
 		S:SafeCall("AH:BuildUI", AH.BuildUI, AH)
+		-- background re-scan: keeps the price DB fresh without a manual button
+		-- (the getAll cooldown still applies, CanSendAuctionQuery gates it)
+		if AH.db.autoScan ~= false and AH.scan and not AH.scan.running then
+			local can, canAll = true, true
+			if CanSendAuctionQuery then can, canAll = CanSendAuctionQuery() end
+			local stale = not AH.scan.lastDone or (time() - AH.scan.lastDone) > 900
+			if can and canAll and stale then
+				AH:Status(L["Auto-scanning auction house..."])
+				AH.scan:Start()
+			end
+		end
 	end)
 	if self.scan and self.scan.Hook then self.scan:Hook() end
 	if self.cancel and self.cancel.Hook then self.cancel:Hook() end

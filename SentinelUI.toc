@@ -149,6 +149,7 @@ Modules\PotionReminder.lua
 Modules\FoodReminder.lua
 Modules\WeaponSkill.lua
 Modules\SpellSearch.lua
+Modules\QuestItems.lua
 Modules\CombatLogToggle.lua
 Modules\GroupBulletin.lua
 Modules\TrinketTracker.lua

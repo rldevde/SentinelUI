@@ -130,6 +130,61 @@ function M:UI_ERROR_MESSAGE(_, errArg, errArg2)
 	if msg == ERR_MOUNTED and IsMounted and IsMounted() and Dismount then Dismount() end
 end
 
+-- Quest progress announce -----------------------------------------------------
+-- posts objective progress to party chat when a quest objective advances
+local objCache, objReady = {}, false
+local function ScanQuestObjectives()
+	local out, n = {}, 0
+	if C_QuestLog and C_QuestLog.GetNumQuestLogEntries then
+		n = select(1, C_QuestLog.GetNumQuestLogEntries()) or 0
+	elseif GetNumQuestLogEntries then
+		n = GetNumQuestLogEntries() or 0
+	end
+	for i = 1, n do
+		local qid, title, isHeader
+		if C_QuestLog and C_QuestLog.GetInfo then
+			local info = C_QuestLog.GetInfo(i)
+			if info then qid, title, isHeader = info.questID, info.title, info.isHeader end
+		elseif GetQuestLogTitle then
+			local t, _, _, ih = GetQuestLogTitle(i)
+			qid, title, isHeader = select(9, GetQuestLogTitle(i)), t, ih
+		end
+		if qid and title and not isHeader then
+			local objs = C_QuestLog and C_QuestLog.GetQuestObjectives and C_QuestLog.GetQuestObjectives(qid)
+			if objs then
+				for j, o in ipairs(objs) do
+					if o.text and o.numFulfilled and o.numRequired and o.numRequired > 0 then
+						out[qid .. ":" .. j] = { q = title, text = o.text, cur = o.numFulfilled, max = o.numRequired, done = o.finished }
+					end
+				end
+			elseif GetQuestLogLeaderBoard and GetNumQuestLeaderBoards then
+				for j = 1, GetNumQuestLeaderBoards(i) or 0 do
+					local text, _, finished = GetQuestLogLeaderBoard(j, i)
+					local cur, mx = text and text:match("(%d+)%s*/%s*(%d+)")
+					if cur then
+						out[qid .. ":" .. j] = { q = title, text = text:gsub("%s*:%s*%d+%s*/%s*%d+%s*$", ""), cur = tonumber(cur), max = tonumber(mx), done = finished }
+					end
+				end
+			end
+		end
+	end
+	return out
+end
+
+function M:QUEST_LOG_UPDATE()
+	local fresh = ScanQuestObjectives()
+	if objReady and self.db.questAnnounce and IsInGroup() then
+		for k, o in pairs(fresh) do
+			local old = objCache[k]
+			if old and o.cur and old.cur and o.cur > old.cur and not (S.IsSecret and (S.IsSecret(o.text) or S.IsSecret(o.q))) then
+				SendChatMessage(format("%s: %s (%d/%d)", o.q, o.text, o.cur, o.max), "PARTY")
+			end
+		end
+	end
+	objCache = fresh
+	objReady = true
+end
+
 -- Auto-watch reputation -------------------------------------------------------
 -- the watched-faction bar follows whichever faction gained rep last
 local repCache
@@ -1226,6 +1281,7 @@ function M:Initialize()
 	self:RegisterEvent("PLAYER_REGEN_ENABLED")
 	self:RegisterEvent("UI_ERROR_MESSAGE")
 	self:RegisterEvent("UPDATE_FACTION")
+	self:RegisterEvent("QUEST_LOG_UPDATE")
 	self:RegisterEvent("MINIMAP_PING", function(_, unit)
 		if not M.db.pingAlert then return end
 		local name = UnitName(unit)

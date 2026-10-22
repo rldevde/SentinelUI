@@ -610,6 +610,7 @@ local T = {
 	["Usage: /sway x y [name] - or /sway help"] = "Nutzung: /sway x y [Name] - oder /sway help",
 	["Left-click: navigate | Right-click: remove"] = "Links: navigieren | Rechts: entfernen",
 	["Right-click: clear waypoint"] = "Rechtsklick: Wegpunkt löschen",
+	["Right-click: next faction"] = "Rechtsklick: nächste Fraktion",
 	["Right-click: navigate to quest"] = "Rechtsklick: zum Quest-Ziel navigieren",
 	["Navigate to quest"] = "Zum Quest-Ziel navigieren",
 	["Select a quest in the log first."] = "Wähle zuerst eine Quest im Log aus.",
@@ -1851,6 +1852,9 @@ local T = {
 	["autoSell"] = "Grauzeug verkaufen",
 	["autoWatch"] = "Zuletzt gewonnenen Ruf verfolgen",
 	["autoDismount"] = "Auto-Absitzen beim Zaubern",
+	["questAnnounce"] = "Quest-Fortschritt ansagen",
+	["autoScan"] = "Auto-Scan beim Öffnen",
+	["Auto-scanning auction house..."] = "Auktionshaus wird gescannt...",
 	["maxCamera"] = "Max. Kamera-Distanz",
 	["autoRepair"] = "Auto-Reparieren",
 }

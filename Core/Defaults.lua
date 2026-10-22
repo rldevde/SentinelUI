@@ -68,6 +68,7 @@ S.defaults = {
 			autoSell = false,
 			autoDismount = true,
 			autoWatch = true,
+			questAnnounce = true,
 			maxCamera = true,
 
 			autoAcceptInvite = false,
@@ -750,6 +751,7 @@ S.defaults = {
 			undercut = 0, -- % undercut applied to the sell suggestion
 			duration = 2, -- 1/2/3 = 12/24/48h default auction duration
 			scanAlerts = true, -- chat feedback for scans/searches
+			autoScan = true, -- quiet background getAll scan when the AH opens and the DB is stale
 		},
 		skins = {
 			blizzard = true, character = true, spellbook = true, talents = true, quest = true, gossip = true,
@@ -826,6 +828,7 @@ S.privateDefaults = {
 		potionreminder = { enable = true },
 		foodreminder = { enable = true },
 		weaponskill = { enable = false },
+		questitems = { enable = true },
 		spellsearch = { enable = true },
 		combatlog = { enable = true },
 		groupbulletin = { enable = true },
