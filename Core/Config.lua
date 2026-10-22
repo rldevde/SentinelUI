@@ -461,9 +461,10 @@ end
 
 -- free tag text fields per unit ---------------------------------------------------
 local newCTName = ""
-local function CustomTextOptions(unitKey)
+local function CustomTextOptions(unitKey, dbAcc)
+	local acc = dbAcc or function() return S.db.profile.unitframes.units[unitKey] end
 	local function Texts()
-		local udb = S.db.profile.unitframes.units[unitKey]
+		local udb = acc()
 		if not udb.customTexts then udb.customTexts = {} end
 		return udb.customTexts
 	end
@@ -838,6 +839,12 @@ function S:BuildOptions()
 		boss = L["Boss"], arena = L["Arena"],
 	}
 	if root.args.unitframes then root.args.unitframes.childGroups = "tree" end
+	if root.args.nameplates then
+		root.args.nameplates.args.customTexts = {
+			type = "group", name = L["Custom Texts"], order = 50,
+			args = CustomTextOptions(nil, function() return S.db.profile.nameplates end),
+		}
+	end
 	if root.args.unitframes and root.args.unitframes.args.units then
 		local units = root.args.unitframes.args.units
 		units.childGroups = "tree"

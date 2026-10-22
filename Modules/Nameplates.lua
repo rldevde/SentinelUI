@@ -108,6 +108,7 @@ function NP:CreatePlate(plate)
 	f.CastTarget:Hide()
 
 	f.Debuffs = UF:CreateAuras(f, "debuffs")
+	f.customTextPool = {}
 	plate.suiPlate = f
 	return f
 end
@@ -137,6 +138,26 @@ function NP:LayoutPlate(f)
 	UF:LayoutAuras(f, f.Debuffs, f.auraDB)
 	f.Debuffs:ClearAllPoints()
 	f.Debuffs:SetPoint("BOTTOMLEFT", f.Health, "TOPLEFT", 0, db.fontSize + 6)
+	-- free tag texts: same editor as unit frames, anchored to health or frame
+	local activeCT = {}
+	for name, ct in pairs(db.customTexts or {}) do
+		local fs = f.customTextPool[name]
+		if not fs then
+			fs = S:FontString(f, max(8, db.fontSize), "OUTLINE", S.media.unitFont)
+			f.customTextPool[name] = fs
+		end
+		S:SetFont(fs, db.font and S:Fetch("font", db.font) or S.media.font, ct.fontSize or max(8, db.fontSize), "OUTLINE")
+		fs:ClearAllPoints()
+		local anchor = ct.attachTo == "FRAME" and f or f.Health
+		local pos = ct.position or "CENTER"
+		fs:SetPoint(pos, anchor, pos, ct.xOffset or 0, ct.yOffset or 0)
+		fs:SetJustifyH(pos:find("RIGHT") and "RIGHT" or pos:find("LEFT") and "LEFT" or "CENTER")
+		fs:SetShown(ct.text ~= nil and ct.text ~= "")
+		activeCT[name] = true
+	end
+	for name, fs in pairs(f.customTextPool) do
+		if not activeCT[name] then fs:Hide() end
+	end
 	self:ApplyStyle(f, style)
 end
 
@@ -405,6 +426,27 @@ function NP:UpdateCastTarget(f)
 	end
 end
 
+function NP:UpdateCustomTexts(f)
+	local pool = f.customTextPool
+	if not pool or not f.unit then return end
+	for name, fs in pairs(pool) do
+		local ct = self.db.customTexts and self.db.customTexts[name]
+		if ct and ct.text and ct.text ~= "" and fs:IsShown() then
+			S:SafeCall("Nameplates:CustomText", function()
+				UF:SetTagText(fs, ct.text, f.unit, ct)
+				if ct.colorClass then
+					local c = S.UnitColor(f.unit)
+					fs:SetTextColor(c.r, c.g, c.b)
+				elseif ct.color and ct.color.r then
+					fs:SetTextColor(ct.color.r, ct.color.g, ct.color.b)
+				else
+					fs:SetTextColor(1, 1, 1)
+				end
+			end)
+		end
+	end
+end
+
 function NP:UpdateCast(f)
 	if not self.db.castbar then f.Castbar:Hide() f.CastTarget:Hide() return end
 	if UnitCastingInfo(f.unit) then UF:CastStart(f, false)
@@ -423,6 +465,7 @@ function NP:FullUpdate(f)
 	self:UpdateAuras(f)
 	self:UpdateCast(f)
 	self:UpdateQuest(f)
+	self:UpdateCustomTexts(f)
 end
 
 local function HideBlizzardPlate(plate)
@@ -488,7 +531,8 @@ function NP:OnUnitEvent(event, unit)
 	local method = plateEvents[event]
 	if method then
 		self[method](self, f)
-		if method == "UpdateHealth" then self:UpdateColor(f)
+		if method == "UpdateHealth" then self:UpdateColor(f) self:UpdateCustomTexts(f)
+		elseif method == "UpdateName" then self:UpdateCustomTexts(f)
 		elseif method == "UpdateTargetOf" then self:UpdateCastTarget(f) end
 	elseif castEvents[event] and self.db.castbar then
 		if event == "UNIT_SPELLCAST_START" then UF:CastStart(f, false)
