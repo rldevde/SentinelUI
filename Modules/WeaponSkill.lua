@@ -32,14 +32,19 @@ function WS:BuildFrame()
 	local f = CreateFrame("Frame", "SentinelUIWeaponSkill", UIParent)
 	f:SetSize(170, 40)
 	f:SetPoint("CENTER", UIParent, "CENTER", 210, -230)
+	-- content lives on a child overlay: FontStrings/textures on `f` would draw
+	-- under the backdrop child, so everything visible is parented to `inner`
+	local inner = CreateFrame("Frame", nil, f)
+	inner:SetAllPoints()
+	f.inner = inner
 	S:CreateBackdrop(f, "Default")
-	f.icon = f:CreateTexture(nil, "ARTWORK")
+	f.icon = inner:CreateTexture(nil, "ARTWORK")
 	f.icon:SetSize(24, 24)
-	f.icon:SetPoint("LEFT", f, "LEFT", 6, 0)
+	f.icon:SetPoint("TOPLEFT", inner, "TOPLEFT", 6, -6)
 	f.icon:SetTexture("Interface\\Icons\\Inv_Sword_27")
 	f.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
-	f.title = S:FontString(f, 10, "OUTLINE", S.media.unitFont)
-	f.title:SetPoint("TOPLEFT", f, "TOPLEFT", 34, -6)
+	f.title = S:FontString(inner, 10, "OUTLINE", S.media.unitFont)
+	f.title:SetPoint("TOPLEFT", f.icon, "TOPRIGHT", 6, -2)
 	f.title:SetText("|cffebad33" .. (L["Weapon Skills"] or "Weapon Skills") .. "|r")
 	f.lines = {}
 	f:Hide()
@@ -56,8 +61,8 @@ function WS:Refresh()
 		shown = i
 		local t = f.lines[i]
 		if not t then
-			t = S:FontString(f, 10, "OUTLINE", S.media.numberFont)
-			t:SetPoint("TOPLEFT", f, "TOPLEFT", 34, -20 - (i - 1) * 13)
+			t = S:FontString(f.inner, 10, "OUTLINE", S.media.numberFont)
+			t:SetPoint("TOPLEFT", f.inner, "TOPLEFT", 36, -26 - (i - 1) * 13)
 			f.lines[i] = t
 		end
 		t:SetFormattedText("%s: |cff80ff80%s|r/|cffff4040%s|r",
@@ -65,7 +70,7 @@ function WS:Refresh()
 		t:Show()
 	end
 	for i = shown + 1, #f.lines do f.lines[i]:Hide() end
-	f:SetSize(170, shown > 0 and (22 + shown * 13) or 40)
+	f:SetSize(170, shown > 0 and (32 + shown * 13) or 40)
 	f:SetShown(shown > 0)
 end
 
