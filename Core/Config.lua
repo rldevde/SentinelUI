@@ -798,7 +798,7 @@ function S:BuildOptions()
 		gathernotes = L["Gather Notes"], cooldowntracker = L["Cooldown Tracker"], diminishing = L["Diminishing Returns"],
 		potionreminder = L["Potion Reminder"], combatlog = L["Combat Log"],
 		foodreminder = L["Food Reminder"], weaponskill = L["Weapon Skills"], spellsearch = L["Spell Search"],
-		questitems = L["Quest Items"],
+		questitems = L["Quest Items"], cursorring = L["Cursor Ring"],
 		groupbulletin = L["Group Bulletin"], trinkettracker = L["Trinket Tracker"],
 		timermodule = L["Timer"], autoaccept = L["Auto Accept"],
 		disenchant = L["Disenchant Info"], craftqueue = L["Craft Queue"],
@@ -826,7 +826,7 @@ function S:BuildOptions()
 		"externalbuffs", "flighttimer", "lfgenhance",
 		"clickcast", "aurawatcher", "pricehistory", "loothistory",
 		"speedrun", "rankreminder", "sessionstats", "fishinghelper", "auctionhouse",
-		"foodreminder", "weaponskill", "spellsearch", "questitems" }
+		"foodreminder", "weaponskill", "spellsearch", "questitems", "cursorring" }
 	for i, k in ipairs(order) do
 		if root.args[k] then
 			root.args[k].name = titles[k]
@@ -1053,7 +1053,7 @@ function S:BuildOptions()
 		{ "rankreminder", L["Rank Reminder"] }, { "sessionstats", L["Session Stats"] },
 		{ "fishinghelper", L["Fishing"] }, { "auctionhouse", L["Auction House"] },
 		{ "foodreminder", L["Food Reminder"] }, { "weaponskill", L["Weapon Skills"] }, { "spellsearch", L["Spell Search"] },
-		{ "questitems", L["Quest Items"] },
+		{ "questitems", L["Quest Items"] }, { "cursorring", L["Cursor Ring"] },
 	}
 	m.args.desc = { type = "description", name = L["Enabling or disabling a module requires a reload. These settings are per character."], order = 0 }
 	for i, info in ipairs(mods) do

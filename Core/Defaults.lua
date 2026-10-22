@@ -71,6 +71,9 @@ S.defaults = {
 			questAnnounce = true,
 			antiAFK = true,
 			autoDelete = true,
+			cursorRing = true,
+			cursorRingSize = 64,
+			cursorRingAlpha = 0.5,
 			maxCamera = true,
 
 			autoAcceptInvite = false,
@@ -831,6 +834,7 @@ S.privateDefaults = {
 		foodreminder = { enable = true },
 		weaponskill = { enable = false },
 		questitems = { enable = true },
+		cursorring = { enable = true },
 		spellsearch = { enable = true },
 		combatlog = { enable = true },
 		groupbulletin = { enable = true },

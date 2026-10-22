@@ -22,6 +22,8 @@ standalone RLBetterItem release.
 - **Auto-fill delete confirm** — the required word is typed into the item-delete popup automatically, you only confirm the button (General → autoDelete, on by default)
 - **Map reveal on every flavor** — the fog reveal now pulls the zone's art tiles straight from the client via `C_Map.GetMapArtLayerTextures` when available, so unexplored areas reveal on WotLK/Cata/retail maps too; the baked Classic/TBC tile table remains as fallback
 - **Castbar pushback marker** — when a cast is delayed by damage a red tick marks the point the bar jumped back to (fades over 0.6s), on top of the existing "+0.4s" delay text
+- **AH price lines in item tooltips** — the price tooltip now shows the freshest scanned unit price ("AH" + age) alongside the existing min/avg history, plus the vendor sell price
+- **Cursor Ring** — subtle accent-colored ring that follows the mouse cursor so it stays findable during raid clutter (module: Cursor Ring; size/alpha under General → cursorRingSize/cursorRingAlpha)
 
 ## [1.3.0]
 

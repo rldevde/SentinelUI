@@ -56,20 +56,46 @@ function PH:Scan()
 	end
 end
 
+-- freshest price: the AH module's getAll scan DB (per realm+faction)
+local function ScanPrice(id)
+	local db = S.db.global.auctionDB
+	if not db then return end
+	local key = (GetRealmName and GetRealmName() or "?") .. "-" .. (UnitFactionGroup and UnitFactionGroup("player") or "?")
+	local e = db[key] and db[key][id]
+	if e and e.p then return e.p, e.t end
+end
+
+local function AgeText(t)
+	local age = floor((time() - (t or 0)) / 3600)
+	return format(L["%s ago"], age >= 48 and format("%dd", floor(age / 24)) or format("%dh", age))
+end
+
 local function TooltipLine(tt)
 	if not (PH.db and PH.db.enable and PH.db.tooltip) then return end
 	local _, link = tt:GetItem()
 	local id = link and ItemID(link)
-	local e = id and Store()[id]
-	if not e or not e.min then return end
-	local age = floor((time() - (e.t or 0)) / 3600)
-	local ageText = age >= 48 and format("%dd", floor(age / 24)) or format("%dh", age)
-	tt:AddDoubleLine(L["AH min"], format("%s |cff888888(%s)|r",
-		Money(e.min), format(L["%s ago"], ageText)), 0.4, 0.75, 1, 1, 1, 1)
-	if e.avg and e.avg ~= e.min then
-		tt:AddDoubleLine(L["AH avg"], Money(e.avg), 0.5, 0.6, 0.9, 0.7, 0.7, 0.7)
+	if not id then return end
+	local added
+	local sp, st = ScanPrice(id)
+	if sp then
+		tt:AddDoubleLine(L["AH"], format("%s |cff888888(%s)|r", Money(sp), AgeText(st)), 0.4, 0.75, 1, 1, 1, 1)
+		added = true
 	end
-	tt:Show()
+	local e = Store()[id]
+	if e and e.min and (not sp or e.min ~= sp) then
+		tt:AddDoubleLine(L["AH min"], format("%s |cff888888(%s)|r", Money(e.min), AgeText(e.t)), 0.4, 0.75, 1, 1, 1, 1)
+		added = true
+	end
+	if e and e.avg and e.avg ~= e.min then
+		tt:AddDoubleLine(L["AH avg"], Money(e.avg), 0.5, 0.6, 0.9, 0.7, 0.7, 0.7)
+		added = true
+	end
+	local sellPrice = select(11, S.GetItemInfo(link))
+	if sellPrice and sellPrice > 0 then
+		tt:AddDoubleLine(L["Vendor"], Money(sellPrice), 0.7, 0.7, 0.7, 1, 1, 1)
+		added = true
+	end
+	if added then tt:Show() end
 end
 
 function PH:Initialize()
