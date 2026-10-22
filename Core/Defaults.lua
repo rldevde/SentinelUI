@@ -148,7 +148,7 @@ S.defaults = {
 				focustarget = Unit(130, 30, { enable = false, power = { enable = false }, health = { text = "" }, name = { position = "CENTER", xOffset = 0 } }),
 				pet = Unit(130, 30, { health = { text = "[percent]", position = "RIGHT", xOffset = -3 }, power = { height = 4, text = "[perpp]" }, name = { position = "LEFT", xOffset = 6, maxLength = 10 }, castbar = { enable = false } }),
 				pettarget = Unit(130, 26, { enable = false, power = { enable = false }, health = { text = "" } }),
-				party = Unit(190, 42, { growth = "DOWN", spacing = 26, showPlayer = true, showSolo = false, classIcon = true, sortMethod = "INDEX", sortDir = "ASC", visibility = "", health = { text = "[deficit]" }, power = { text = "[perpp]" }, debuffs = { enable = true, size = 30, perRow = 3, maxRows = 1, anchor = "RIGHT" }, buffs = { enable = false }, name = { classColor = true }, buffIndicators = { enable = true, size = 10, max = 6 }, dispelHighlight = true }),
+				party = Unit(190, 42, { growth = "DOWN", spacing = 26, showPlayer = true, showSolo = false, classIcon = true, sortMethod = "INDEX", sortDir = "ASC", visibility = "", health = { text = "[deficit]" }, power = { text = "[perpp]" }, debuffs = { enable = true, size = 30, perRow = 3, maxRows = 1, anchor = "RIGHT" }, buffs = { enable = true, size = 18, perRow = 4, maxRows = 1, anchor = "TOP", onlyPlayer = true }, name = { classColor = true }, buffIndicators = { enable = true, size = 10, max = 6 }, dispelHighlight = true }),
 				partypet = Unit(140, 24, { enable = false, growth = "DOWN", spacing = 4, unitsPerColumn = 5, maxColumns = 8, groupBy = "GROUP", health = { text = "" }, power = { enable = false }, name = { text = "[name]", maxLength = 10, classColor = true }, debuffs = { enable = false }, buffs = { enable = false } }),
 				raid = Unit(86, 42, { power = { enable = true, height = 3 }, health = { text = "[deficit]", position = "BOTTOM", xOffset = 0, yOffset = 3 }, name = { position = "CENTER", xOffset = 0, yOffset = 4, maxLength = 8, classColor = true }, unitsPerColumn = 5, maxColumns = 8, spacing = 3, groupBy = "GROUP", growth = "RIGHT_DOWN", showPlayer = true, sortMethod = "INDEX", sortDir = "ASC", groupFilter = "1,2,3,4,5,6,7,8", raidWideSorting = false, startFromCenter = false, visibility = "", debuffs = { enable = true, size = 18, perRow = 2, maxRows = 1, anchor = "CENTER" }, dispelHighlight = true, buffIndicators = { enable = true, size = 9, max = 5 } }),
 				raid40 = Unit(70, 34, { power = { enable = false }, health = { text = "" }, name = { position = "CENTER", xOffset = 0, maxLength = 6, classColor = true }, unitsPerColumn = 5, maxColumns = 8, spacing = 2, groupBy = "GROUP", growth = "RIGHT_DOWN", showPlayer = true, sortMethod = "INDEX", sortDir = "ASC", groupFilter = "1,2,3,4,5,6,7,8", raidWideSorting = false, startFromCenter = false, visibility = "", debuffs = { enable = true, size = 16, perRow = 1, maxRows = 1, anchor = "CENTER" }, dispelHighlight = true, buffIndicators = { enable = true, size = 8, max = 4 } }),
@@ -625,7 +625,7 @@ S.defaults = {
 			enable = true,
 		},
 		craftqueue = {
-			showButton = false,
+			showButton = false, showCost = true,
 		},
 		bgtools = {
 			enable = true, announce = true,

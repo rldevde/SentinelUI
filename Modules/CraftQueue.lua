@@ -26,6 +26,10 @@ local function TradeAPI()
 				end
 				return out
 			end,
+			product = function(id)
+				return C_TradeSkillUI.GetRecipeItemLink and C_TradeSkillUI.GetRecipeItemLink(id),
+					C_TradeSkillUI.GetRecipeNumItemsProduced and C_TradeSkillUI.GetRecipeNumItemsProduced(id) or 1
+			end,
 		}
 	elseif GetTradeSkillSelectionIndex then
 		return {
@@ -40,8 +44,58 @@ local function TradeAPI()
 				end
 				return out
 			end,
+			product = function(idx)
+				return GetTradeSkillItemLink and GetTradeSkillItemLink(idx),
+					GetTradeSkillNumMade and GetTradeSkillNumMade(idx) or 1
+			end,
 		}
 	end
+end
+
+-- crafting cost line under the tradeskill frame: sums reagent prices from
+-- the AH price DB against the product's price so margin is visible at a glance
+local function ItemIDOf(link)
+	if not link then return end
+	if GetItemInfoInstant then return GetItemInfoInstant(link) end
+	return tonumber(link:match("item:(%d+)"))
+end
+
+local function Gold(c)
+	if S.FormatMoney then return S.FormatMoney(c) end
+	return format("%dg %ds %dc", floor(c / 10000), floor(c / 100) % 100, c % 100)
+end
+
+function CQ:UpdateCost()
+	local host = TradeSkillFrame or ProfessionsFrame
+	if not host then return end
+	if not self.costText then
+		self.costText = S:FontString(host, 11, "OUTLINE", S.media.numberFont)
+		self.costText:SetPoint("BOTTOM", host, "BOTTOM", -20, 12)
+	end
+	local f = self.costText
+	local api = TradeAPI()
+	local ah = S:GetModule("AuctionHouse")
+	local idx = api and api.selected and api.selected()
+	if not (self.db.showCost ~= false and host:IsShown() and idx and api.reagents and api.product
+		and ah and ah.PriceFor) then f:Hide() return end
+	local cost, missing = 0, 0
+	for _, rg in ipairs(api.reagents(idx)) do
+		local p = rg.link and ah:PriceFor(ItemIDOf(rg.link))
+		if p then cost = cost + p * (rg.count or 1) else missing = missing + 1 end
+	end
+	local plink, made = api.product(idx)
+	local sale = plink and ah:PriceFor(ItemIDOf(plink))
+	if sale and (made or 1) > 1 then sale = sale * made end
+	if cost == 0 and not sale then f:Hide() return end
+	local txt = "|cff8ab4f8" .. (L["Mats"] or "Mats") .. ":|r " .. (cost > 0 and ("~" .. Gold(cost)) or "|cff777777?|r")
+	if missing > 0 then txt = txt .. " |cff777777(" .. missing .. " ?)|r" end
+	txt = txt .. "  |cff8ab4f8" .. (L["Sale"] or "Sale") .. ":|r " .. (sale and ("~" .. Gold(sale)) or "|cff777777?|r")
+	if sale and cost > 0 then
+		local diff = sale - cost
+		txt = txt .. "  " .. (diff >= 0 and "|cff80ff80+" or "|cffff4040") .. Gold(abs(diff)) .. "|r"
+	end
+	f:SetText(txt)
+	f:Show()
 end
 
 local WIN_W, ROW_H = 280, 22
@@ -131,8 +185,12 @@ end
 function CQ:Initialize()
 	self.db = S.db.profile.craftqueue
 	if TradeSkillFrame or ProfessionsFrame then self:BuildButton() end
-	self:RegisterEvent("TRADE_SKILL_SHOW", function() CQ:BuildButton() end)
-	self:RegisterEvent("TRADE_SKILL_UPDATE", function() if CQ.frame and CQ.frame:IsShown() then CQ:Fill() end end)
+	self:RegisterEvent("TRADE_SKILL_SHOW", function() CQ:BuildButton() CQ:UpdateCost() end)
+	self:RegisterEvent("TRADE_SKILL_UPDATE", function()
+		if CQ.frame and CQ.frame:IsShown() then CQ:Fill() end
+		CQ:UpdateCost()
+	end)
+	self:RegisterEvent("TRADE_SKILL_CLOSE", function() if CQ.costText then CQ.costText:Hide() end end)
 end
 
 function CQ:Update()
@@ -142,4 +200,5 @@ function CQ:Update()
 	else
 		self:BuildButton()
 	end
+	self:UpdateCost()
 end
