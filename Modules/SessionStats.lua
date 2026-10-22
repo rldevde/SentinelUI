@@ -43,6 +43,10 @@ function SS:Initialize()
 			GameTooltip:AddDoubleLine(L["Kills"], st.kills, 1, 1, 1, 1, 1, 1)
 			GameTooltip:AddDoubleLine(L["Deaths"], st.deaths, 1, 1, 1, 1, 1, 1)
 			GameTooltip:AddDoubleLine(L["Gold earned"], S.FormatMoney and S.FormatMoney(MoneyDelta()) or MoneyDelta(), 1, 1, 1, 1, 1, 1)
+			local hours = (GetTime() - st.t0) / 3600
+			if hours > 0.02 then
+				GameTooltip:AddDoubleLine("G/h", S.FormatMoney and S.FormatMoney(MoneyDelta() / hours) or 0, 1, 1, 1, 1, 1, 1)
+			end
 			GameTooltip:AddDoubleLine(L["XP gained"], st.xp, 1, 1, 1, 1, 1, 1)
 			GameTooltip:AddLine(L["Click: reset session"], 0.7, 0.7, 0.7)
 			GameTooltip:Show()

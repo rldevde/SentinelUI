@@ -302,6 +302,64 @@ function M:CHAT_MSG_LOOT(_, msg)
 	end
 end
 
+local FOOD_PAT = GetLocale() == "deDE" and "Satt" or "Well Fed|Satt|Bien nourri|Saciado"
+local FLASK_PAT = GetLocale() == "deDE" and "Fläschchen|Elixier" or "Flask|Elixir|Fläschchen|Elixier"
+
+-- Buff expiry warning ---------------------------------------------------------
+-- warns once per aura when a food/flask/elixir buff drops below 5 minutes
+local buffWarned = {}
+local function BuffExpireScan()
+	if M.db.buffExpireWarn == false or not S.UnitAura then return end
+	local now = GetTime()
+	for i = 1, 40 do
+		local name, _, _, _, duration, exp = S.UnitAura("player", i, "HELPFUL")
+		if not name then break end
+		if duration and exp and duration > 0 and type(name) == "string" then
+			local rem = exp - now
+			if rem > 0 and rem < 300 and (name:find(FOOD_PAT) or name:find(FLASK_PAT)) then
+				local key = name .. "|" .. exp
+				if not buffWarned[key] then
+					buffWarned[key] = true
+					S:Print(format(L["%s expires in less than 5 min"], name))
+					if PlaySound then PlaySound(SOUNDKIT and SOUNDKIT.RAID_WARNING or 8959) end
+				end
+			end
+		end
+	end
+end
+
+-- Bag full warning ------------------------------------------------------------
+-- one-shot toast when free bag space drops to <= 3 slots (60s throttle)
+local lastBagWarn, lastFree = 0, 99
+function M:BAG_UPDATE()
+	if self.db.bagFullWarn == false or not S.GetContainerNumFreeSlots then return end
+	local free = 0
+	for bag = 0, 4 do free = free + (S.GetContainerNumFreeSlots(bag) or 0) end
+	if free <= 3 and free < lastFree and GetTime() - lastBagWarn > 60 then
+		lastBagWarn = GetTime()
+		S:Print(format(L["Bags almost full: %d free slots"], free))
+		if PlaySound then PlaySound(SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPEN or 856) end
+	end
+	lastFree = free
+end
+
+-- Friend online ding ----------------------------------------------------------
+local friendOnlinePat
+local function FriendOnlinePattern()
+	if friendOnlinePat ~= nil then return friendOnlinePat end
+	local fmt = _G.ERR_FRIEND_ONLINE_SS
+	if not fmt then friendOnlinePat = false return end
+	friendOnlinePat = fmt:gsub("([%^%$%(%)%%%.%[%]%+%-%?])", "%%%1"):gsub("%%%%s", "(.-)"):gsub("%%%%d", "(%%d+)")
+	return friendOnlinePat
+end
+function M:CHAT_MSG_SYSTEM(_, msg)
+	if self.db.friendDing == false or not msg then return end
+	local pat = FriendOnlinePattern()
+	if pat and msg:find(pat) then
+		if PlaySound then PlaySound(SOUNDKIT and SOUNDKIT.FRIEND_JOIN_GAME or 33329) end
+	end
+end
+
 -- Trade gold display ----------------------------------------------------------
 local tradeGoldText
 local function UpdateTradeGold()
@@ -321,8 +379,6 @@ end
 
 -- Raid consumables check ------------------------------------------------------
 -- /suiconsume: lists who is missing food and flask/elixir buffs
-local FOOD_PAT = GetLocale() == "deDE" and "Satt" or "Well Fed|Satt|Bien nourri|Saciado"
-local FLASK_PAT = GetLocale() == "deDE" and "Fläschchen|Elixier" or "Flask|Elixir|Fläschchen|Elixier"
 
 local function GroupUnits()
 	local units = {}
@@ -1485,7 +1541,17 @@ function M:Initialize()
 	self:RegisterEvent("TRADE_SHOW", UpdateTradeGold)
 	self:RegisterEvent("MAIL_SHOW", BuildMailAltList)
 	self:RegisterEvent("MAIL_SEND_INFO_UPDATE", BuildMailAltList)
+	self:RegisterEvent("BAG_UPDATE")
+	self:RegisterEvent("CHAT_MSG_SYSTEM")
 	HookFriendsNotes()
+	-- buff expiry scan: light 10s poller (expirations fire no events)
+	self._buffPoll = self._buffPoll or CreateFrame("Frame")
+	self._buffPoll:SetScript("OnUpdate", function(_, el)
+		M._bt = (M._bt or 0) + el
+		if M._bt < 10 then return end
+		M._bt = 0
+		BuffExpireScan()
+	end)
 	self:RegisterEvent("MINIMAP_PING", function(_, unit)
 		if not M.db.pingAlert then return end
 		local name = UnitName(unit)

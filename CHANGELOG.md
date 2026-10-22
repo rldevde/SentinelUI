@@ -33,6 +33,10 @@ standalone RLBetterItem release.
 - **Notes in friends list** — players with a stored `/suinote` get a gold asterisk and their note text as the status line in the friends list (General → friendsNotes, on by default)
 - **Roll summary** — after a group loot roll resolves, "X won [item]" is posted to party/raid chat (General → rollSummary, on by default)
 - **Trade gold display** — both sides' offered gold is shown as a prominent line at the bottom of the trade window (General → tradeGold, on by default)
+- **Buff expiry warning** — a chat warning + sound fires once when a food/flask/elixir buff drops below 5 minutes remaining (General → buffExpireWarn, on by default; weapon enchant expiry is already covered by Weapon Buff)
+- **Bags almost full warning** — toast + sound when free bag space drops to 3 slots or fewer while looting, throttled to once per minute (General → bagFullWarn, on by default)
+- **Friend online ding** — plays a join sound when a friend comes online (General → friendDing, on by default)
+- **Gold per hour** — the Session data text tooltip now shows the G/h farm rate once ~70 seconds of data exist
 
 ## [1.3.0]
 
