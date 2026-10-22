@@ -118,7 +118,7 @@ function TM:UpdateList()
 		r.name:SetText(tag .. (d.isMe and ("|cff7fff9f" .. d.name .. "|r") or d.name))
 		r.val:SetFormattedText("%.0f%%", d.pct)
 	end
-	local need = 0
+	local need = (frame.title:GetStringWidth() or 0) + 16
 	for i = 1, maxB do
 		local r = rows[i]
 		need = max(need, r.name:GetStringWidth() + r.val:GetStringWidth() + 30)
