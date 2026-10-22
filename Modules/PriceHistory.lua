@@ -8,7 +8,7 @@ local L = S.L
 local PH = S:NewModule("PriceHistory", "pricehistory")
 
 local ipairs, pairs = ipairs, pairs
-local floor, format = math.floor, format
+local floor, format, tremove = math.floor, format, tremove
 local GetNumAuctionItems, GetAuctionItemInfo, GetAuctionItemLink =
 	GetNumAuctionItems, GetAuctionItemInfo, GetAuctionItemLink
 
@@ -32,6 +32,25 @@ local function ItemID(link)
 	return tonumber(link:match("item:(%d+)"))
 end
 
+-- time series: one sample per ~6h window, entries older than MAX_AGE pruned.
+-- exported so the AH full scan can feed the same history.
+function PH:RecordPrice(e, per, now)
+	if not e.hist then e.hist = {} end
+	local last = e.hist[#e.hist]
+	if not last or (now - (last.t or 0)) > 21600 then
+		e.hist[#e.hist + 1] = { t = now, p = per }
+	elseif per < (last.p or per) then
+		last.p = per -- keep the cheapest observation inside the window
+	end
+	local i = 1
+	while e.hist[i] and now - (e.hist[i].t or 0) > MAX_AGE do i = i + 1 end
+	if i > 1 then
+		for j = 1, #e.hist - i + 1 do e.hist[j] = e.hist[j + i - 1] end
+		for j = #e.hist - i + 2, #e.hist do e.hist[j] = nil end
+	end
+	while #e.hist > 40 do tremove(e.hist, 1) end
+end
+
 function PH:Scan()
 	if not self.db.enable or not GetNumAuctionItems then return end
 	local n = GetNumAuctionItems("list")
@@ -45,13 +64,15 @@ function PH:Scan()
 			local per = floor(buyout / count)
 			local e = store[id]
 			if not e then
-				store[id] = { min = per, avg = per, n = 1, t = now }
+				e = { min = per, avg = per, n = 0, t = now }
+				store[id] = e
 			else
 				e.min = math.min(e.min or per, per)
 				e.avg = floor(((e.avg or per) * (e.n or 1) + per) / ((e.n or 1) + 1))
 				e.n = (e.n or 1) + 1
 				e.t = now
 			end
+			PH:RecordPrice(e, per, now)
 		end
 	end
 end
@@ -89,6 +110,16 @@ local function TooltipLine(tt)
 	if e and e.avg and e.avg ~= e.min then
 		tt:AddDoubleLine(L["AH avg"], Money(e.avg), 0.5, 0.6, 0.9, 0.7, 0.7, 0.7)
 		added = true
+	end
+	if e and e.hist and #e.hist >= 2 then
+		local first, last = e.hist[1], e.hist[#e.hist]
+		if first.p and first.p > 0 and last.p ~= first.p then
+			local pct = (last.p - first.p) / first.p * 100
+			local days = max(1, floor(((last.t or 0) - (first.t or 0)) / 86400))
+			local col = pct > 0 and "|cffff6060" or "|cff60ff60"
+			tt:AddDoubleLine(format(L["Trend %dd"], days), format("%s%+.0f%%|r", col, pct), 0.9, 0.9, 0.9, 1, 1, 1)
+			added = true
+		end
 	end
 	local sellPrice = select(11, S.GetItemInfo(link))
 	if sellPrice and sellPrice > 0 then

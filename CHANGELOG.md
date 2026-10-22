@@ -24,6 +24,7 @@ standalone RLBetterItem release.
 - **Castbar pushback marker** — when a cast is delayed by damage a red tick marks the point the bar jumped back to (fades over 0.6s), on top of the existing "+0.4s" delay text
 - **AH price lines in item tooltips** — the price tooltip now shows the freshest scanned unit price ("AH" + age) alongside the existing min/avg history, plus the vendor sell price
 - **Cursor Ring** — subtle accent-colored ring that follows the mouse cursor so it stays findable during raid clutter (module: Cursor Ring; size/alpha under General → cursorRingSize/cursorRingAlpha)
+- **Price history time series** — every scan (browse and getAll) now records a price sample per ~6h window (40 samples, 14-day retention, account-wide SavedVariables); tooltips gain a "Trend Nd" line comparing newest vs. oldest stored price (+x% red / -x% green)
 
 ## [1.3.0]
 

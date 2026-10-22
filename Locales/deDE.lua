@@ -1986,6 +1986,7 @@ local T = {
 	["Gold earned"] = "Gold verdient", ["Click: reset session"] = "Klick: Sitzung zurücksetzen",
 	["Lure"] = "Köder", ["Skill-ups this session"] = "Skill-Ups (Sitzung)",
 	["AH"] = "AH", ["AH min"] = "AH-Min", ["AH avg"] = "AH-Ø",
+	["Trend %dd"] = "Trend %dT",
 	["Outdated rank: %s (Rank %d of %d) on the action bar"] = "Veralteter Rang: %s (Rang %d von %d) auf der Aktionsleiste",
 	["New best time for %s: %d:%02d"] = "Neue Bestzeit für %s: %d:%02d",
 	["Run %s: %d:%02d (best %d:%02d)"] = "Lauf %s: %d:%02d (Bestzeit %d:%02d)",
