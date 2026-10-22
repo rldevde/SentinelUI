@@ -653,9 +653,15 @@ local function SkinParchmentButton(button)
 	end
 	hooksecurefunc(button, "SetText", FixText)
 	hooksecurefunc(button, "SetFormattedText", function(b, fmt, ...)
-		if not fmt then return end
+		if not fmt or b.suiFixText then return end
 		local newFmt, n = gsub(fmt, "|c[fF][fF](%x%x%x%x%x%x)", ReplaceParchmentColor)
-		if n > 0 then b:SetFormattedText(newFmt, ...) end
+		if n > 0 then
+			-- re-entry guard: the replacement colors still match the gsub
+			-- pattern, so a recursive call here would loop forever
+			b.suiFixText = true
+			b:SetFormattedText(newFmt, ...)
+			b.suiFixText = nil
+		end
 	end)
 	local cur = button.GetText and button:GetText()
 	if cur then FixText(button, cur) end
