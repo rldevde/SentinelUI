@@ -62,6 +62,7 @@ local function GetRow(i)
 		r.name:SetPoint("LEFT", 4, 0)
 		r.val = S:FontString(r, 10, "OUTLINE", S.media.numberFont, nil, "RIGHT")
 		r.val:SetPoint("RIGHT", -4, 0)
+		r.name:SetPoint("RIGHT", r.val, "LEFT", -6, 0)
 		rows[i] = r
 	end
 	return r
@@ -113,6 +114,18 @@ function TM:UpdateList()
 	local w = self.db.width or 180
 	for i = 1, maxB do
 		local d, r = list[i], GetRow(i)
+		local tag = d.tanking and "|cffff8040*|r " or ""
+		r.name:SetText(tag .. (d.isMe and ("|cff7fff9f" .. d.name .. "|r") or d.name))
+		r.val:SetFormattedText("%.0f%%", d.pct)
+	end
+	local need = 0
+	for i = 1, maxB do
+		local r = rows[i]
+		need = max(need, r.name:GetStringWidth() + r.val:GetStringWidth() + 30)
+	end
+	if need > 0 then w = min(400, max(110, need)) end
+	for i = 1, maxB do
+		local d, r = list[i], GetRow(i)
 		r:SetSize(w - 10, h)
 		r:ClearAllPoints()
 		r:SetPoint("TOPLEFT", frame.body, "TOPLEFT", 0, -((i - 1) * (h + gap)))
@@ -125,9 +138,6 @@ function TM:UpdateList()
 			local cr, cg, cb = GetThreatStatusColor(d.status)
 			r:SetStatusBarColor(cr, cg, cb, d.isMe and 1 or 0.75)
 		end
-		local tag = d.tanking and "|cffff8040*|r " or ""
-		r.name:SetText(tag .. (d.isMe and ("|cff7fff9f" .. d.name .. "|r") or d.name))
-		r.val:SetFormattedText("%.0f%%", d.pct)
 		r:Show()
 	end
 	for i = maxB + 1, #rows do rows[i]:Hide() end

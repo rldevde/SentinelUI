@@ -10,6 +10,7 @@ standalone RLBetterItem release.
 ## [1.4.0]
 
 ### Fixed
+- **Threat meter width** — the window was a fixed 180px, so names overlapped or clipped into the percentage. Width now adapts to the widest visible name (110–400px) and long names ellipsize before hitting the % value
 - **Roll summary showed the dice result as the winner** — the roll-result lines ("9 würfelt …") also contain the item link and fell back to grabbing the first word of the line, announcing "9 gewann [Item]" instead of the player name. Only lines matching the actual win formats (`LOOT_ROLL_WON` / `LOOT_ROLL_YOU_WON`) are announced now
 - **Event-arg off-by-one in 12 handlers** — anonymous `RegisterEvent` handlers receive `(owner, event, payload…)`, but 12 sites bound the payload to the 2nd parameter, so they got the event name instead of real data. Silently killed: loot-roll summary (`GetLootRollItemLink` usage error), minimap ping names, aggro warning, banish timer, external-buff icons, fishing skill-ups, hunter ammo-on-aura check, nameplate quest refresh, purge icon, session XP/kill tracking, soulstone tracking
 - **Quest Items crash on load** — the module file was missing its `ns`/`S` bootstrap lines, so it errored 6x at startup and the whole module never initialized
