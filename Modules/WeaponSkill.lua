@@ -14,10 +14,12 @@ local function UnderMax(skipDefense)
 	local out = {}
 	if not (GetNumSkillLines and GetSkillLineInfo) then return out end
 	local cap = (UnitLevel("player") or 1) * 5
+	local secret = S.IsSecret or _G.IsSecret
 	for i = 1, (GetNumSkillLines() or 0) do
 		local name, isHeader, _, rank, _, _, maxRank = GetSkillLineInfo(i)
-		if name and not isHeader and maxRank == cap and rank < maxRank then
-			if not (skipDefense and name == DEFENSE) then
+		if name and not isHeader and not (secret and (secret(name) or secret(rank) or secret(maxRank)))
+			and maxRank == cap and rank < maxRank then
+			if not (skipDefense and DEFENSE and name == DEFENSE) then
 				out[#out + 1] = { name = name, rank = rank, max = maxRank }
 			end
 		end
@@ -37,7 +39,7 @@ function WS:BuildFrame()
 	f.icon:SetTexture("Interface\\Icons\\Inv_Sword_27")
 	f.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
 	f.title = S:FontString(f, 10, "OUTLINE", S.media.unitFont)
-	f.title:SetPoint("TOPLEFT", f.icon, "TOPRIGHT", 6, 0)
+	f.title:SetPoint("TOPLEFT", f, "TOPLEFT", 34, -6)
 	f.title:SetText("|cffebad33" .. (L["Weapon Skills"] or "Weapon Skills") .. "|r")
 	f.lines = {}
 	f:Hide()
@@ -55,10 +57,11 @@ function WS:Refresh()
 		local t = f.lines[i]
 		if not t then
 			t = S:FontString(f, 10, "OUTLINE", S.media.numberFont)
-			t:SetPoint("TOPLEFT", f.icon, "TOPRIGHT", 6, -12 - (i - 1) * 13)
+			t:SetPoint("TOPLEFT", f, "TOPLEFT", 34, -20 - (i - 1) * 13)
 			f.lines[i] = t
 		end
-		t:SetFormattedText("%s: |cff80ff80%d|r/|cffff4040%d|r", s.name, s.rank, s.max)
+		t:SetFormattedText("%s: |cff80ff80%s|r/|cffff4040%s|r",
+			tostring(s.name or "?"), tostring(s.rank or "?"), tostring(s.max or "?"))
 		t:Show()
 	end
 	for i = shown + 1, #f.lines do f.lines[i]:Hide() end
