@@ -37,6 +37,10 @@ standalone RLBetterItem release.
 - **Bags almost full warning** — toast + sound when free bag space drops to 3 slots or fewer while looting, throttled to once per minute (General → bagFullWarn, on by default)
 - **Friend online ding** — plays a join sound when a friend comes online (General → friendDing, on by default)
 - **Gold per hour** — the Session data text tooltip now shows the G/h farm rate once ~70 seconds of data exist
+- **Unspent talent points reminder** — icon with the open-point count appears while points are unspent; click opens the talent frame, movable via /sui move (General → talentWarn, on by default)
+- **Low ammo warning** — hunters get a chat warning + sound when equipped ammo (or thrown count) drops below 100 (General → ammoWarn, on by default)
+- **Durability warning** — toast + sound on login and on death when lowest gear durability is below 20% (General → duraWarn, on by default)
+- **Time played in tooltip** — the Time data text tooltip now shows playtime at this level and total (requested on login)
 
 ## [1.3.0]
 

@@ -61,6 +61,12 @@ DT:Register("Time", {
 				end
 			end
 		end
+		if S.played then
+			tt:AddLine(" ")
+			tt:AddLine(L["Time played"], S.accent.r, S.accent.g, S.accent.b)
+			tt:AddDoubleLine(L["This level"], SecondsToTime(S.played.level or 0, true), 1, 1, 1, 1, 1, 1)
+			tt:AddDoubleLine(L["Total"], SecondsToTime(S.played.total or 0, true), 1, 1, 1, 1, 1, 1)
+		end
 		tt:AddLine(" ")
 		tt:AddLine(L["Click: Calendar / Stopwatch"], 0.7, 0.7, 0.7)
 		tt:Show()

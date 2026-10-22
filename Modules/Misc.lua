@@ -328,10 +328,33 @@ local function BuffExpireScan()
 	end
 end
 
+-- Low ammo (hunter) ------------------------------------------------------------
+local ammoWarned
+local function AmmoCheck()
+	if S.myClass ~= "HUNTER" or M.db.ammoWarn == false then return end
+	local c = GetInventoryItemCount and (GetInventoryItemCount("player", 0) or 0) or 0
+	if c == 0 then
+		local ranged = GetInventoryItemLink("player", 18)
+		if ranged and select(9, S.GetItemInfo(ranged)) == "INVTYPE_THROWN" then
+			c = GetInventoryItemCount("player", 18) or 0
+		end
+	end
+	if c > 0 and c < 100 then
+		if not ammoWarned then
+			ammoWarned = true
+			S:Print(format(L["Low ammo: %d left"], c))
+			if PlaySound then PlaySound(SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPEN or 856) end
+		end
+	else
+		ammoWarned = nil
+	end
+end
+
 -- Bag full warning ------------------------------------------------------------
 -- one-shot toast when free bag space drops to <= 3 slots (60s throttle)
 local lastBagWarn, lastFree = 0, 99
 function M:BAG_UPDATE()
+	AmmoCheck()
 	if self.db.bagFullWarn == false or not S.GetContainerNumFreeSlots then return end
 	local free = 0
 	for bag = 0, 4 do free = free + (S.GetContainerNumFreeSlots(bag) or 0) end
@@ -357,6 +380,65 @@ function M:CHAT_MSG_SYSTEM(_, msg)
 	local pat = FriendOnlinePattern()
 	if pat and msg:find(pat) then
 		if PlaySound then PlaySound(SOUNDKIT and SOUNDKIT.FRIEND_JOIN_GAME or 33329) end
+	end
+end
+
+-- Unspent talent points -------------------------------------------------------
+-- pulsing icon while there are unspent points; click opens the talent frame
+local talentWarn
+local function UnspentTalents()
+	local level = UnitLevel and UnitLevel("player") or 0
+	if level < 10 or not (GetNumTalentTabs and GetNumTalents and GetTalentInfo) then return 0 end
+	local spent = 0
+	for tab = 1, GetNumTalentTabs() do
+		for i = 1, GetNumTalents(tab) do
+			spent = spent + (select(5, GetTalentInfo(tab, i)) or 0)
+		end
+	end
+	return level - 9 - spent
+end
+local function TalentWarnRefresh()
+	local pts = UnspentTalents()
+	if M.db.talentWarn == false or pts <= 0 then
+		if talentWarn then talentWarn:Hide() end
+		return
+	end
+	if not talentWarn then
+		local b = CreateFrame("Button", "SentinelUITalentWarn", UIParent)
+		b:SetSize(30, 30)
+		b.tex = b:CreateTexture(nil, "ARTWORK")
+		b.tex:SetAllPoints()
+		b.tex:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+		b.tex:SetTexture([[Interface\Icons\Ability_Marksmanship]])
+		S:CreateBackdrop(b, "Default")
+		b.count = S:FontString(b, 13, "OUTLINE", S.media.numberFont)
+		b.count:SetPoint("CENTER")
+		b:RegisterForClicks("AnyUp")
+		b:SetScript("OnClick", function() if ToggleTalentFrame then pcall(ToggleTalentFrame) end end)
+		b:SetScript("OnEnter", function(self2)
+			GameTooltip:SetOwner(self2, "ANCHOR_RIGHT")
+			GameTooltip:AddLine(format(L["%d unspent talent points"], pts), 1, 1, 1)
+			GameTooltip:AddLine(L["Click: open talents"], 0.7, 0.7, 0.7)
+			GameTooltip:Show()
+		end)
+		b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+		S:CreateMover(b, "TalentWarn", L["Talent Points"], { "CENTER", UIParent, "CENTER", 0, -180 }, "talentwarn")
+		talentWarn = b
+	end
+	talentWarn.count:SetText(pts)
+	talentWarn:Show()
+end
+
+-- Durability warning ----------------------------------------------------------
+local lastDuraWarn = 0
+local function DurabilityCheck()
+	if M.db.duraWarn == false or not S.GetDurabilityPercent then return end
+	if GetTime() - lastDuraWarn < 300 then return end
+	local p = S.GetDurabilityPercent()
+	if p and p < 20 then
+		lastDuraWarn = GetTime()
+		S:Print(format(L["Durability low: %d%% - repair soon"], math.floor(p)))
+		if PlaySound then PlaySound(SOUNDKIT and SOUNDKIT.RAID_WARNING or 8959) end
 	end
 end
 
@@ -1544,6 +1626,17 @@ function M:Initialize()
 	self:RegisterEvent("MAIL_SEND_INFO_UPDATE", BuildMailAltList)
 	self:RegisterEvent("BAG_UPDATE")
 	self:RegisterEvent("CHAT_MSG_SYSTEM")
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", function()
+		DurabilityCheck()
+		TalentWarnRefresh()
+		if RequestTimePlayed then RequestTimePlayed() end
+	end)
+	self:RegisterEvent("PLAYER_DEAD", DurabilityCheck)
+	self:RegisterEvent("PLAYER_LEVEL_UP", TalentWarnRefresh)
+	pcall(self.RegisterEvent, self, "CHARACTER_POINTS_CHANGED", TalentWarnRefresh)
+	self:RegisterEvent("TIME_PLAYED_MSG", function(_, _, total, atLevel)
+		S.played = { total = total or 0, level = atLevel or 0 }
+	end)
 	HookFriendsNotes()
 	-- buff expiry scan: light 10s poller (expirations fire no events)
 	self._buffPoll = self._buffPoll or CreateFrame("Frame")
