@@ -2103,3 +2103,15 @@ local T = {
 	["%d result(s)"] = "%d Treffer",
 }
 for k, v in pairs(T) do if not rawget(L, k) then L[k] = v end end
+
+local T = {
+	["onlyDispellable"] = "Nur dispellbare Debuffs",
+	["hotDuration"] = "HoT-Restzeit anzeigen",
+	["showPets"] = "Pets anzeigen",
+	["showAFK"] = "AFK markieren",
+	["auraWatch"] = "Aura-Watch (Spell-IDs, komma-getrennt)",
+	["visibilityMode"] = "Sichtbarkeit",
+	["In group or raid"] = "In Gruppe oder Schlachtzug",
+	["Raid only"] = "Nur Schlachtzug",
+}
+for k, v in pairs(T) do if not rawget(L, k) then L[k] = v end end

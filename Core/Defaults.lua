@@ -366,6 +366,12 @@ S.defaults = {
 			unitTooltip = true,
 			showWhenSolo = true,
 			rezOnDead = true,
+			onlyDispellable = false,
+			hotDuration = true,
+			showPets = false,
+			showAFK = true,
+			auraWatch = "",
+			visibilityMode = "ALWAYS",
 			-- click-cast: same format as unitframes.clickCast (button, mod, type, value);
 			-- "dispel" as spell value resolves to the class dispel automatically —
 			-- decursing is opt-in here (SentinelUI has a dedicated Decurse module);

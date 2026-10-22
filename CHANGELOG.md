@@ -46,6 +46,10 @@ standalone RLBetterItem release.
 - **Low ammo warning** — hunters get a chat warning + sound when equipped ammo (or thrown count) drops below 100 (General → ammoWarn, on by default)
 - **Durability warning** — toast + sound on login and on death when lowest gear durability is below 20% (General → duraWarn, on by default)
 - **Time played in tooltip** — the Time data text tooltip now shows playtime at this level and total (requested on login)
+- **Heal Grid: custom aura watch** — `auraWatch` accepts comma-separated spell IDs or names (e.g. `6788, 974` for Weakened Soul / Earth Shield); matching auras on any member show as up to 2 icons at the cell's top-left
+- **Heal Grid: only-dispellable filter** — `onlyDispellable` hides debuff icons your class cannot remove (per-class type table, Shaman magic dispel only on Wrath+)
+- **Heal Grid: HoT duration text** — own HoT icons show remaining time (seconds, `Xm` for minutes) via `hotDuration`, on by default
+- **Heal Grid: pets, AFK, visibility** — `showPets` adds raid/party pets in the last column, AFK members get an `<AFK>` tag, and `visibilityMode` (Always / In group or raid / Raid only) auto-hides and auto-shows the grid
 
 ## [1.3.0]
 

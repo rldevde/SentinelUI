@@ -30,7 +30,7 @@ local CreateFrame = CreateFrame
 local GameTooltip = GameTooltip
 
 local MAX_GROUPS, MAX_ROWS = 8, 5
-local MAX_DEBUFFS, MAX_HOTS, MAX_BUFFWATCH = 3, 3, 2
+local MAX_DEBUFFS, MAX_HOTS, MAX_BUFFWATCH, MAX_WATCH = 3, 3, 2, 2
 local members = {}        -- group -> { unit, name, class }
 local ticker
 
@@ -48,6 +48,19 @@ local DISPEL_SPELLS = { -- first known spell of the player's class wins
 	MAGE = { 475 },
 	WARLOCK = { 19505 },
 }
+-- which debuff types each class can remove (defensive dispels)
+local CAN_DISPEL = {
+	PRIEST = { Magic = true, Disease = true },
+	PALADIN = { Magic = true, Disease = true, Poison = true },
+	DRUID = { Poison = true, Curse = true },
+	MAGE = { Curse = true },
+	WARLOCK = { Magic = true },            -- felhunter devour magic
+}
+do
+	-- shamans only get magic dispel via the Wrath+ talent Cleanse Spirit
+	CAN_DISPEL.SHAMAN = { Poison = true, Disease = true }
+	if not (S.isTBC or S.isClassic) then CAN_DISPEL.SHAMAN.Magic = true end
+end
 -- buff watch: spell-id groups; shown as icon when *no* aura of the group is up.
 -- name/icon resolve lazily so each client/localization uses live data.
 local BUFFWATCH = {
@@ -277,7 +290,7 @@ local function MakeCell(parent)
 		t:Hide()
 		b.debuffs[i] = t
 	end
-	b.hots = {}
+	b.hots, b.hotText = {}, {}
 	for i = 1, MAX_HOTS do
 		local t = b:CreateTexture(nil, "OVERLAY", nil, 4)
 		t:SetSize(11, 11)
@@ -285,6 +298,18 @@ local function MakeCell(parent)
 		t:SetTexCoord(0.07, 0.93, 0.07, 0.93)
 		t:Hide()
 		b.hots[i] = t
+		local fs = S:FontString(b, 8, "OUTLINE", S.media.numberFont)
+		fs:SetPoint("CENTER", t, "CENTER", 0, 0)
+		b.hotText[i] = fs
+	end
+	b.watch = {}
+	for i = 1, MAX_WATCH do
+		local t = b:CreateTexture(nil, "OVERLAY", nil, 4)
+		t:SetSize(11, 11)
+		t:SetPoint("TOPLEFT", 3 + (i - 1) * 13, -2)
+		t:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+		t:Hide()
+		b.watch[i] = t
 	end
 	b.buffs = {}
 	for i = 1, MAX_BUFFWATCH do
@@ -376,13 +401,14 @@ end
 function RG:Collect()
 	wipe(members)
 	local function Add(unit, grp)
-		if not UnitExists(unit) or not UnitIsPlayer(unit) then return end
+		local isPet = unit:find("pet") ~= nil
+		if not UnitExists(unit) or (not isPet and not UnitIsPlayer(unit)) then return end
 		grp = min(max(grp or 1, 1), MAX_GROUPS)
 		local list = members[grp] or {}
 		members[grp] = list
 		if #list < MAX_ROWS then
 			local _, class = UnitClass(unit)
-			list[#list + 1] = { unit = unit, name = Ambiguate(UnitName(unit), "short"), class = class }
+			list[#list + 1] = { unit = unit, name = Ambiguate(UnitName(unit), "short"), class = class, pet = isPet }
 		end
 	end
 	if IsInRaid() then
@@ -396,11 +422,40 @@ function RG:Collect()
 	elseif self.db.showWhenSolo then
 		Add("player", 1)
 	end
+	-- pets land in the last grid column
+	if self.db.showPets then
+		if IsInRaid() then
+			for i = 1, GetNumGroupMembers() do Add("raidpet" .. i, MAX_GROUPS) end
+		elseif IsInGroup() then
+			Add("pet", MAX_GROUPS)
+			for i = 1, GetNumGroupMembers() - 1 do Add("partypet" .. i, MAX_GROUPS) end
+		elseif self.db.showWhenSolo then
+			Add("pet", MAX_GROUPS)
+		end
+	end
 	if self.db.sortMethod == "NAME" then
 		for _, list in pairs(members) do
 			sort(list, function(a, b) return a.name < b.name end)
 		end
 	end
+end
+
+-- custom aura watch: comma-separated spell IDs (or names) -> icon set per cell
+local watchNames, watchKey
+local function AuraWatchList()
+	local raw = RG.db and RG.db.auraWatch or ""
+	if raw == watchKey then return watchNames end
+	watchKey = raw
+	watchNames = nil
+	if raw ~= "" then
+		watchNames = {}
+		for tok in raw:gmatch("[^,;%s]+") do
+			local id = tonumber(tok)
+			local name = id and S.GetSpellInfo(id) or tok
+			if type(name) == "string" and name ~= "" then watchNames[lower(name)] = true end
+		end
+	end
+	return watchNames
 end
 
 -- per-cell paint ------------------------------------------------------------
@@ -460,7 +515,8 @@ function RG:Paint(cell, m)
 		cell.name:SetText("|cff888888" .. m.name .. "|r")
 		cell.hpText:SetText(L["Offline"])
 	else
-		cell.name:SetText(m.name)
+		local afk = self.db.showAFK ~= false and UnitIsAFK and UnitIsAFK(unit)
+		cell.name:SetText(m.name .. (afk and " |cff888888<AFK>|r" or ""))
 		if self.db.showDeficit then
 			local def = hp - hpMax
 			cell.hpText:SetText(def < 0 and format("|cffff7766%d|r", def) or format("%d%%", frac * 100))
@@ -542,11 +598,14 @@ function RG:Paint(cell, m)
 	cell.res:SetShown(not offline and UnitHasIncomingResurrection and UnitHasIncomingResurrection(unit) or false)
 
 	-- auras: debuff icons + dispel border, own HoTs, missing buffs
-	local dN, hN, auraNames = 0, 0, self.db.buffWatch and {} or nil
+	local dN, hN, wN, auraNames = 0, 0, 0, self.db.buffWatch and {} or nil
+	local watch = AuraWatchList()
+	local onlyDispel = self.db.onlyDispellable and CAN_DISPEL[S.myClass]
 	for i = 1, 40 do
 		local a = S.GetAura(unit, i, "HARMFUL")
 		if not a then break end
-		if a.name and not S.IsSecret(a.name) and dN < MAX_DEBUFFS then
+		if a.name and not S.IsSecret(a.name) and dN < MAX_DEBUFFS
+			and (not onlyDispel or (a.dispelName and onlyDispel[a.dispelName])) then
 			dN = dN + 1
 			cell.debuffs[dN]:SetTexture(a.icon)
 			cell.debuffs[dN].dispel = a.dispelName
@@ -558,15 +617,27 @@ function RG:Paint(cell, m)
 		if not a then break end
 		if a.name and not S.IsSecret(a.name) then
 			if auraNames then auraNames[lower(a.name)] = true end
+			if watch and watch[lower(a.name)] and wN < MAX_WATCH then
+				wN = wN + 1
+				cell.watch[wN]:SetTexture(a.icon)
+				cell.watch[wN]:Show()
+			end
 			if self.db.showHots and a.sourceUnit == "player" and a.duration and a.duration > 0 and hN < MAX_HOTS then
 				hN = hN + 1
 				cell.hots[hN]:SetTexture(a.icon)
+				if self.db.hotDuration ~= false and a.expirationTime and a.expirationTime > 0 then
+					local rem = a.expirationTime - GetTime()
+					cell.hotText[hN]:SetText(rem > 0 and (rem >= 60 and format("%dm", rem / 60) or format("%d", rem)) or "")
+				else
+					cell.hotText[hN]:SetText("")
+				end
 				cell.hots[hN]:Show()
 			end
 		end
 	end
 	for i = dN + 1, MAX_DEBUFFS do cell.debuffs[i]:Hide() cell.debuffs[i].dispel = nil end
-	for i = hN + 1, MAX_HOTS do cell.hots[i]:Hide() end
+	for i = hN + 1, MAX_HOTS do cell.hots[i]:Hide() cell.hotText[i]:SetText("") end
+	for i = wN + 1, MAX_WATCH do cell.watch[i]:Hide() end
 
 	-- border: debuff color > own target accent > default
 	local bcol
@@ -986,8 +1057,25 @@ function RG:ScanRegions()
 end
 
 -- driver ---------------------------------------------------------------------
+-- visibility rule: ALWAYS shows always, PARTY only in a group, RAID only in raid
+local function VisibleByRule()
+	local v = RG.db and RG.db.visibilityMode or "ALWAYS"
+	if v == "RAID" then return IsInRaid() end
+	if v == "PARTY" then return IsInGroup() or IsInRaid() end
+	return true
+end
+
+local function ApplyVisibility()
+	local f = RG.frame
+	if not f then return end
+	local show = RG.wantShown and VisibleByRule()
+	if f:IsShown() ~= show then f:SetShown(show) end
+end
+
 local function Tick()
-	if not RG.frame or not RG.frame:IsShown() then return end
+	if not RG.frame then return end
+	ApplyVisibility()
+	if not RG.frame:IsShown() then return end
 	local ok, err = pcall(RG.Refresh, RG)
 	if not ok and not RG.tickErrLogged then
 		RG.tickErrLogged = true
@@ -998,11 +1086,9 @@ end
 function RG:Toggle()
 	local ok, err = pcall(function()
 		self:BuildFrame()
+		self.wantShown = not self.wantShown
+		ApplyVisibility()
 		if self.frame:IsShown() then
-			self.frame:Hide()
-			if ticker then ticker:Cancel() ticker = nil end
-		else
-			self.frame:Show()
 			if InCombatLockdown() then
 				S:RunOutOfCombat(self.Layout, self)
 				S:RunOutOfCombat(self.ApplyClicks, self)
@@ -1011,7 +1097,13 @@ function RG:Toggle()
 				self:ApplyClicks()
 			end
 			self:Refresh()
+		end
+		-- keep the ticker alive while wanted even if the rule hides the frame,
+		-- so the grid pops back automatically on joining a group
+		if self.wantShown then
 			if not ticker then ticker = C_Timer.NewTicker(0.2, Tick) end
+		elseif ticker then
+			ticker:Cancel() ticker = nil
 		end
 	end)
 	if not ok then
@@ -1044,6 +1136,7 @@ end
 
 function RG:Initialize()
 	self.db = S.db.profile.raidgrid
+	self.wantShown = false
 	-- migrate any previous default binding set (dispel or plain menu on right
 	-- click) to heal-on-right-click; only touches uncustomized profiles
 	local b = self.db.clickCast and self.db.clickCast.bindings

@@ -44,6 +44,7 @@ local selects = {
 	growth = GROWTH,
 	locationText = { SHOW = L["Always"], MOUSEOVER = L["Mouseover"], HIDE = L["Hide"] },
 	collectorExpand = { HOVER = L["Mouseover"], CLICK = L["Click"], ALWAYS = L["Always"] },
+	visibilityMode = { ALWAYS = L["Always"], PARTY = L["In group or raid"], RAID = L["Raid only"] },
 	collectorGrowH = { LEFT = L["Left"], RIGHT = L["Right"] },
 	collectorGrowV = { UP = L["Up"], DOWN = L["Down"] },
 	shape = { ROUND = L["Round (radar)"], SQUARE = L["Square"] },
