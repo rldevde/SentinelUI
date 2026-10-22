@@ -203,6 +203,122 @@ local function HookDeletePopup()
 	end
 end
 
+-- Mail alt dropdown -----------------------------------------------------------
+-- small arrow next to the recipient field listing your own characters
+local function BuildMailAltList()
+	if M.mailAltBtn or not _G.SendMailNameEditBox then return end
+	local eb = _G.SendMailNameEditBox
+	local btn = CreateFrame("Button", "SentinelUIMailAlt", eb:GetParent())
+	btn:SetSize(18, 18)
+	btn:SetPoint("LEFT", eb, "RIGHT", 5, 0)
+	btn:SetNormalTexture([[Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up]])
+	btn:SetHighlightTexture([[Interface\Buttons\UI-Common-MouseHilight]], "ADD")
+	btn:SetScript("OnClick", function()
+		if not UIDropDownMenu_Initialize or not ToggleDropDownMenu then return end
+		local dd = M.mailAltDD or CreateFrame("Frame", "SentinelUIMailAltDD", btn, "UIDropDownMenuTemplate")
+		M.mailAltDD = dd
+		UIDropDownMenu_Initialize(dd, function()
+			local names = {}
+			for name in pairs(S.db.global.altroster or {}) do
+				if name ~= S.myName then names[#names + 1] = name end
+			end
+			table.sort(names)
+			for _, name in ipairs(names) do
+				local info = UIDropDownMenu_CreateInfo()
+				info.text = name
+				info.func = function() eb:SetText(name) end
+				UIDropDownMenu_AddButton(info)
+			end
+			if #names == 0 then
+				local info = UIDropDownMenu_CreateInfo()
+				info.text = L["No alts recorded"]
+				info.disabled = true
+				UIDropDownMenu_AddButton(info)
+			end
+		end)
+		ToggleDropDownMenu(1, nil, dd, btn, 0, 0)
+	end)
+	M.mailAltBtn = btn
+end
+
+-- Notes in friends list -------------------------------------------------------
+local friendsHooked
+local function HookFriendsNotes()
+	if friendsHooked or not FriendsList_Update then return end
+	friendsHooked = true
+	hooksecurefunc("FriendsList_Update", function()
+		if M.db.friendsNotes == false then return end
+		local store = S.db.global.playerNotes
+		if not store then return end
+		for i = 1, 20 do
+			local b = _G["FriendsFrameFriendButton" .. i] or _G["FriendsFrameFriendsScrollFrameButton" .. i]
+			if not b then break end
+			local id = b.id or (b.GetID and b:GetID())
+			local fname = id and GetFriendInfo and GetFriendInfo(id)
+			local note = fname and store[fname]
+			if note and b.name then
+				local t = b.name:GetText() or ""
+				if not t:find("%*|r$") then b.name:SetText(t .. " |cffffd700*|r") end
+				if b.info then b.info:SetText("|cffffd700" .. note .. "|r") end
+			end
+		end
+	end)
+end
+
+-- Roll summary ----------------------------------------------------------------
+-- announces won rolls in group chat (best-effort: uses the roll-won chat line)
+local pendingRolls = {}
+local rollWonPat
+local function RollPattern()
+	if rollWonPat ~= nil then return rollWonPat end
+	local fmt = _G.LOOT_ROLL_WON
+	if not fmt then rollWonPat = false return end
+	-- "%s won: %s" -> "^(.-) won: (.+)$"
+	local pat = fmt:gsub("([%^%$%(%)%%%.%[%]%+%-%?])", "%%%1"):gsub("%%%%s", "(.-)"):gsub("%%%%d", "(%%d+)")
+	rollWonPat = "^" .. pat .. "$"
+	return rollWonPat
+end
+function M:TrackRoll(rollID)
+	local link = GetLootRollItemLink and GetLootRollItemLink(rollID)
+	if link then pendingRolls[link] = GetTime() end
+end
+function M:CHAT_MSG_LOOT(_, msg)
+	if self.db.rollSummary == false or not IsInGroup() then return end
+	if not msg or next(pendingRolls) == nil then return end
+	local now = GetTime()
+	for link, t in pairs(pendingRolls) do
+		if now - t > 130 then pendingRolls[link] = nil
+		elseif msg:find(link, 1, true) then
+			local pat = RollPattern()
+			local name = pat and msg:match(pat)
+			if not name then name = msg:match("^(%S+)") end
+			if name == YOU then name = S.myName end
+			if name then
+				local ch = IsInRaid() and "RAID" or "PARTY"
+				SendChatMessage(format(L["%s won %s"], name, link), ch)
+			end
+			pendingRolls[link] = nil
+		end
+	end
+end
+
+-- Trade gold display ----------------------------------------------------------
+local tradeGoldText
+local function UpdateTradeGold()
+	local f = _G.TradeFrame
+	if not f then return end
+	if not tradeGoldText then
+		tradeGoldText = S:FontString(f, 11, "OUTLINE", S.media.numberFont)
+		tradeGoldText:SetPoint("BOTTOM", f, "BOTTOM", 0, 18)
+	end
+	if M.db.tradeGold == false then tradeGoldText:SetText("") return end
+	local mine = GetPlayerTradeMoney and GetPlayerTradeMoney() or 0
+	local theirs = GetTargetTradeMoney and GetTargetTradeMoney() or 0
+	tradeGoldText:SetFormattedText("%s: %s  |  %s: %s",
+		YOU or L["You"], S:FormatMoney(mine),
+		TARGET or L["Target"], S:FormatMoney(theirs))
+end
+
 -- Raid consumables check ------------------------------------------------------
 -- /suiconsume: lists who is missing food and flask/elixir buffs
 local FOOD_PAT = GetLocale() == "deDE" and "Satt" or "Well Fed|Satt|Bien nourri|Saciado"
@@ -725,7 +841,8 @@ function M:SkinLoot()
 			end)
 		end
 		-- roll frames are created lazily - skin them when the first roll arrives
-		self:RegisterEvent("START_LOOT_ROLL", function()
+		self:RegisterEvent("START_LOOT_ROLL", function(_, rollID)
+			M:TrackRoll(rollID)
 			C_Timer.After(0.1, function()
 				for i = 1, (NUM_GROUP_LOOT_FRAMES or 4) do
 					SkinRollFrame(_G["GroupLootFrame" .. i])
@@ -1363,6 +1480,12 @@ function M:Initialize()
 	HookDeletePopup()
 	S:RegisterChatCommand("suiconsume", ConsumeCheck)
 	S:RegisterChatCommand("consume", ConsumeCheck)
+	self:RegisterEvent("CHAT_MSG_LOOT")
+	self:RegisterEvent("TRADE_MONEY_CHANGED", UpdateTradeGold)
+	self:RegisterEvent("TRADE_SHOW", UpdateTradeGold)
+	self:RegisterEvent("MAIL_SHOW", BuildMailAltList)
+	self:RegisterEvent("MAIL_SEND_INFO_UPDATE", BuildMailAltList)
+	HookFriendsNotes()
 	self:RegisterEvent("MINIMAP_PING", function(_, unit)
 		if not M.db.pingAlert then return end
 		local name = UnitName(unit)

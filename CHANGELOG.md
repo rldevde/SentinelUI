@@ -29,6 +29,10 @@ standalone RLBetterItem release.
 - **Price alerts** — `/suialert [itemlink] <price>` sets a target unit price (e.g. `40g`, `2g50s`); every browse or getAll scan at or below the target prints a chat alert (once per 12h per item), `/suialert` lists, `/suialert [itemlink]` removes
 - **Consumables check** — `/suiconsume` scans party/raid for food (Well Fed/Satt) and flask/elixir buffs and lists who is missing what (locale-aware buff matching)
 - **Player notes** — `/suinote <name> <text>` stores an account-wide note shown as a gold line in that player's unit tooltip; `/suinote` lists, `/suinote <name>` removes (module: Notes)
+- **Alt mail list** — small arrow button next to the mail recipient field opens a dropdown of your own characters (from AltRoster) for one-click recipient fill
+- **Notes in friends list** — players with a stored `/suinote` get a gold asterisk and their note text as the status line in the friends list (General → friendsNotes, on by default)
+- **Roll summary** — after a group loot roll resolves, "X won [item]" is posted to party/raid chat (General → rollSummary, on by default)
+- **Trade gold display** — both sides' offered gold is shown as a prominent line at the bottom of the trade window (General → tradeGold, on by default)
 
 ## [1.3.0]
 
