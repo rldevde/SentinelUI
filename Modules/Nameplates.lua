@@ -68,12 +68,17 @@ function NP:CreatePlate(plate)
 	f.TargetOf:SetPoint("TOPLEFT", health, "BOTTOMLEFT", 0, -2)
 	f.TargetOf:SetJustifyH("LEFT")
 
-	-- quest kill progress ("3/8") under the right bar edge
+	-- quest kill progress ("3/8") under the right bar edge + a "!" marker
 	f.Quest = S:FontString(health, db.fontSize - 1, "OUTLINE", S.media.numberFont)
 	f.Quest:SetPoint("TOPRIGHT", health, "BOTTOMRIGHT", 0, -2)
 	f.Quest:SetJustifyH("RIGHT")
 	f.Quest:SetTextColor(1, 0.72, 0.25)
 	f.Quest:Hide()
+	f.QuestIcon = health:CreateTexture(nil, "OVERLAY")
+	f.QuestIcon:SetTexture([[Interface\GossipFrame\AvailableQuestIcon]])
+	f.QuestIcon:SetSize(10, 10)
+	f.QuestIcon:SetPoint("RIGHT", f.Quest, "LEFT", -1, 0)
+	f.QuestIcon:Hide()
 
 	f.RaidIcon = health:CreateTexture(nil, "OVERLAY")
 	f.RaidIcon:SetTexture([[Interface\TargetingFrame\UI-RaidTargetingIcons]])
@@ -352,13 +357,15 @@ local function QuestProgressFor(unit)
 end
 
 function NP:UpdateQuest(f)
-	if not self.db.quest then f.Quest:Hide() return end
+	if not self.db.quest then f.Quest:Hide() f.QuestIcon:Hide() return end
 	local o = f.unit and QuestProgressFor(f.unit)
 	if o then
 		f.Quest:SetFormattedText("%d/%d", o.num, o.req)
 		f.Quest:Show()
+		f.QuestIcon:Show()
 	else
 		f.Quest:Hide()
+		f.QuestIcon:Hide()
 	end
 end
 

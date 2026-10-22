@@ -602,6 +602,12 @@ S.defaults = {
 		potionreminder = {
 			enable = true, threshold = 0.35,
 		},
+		foodreminder = {
+			threshold = 0.4, needsItem = true,
+		},
+		weaponskill = {
+			showDefense = true,
+		},
 		combatlog = {
 			dungeons = false, chatNote = true,
 		},
@@ -815,6 +821,9 @@ S.privateDefaults = {
 		cooldowntracker = { enable = true },
 		diminishing = { enable = true },
 		potionreminder = { enable = true },
+		foodreminder = { enable = true },
+		weaponskill = { enable = true },
+		spellsearch = { enable = true },
 		combatlog = { enable = true },
 		groupbulletin = { enable = true },
 		trinkettracker = { enable = true },
