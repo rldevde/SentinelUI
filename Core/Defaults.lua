@@ -164,7 +164,7 @@ S.defaults = {
 			classColorEnemy = true, classColorFriendly = true,
 			threat = true, threatColors = { good = { r = 0.2, g = 0.7, b = 0.3 }, transition = { r = 0.95, g = 0.75, b = 0.1 }, bad = { r = 0.85, g = 0.15, b = 0.15 } },
 			targetName = true,
-			castbar = true, castbarHeight = 9, castIcon = true,
+			castbar = true, castbarHeight = 9, castIcon = true, castTarget = true,
 			debuffs = true, debuffSize = 22, onlyPlayerDebuffs = true, maxDebuffs = 5,
 			targetGlow = true, targetScale = 1.1, nonTargetAlpha = 0.75,
 			quest = true, eliteIcon = true,

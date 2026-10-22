@@ -101,6 +101,12 @@ function NP:CreatePlate(plate)
 	f.Castbar.IconHolder:ClearAllPoints()
 	f.Castbar.IconHolder:SetPoint("BOTTOMRIGHT", f.Castbar, "BOTTOMLEFT", -3, 0)
 
+	-- who the mob is casting on, right edge inside the castbar ("-> Name")
+	f.CastTarget = S:FontString(f.Castbar, db.fontSize - 1, "OUTLINE", S.media.numberFont)
+	f.CastTarget:SetPoint("RIGHT", f.Castbar, "RIGHT", -2, 0)
+	f.CastTarget:SetJustifyH("RIGHT")
+	f.CastTarget:Hide()
+
 	f.Debuffs = UF:CreateAuras(f, "debuffs")
 	plate.suiPlate = f
 	return f
@@ -125,6 +131,7 @@ function NP:LayoutPlate(f)
 	f.Castbar.IconHolder:SetShown(db.castIcon)
 	S:SetFont(f.Castbar.Text, db.font and S:Fetch("font", db.font) or S.media.font, max(8, db.fontSize - 1), "OUTLINE")
 	S:SetFont(f.Castbar.Time, S.media.numberFont, max(8, db.fontSize - 1), "OUTLINE")
+	S:SetFont(f.CastTarget, S.media.numberFont, max(8, db.fontSize - 1), "OUTLINE")
 	f.Castbar.Spark:SetHeight(db.castbarHeight)
 	f.auraDB = { size = db.debuffSize, perRow = db.maxDebuffs, maxRows = 1, spacing = 2, anchor = "TOPLEFT", growthY = "UP", onlyPlayer = db.onlyPlayerDebuffs, useBlacklist = true, customFilter = "NONE", noDuration = true }
 	UF:LayoutAuras(f, f.Debuffs, f.auraDB)
@@ -385,11 +392,25 @@ function NP:UpdateAuras(f)
 	UF:UpdateAuras(f, f.Debuffs, f.auraDB)
 end
 
+function NP:UpdateCastTarget(f)
+	local cast = f.Castbar.casting or f.Castbar.channeling
+	if not self.db.castTarget or not cast or not f.unit then f.CastTarget:Hide() return end
+	local name = UnitName(f.unit .. "target")
+	if name and name ~= "" then
+		local c = UnitIsPlayer(f.unit .. "target") and S.ClassColor(select(2, UnitClass(f.unit .. "target"))) or { r = 1, g = 1, b = 1 }
+		f.CastTarget:SetFormattedText("-> |cff%02x%02x%02x%s|r", (c.r or 1) * 255, (c.g or 1) * 255, (c.b or 1) * 255, name)
+		f.CastTarget:Show()
+	else
+		f.CastTarget:Hide()
+	end
+end
+
 function NP:UpdateCast(f)
-	if not self.db.castbar then f.Castbar:Hide() return end
+	if not self.db.castbar then f.Castbar:Hide() f.CastTarget:Hide() return end
 	if UnitCastingInfo(f.unit) then UF:CastStart(f, false)
 	elseif UnitChannelInfo(f.unit) then UF:CastStart(f, true)
 	else f.Castbar.casting, f.Castbar.channeling = nil, nil f.Castbar:Hide() end
+	self:UpdateCastTarget(f)
 end
 
 function NP:FullUpdate(f)
@@ -452,7 +473,7 @@ local plateEvents = {
 	UNIT_HEALTH = "UpdateHealth", UNIT_MAXHEALTH = "UpdateHealth", UNIT_HEALTH_FREQUENT = "UpdateHealth",
 	UNIT_NAME_UPDATE = "UpdateName", UNIT_LEVEL = "UpdateName", UNIT_FACTION = "UpdateColor",
 	UNIT_THREAT_LIST_UPDATE = "UpdateColor", UNIT_THREAT_SITUATION_UPDATE = "UpdateColor", UNIT_FLAGS = "UpdateColor",
-	UNIT_TARGET = "UpdateTargetOf",
+	UNIT_TARGET = "UpdateTargetOf", -- also refreshes the cast-target text
 	UNIT_AURA = "UpdateAuras",
 }
 local castEvents = {
@@ -467,7 +488,8 @@ function NP:OnUnitEvent(event, unit)
 	local method = plateEvents[event]
 	if method then
 		self[method](self, f)
-		if method == "UpdateHealth" then self:UpdateColor(f) end
+		if method == "UpdateHealth" then self:UpdateColor(f)
+		elseif method == "UpdateTargetOf" then self:UpdateCastTarget(f) end
 	elseif castEvents[event] and self.db.castbar then
 		if event == "UNIT_SPELLCAST_START" then UF:CastStart(f, false)
 		elseif event == "UNIT_SPELLCAST_CHANNEL_START" then UF:CastStart(f, true)
@@ -477,6 +499,7 @@ function NP:OnUnitEvent(event, unit)
 			local c = event == "UNIT_SPELLCAST_NOT_INTERRUPTIBLE" and UF.db.colors.castNoInterrupt or UF.db.colors.castbar
 			f.Castbar:SetStatusBarColor(c.r, c.g, c.b)
 		else UF:CastStop(f, event) end
+		self:UpdateCastTarget(f)
 	end
 end
 

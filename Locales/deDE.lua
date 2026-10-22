@@ -2037,6 +2037,7 @@ local T = {
 	["Mass cancel stopped"] = "Massen-Storno gestoppt",
 	["Nothing undercut"] = "Nichts unterboten",
 	["Map Reveal"] = "Karte aufdecken",
+	["Cast Target"] = "Zauberziel",
 	["Reveal Tint"] = "Aufdeck-Färbung",
 	["Type at least 2 characters to search all settings. Click a result to jump to it."] = "Mindestens 2 Zeichen eingeben, um alle Einstellungen zu durchsuchen. Ein Klick auf ein Ergebnis springt dorthin.",
 	["%d result(s)"] = "%d Treffer",
