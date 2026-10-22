@@ -270,15 +270,19 @@ end
 -- Roll summary ----------------------------------------------------------------
 -- announces won rolls in group chat (best-effort: uses the roll-won chat line)
 local pendingRolls = {}
-local rollWonPat
-local function RollPattern()
-	if rollWonPat ~= nil then return rollWonPat end
-	local fmt = _G.LOOT_ROLL_WON
-	if not fmt then rollWonPat = false return end
-	-- "%s won: %s" -> "^(.-) won: (.+)$"
-	local pat = fmt:gsub("([%^%$%(%)%%%.%[%]%+%-%?])", "%%%1"):gsub("%%%%s", "(.-)"):gsub("%%%%d", "(%%d+)")
-	rollWonPat = "^" .. pat .. "$"
-	return rollWonPat
+local winPats
+local function WinPatterns()
+	if winPats ~= nil then return winPats end
+	winPats = {}
+	local function Add(fmt, you)
+		if not fmt then return end
+		local p = "^" .. fmt:gsub("([%^%$%(%)%%%.%[%]%+%-%?])", "%%%1"):gsub("%%%%s", "(.-)"):gsub("%%%%d", "(%%d+)") .. "$"
+		winPats[#winPats + 1] = { pat = p, you = you }
+	end
+	Add(_G.LOOT_ROLL_WON)
+	Add(_G.LOOT_ROLL_YOU_WON, true)
+	if #winPats == 0 then winPats = false end
+	return winPats
 end
 function M:TrackRoll(rollID)
 	local link = GetLootRollItemLink and GetLootRollItemLink(rollID)
@@ -287,19 +291,22 @@ end
 function M:CHAT_MSG_LOOT(_, msg)
 	if self.db.rollSummary == false or not IsInGroup() then return end
 	if not msg or next(pendingRolls) == nil then return end
+	local pats = WinPatterns()
+	if not pats then return end
 	local now = GetTime()
 	for link, t in pairs(pendingRolls) do
 		if now - t > 130 then pendingRolls[link] = nil
 		elseif msg:find(link, 1, true) then
-			local pat = RollPattern()
-			local name = pat and msg:match(pat)
-			if not name then name = msg:match("^(%S+)") end
-			if name == YOU then name = S.myName end
-			if name then
-				local ch = IsInRaid() and "RAID" or "PARTY"
-				SendChatMessage(format(L["%s won %s"], name, link), ch)
+			for _, wp in ipairs(pats) do
+				local a, b = msg:match(wp.pat)
+				if a then
+					local name = wp.you and S.myName or a
+					local ch = IsInRaid() and "RAID" or "PARTY"
+					SendChatMessage(format(L["%s won %s"], name, link), ch)
+					pendingRolls[link] = nil
+					break
+				end
 			end
-			pendingRolls[link] = nil
 		end
 	end
 end
