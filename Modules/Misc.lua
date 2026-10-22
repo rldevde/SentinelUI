@@ -366,8 +366,9 @@ local function UpdateTradeGold()
 	local f = _G.TradeFrame
 	if not f then return end
 	if not tradeGoldText then
-		tradeGoldText = S:FontString(f, 11, "OUTLINE", S.media.numberFont)
-		tradeGoldText:SetPoint("BOTTOM", f, "BOTTOM", 0, 18)
+		tradeGoldText = S:FontString(f, 12, "OUTLINE", S.media.numberFont)
+		-- free band between the name header and the money/item rows
+		tradeGoldText:SetPoint("TOP", f, "TOP", 0, -62)
 	end
 	if M.db.tradeGold == false then tradeGoldText:SetText("") return end
 	local mine = GetPlayerTradeMoney and GetPlayerTradeMoney() or 0
