@@ -112,18 +112,29 @@ function CT:Initialize()
 	self:RegisterEvent("UNIT_INVENTORY_CHANGED", function(_, _, unit) if unit == "player" then CT:Refresh() end end)
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", function() CT:Refresh() end)
 	-- merchant reminder: tracked reagents running low -> chat note to restock,
-	-- or buy up to the target amount when autoBuy is enabled
+	-- or buy up to the target amount when autoBuy is enabled. Item names of
+	-- reagents the player does not own are often uncached: request the data and
+	-- hold the chat line until it arrives (static names as last resort).
+	local ITEM_NAMES = {
+		[22147] = "Flintweed Seed", [17026] = "Wild Thornroot", [17038] = "Wild Quillvine",
+		[17020] = "Arcane Powder", [17031] = "Rune of Teleportation", [17032] = "Rune of Portals",
+		[17029] = "Sacred Candle", [44615] = "Devout Candle", [17028] = "Holy Candle",
+		[21177] = "Symbol of Kings", [17033] = "Symbol of Divinity",
+		[17030] = "Ankh", [6265] = "Soul Shard",
+	}
+	local function ItemLabel(id)
+		local name, link = S.GetItemInfo and S.GetItemInfo(id)
+		if link then return link, true end
+		return "|cffffffff|Hitem:" .. id .. "|h[" .. (ITEM_NAMES[id] or name or ("item:" .. id)) .. "]|h|r",
+			name ~= nil or ITEM_NAMES[id] ~= nil
+	end
 	self:RegisterEvent("MERCHANT_SHOW", function()
+		local pending
 		for _, def in ipairs(ITEMS[S.myClass] or {}) do
 			local id, low = def[1], def[2]
 			if type(id) == "number" then
 				local c = Count(id)
 				if c <= low then
-					local name, link = S.GetItemInfo and S.GetItemInfo(id)
-					if not name and C_Item and C_Item.RequestLoadItemDataByID then
-						C_Item.RequestLoadItemDataByID(id)
-					end
-					local label = link or ("|cffffffff|Hitem:" .. id .. "|h[item:" .. id .. "]|h|r")
 					local bought = 0
 					if CT.db.autoBuy and GetMerchantNumItems then
 						local want = (def[3] or low * 2) - c
@@ -140,13 +151,31 @@ function CT:Initialize()
 							end
 						end
 					end
+					local label, known = ItemLabel(id)
+					if not known and C_Item and C_Item.RequestLoadItemDataByID then
+						C_Item.RequestLoadItemDataByID(id)
+					end
 					if bought > 0 then
 						S:Print(format(L["Bought %dx %s"], bought, label))
 					elseif CT.db.restockNote ~= false then
-						S:Print(format(L["Low on %s (%d) - restock at vendor"], label, c))
+						if known then
+							S:Print(format(L["Low on %s (%d) - restock at vendor"], label, c))
+						else
+							pending = pending or {}
+							pending[id] = c
+						end
 					end
 				end
 			end
+		end
+		-- reprint held-back lines once the item data lands (or not, with fallback names)
+		if pending then
+			C_Timer.After(0.75, function()
+				for id, c in pairs(pending) do
+					local label = ItemLabel(id)
+					S:Print(format(L["Low on %s (%d) - restock at vendor"], label, c))
+				end
+			end)
 		end
 	end)
 	self:Refresh()
