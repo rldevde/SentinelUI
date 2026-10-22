@@ -115,7 +115,8 @@ function CQ:Toggle()
 end
 
 function CQ:BuildButton()
-	if self.btn then return end
+	if self.btn then self.btn:SetShown(self.db.showButton ~= false) return end
+	if self.db.showButton == false then return end
 	local host = TradeSkillFrame or ProfessionsFrame
 	if not host then return end
 	local b = CreateFrame("Button", nil, host, "UIPanelButtonTemplate")
@@ -136,4 +137,9 @@ end
 
 function CQ:Update()
 	self.db = S.db.profile.craftqueue
+	if self.db.showButton == false then
+		if self.btn then self.btn:Hide() end
+	else
+		self:BuildButton()
+	end
 end

@@ -20,6 +20,7 @@ standalone RLBetterItem release.
 - **Weapon Skills** — lists weapon skills below the level cap (detected by max rank, works in every locale; optional Defense display; movable)
 - **Spell Search** — search box inside the spellbook dims non-matching spell buttons; zero taint, re-applies on page/tab flips
 - **Turn-in waypoints match the "?"** — completed quests now navigate to Blizzard's own turn-in POI position instead of spawn-database coords that could sit meters away from the real NPC
+- **Craft Queue button optional** — the "Mats" button on profession windows is now off by default and can be re-enabled via Craft Queue → Show Button
 - **Click Cast** — Clique-style click bindings on the unit frames: each shift/ctrl/alt + left/right/middle combo can run a configured spell (name or ID) on the frame's unit while plain clicks still target. Attributes are applied out of combat to every unit frame and existing group-header child; roster changes re-apply them
 - **Aura Watch** — generic weakauras-lite: up to 3 movable watcher frames, each configured with spell (name or ID), unit (target/player/focus/pet) and kind (buff/debuff); shows icon, name, stack count and remaining duration while the aura is up (module: Aura Watch)
 - **Price History** — passive auction tracking: every browse-list update records each item's lowest per-unit buyout account-wide; item tooltips show "AH min" + age and running "AH avg". Entries older than 14 days are pruned

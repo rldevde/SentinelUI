@@ -625,6 +625,7 @@ S.defaults = {
 			enable = true,
 		},
 		craftqueue = {
+			showButton = false,
 		},
 		bgtools = {
 			enable = true, announce = true,

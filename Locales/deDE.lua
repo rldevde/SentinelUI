@@ -1818,7 +1818,8 @@ local T = {
 	["Craft Queue"] = "Fertigungs-Liste",
 	["Materials needed"] = "Benötigte Materialien",
 	["Select a recipe first"] = "Erst ein Rezept wählen",
-	["Mats"] = "Mats",
+	["Mats"] = "Materialien",
+	["showButton"] = "Mats-Knopf zeigen",
 	["Low on %s (%d) - restock at vendor"] = "Wenig %s (%d) - beim Händler nachkaufen",
 }
 for k, v in pairs(T) do L[k] = v end
