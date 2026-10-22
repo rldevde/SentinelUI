@@ -281,6 +281,8 @@ local function WinPatterns()
 	end
 	Add(_G.LOOT_ROLL_WON)
 	Add(_G.LOOT_ROLL_YOU_WON, true)
+	Add(_G.LOOT_ROLL_WON_NO_ROLL)
+	Add(_G.LOOT_ROLL_YOU_WON_NO_ROLL, true)
 	if #winPats == 0 then winPats = false end
 	return winPats
 end
@@ -298,13 +300,21 @@ function M:CHAT_MSG_LOOT(_, msg)
 		if now - t > 130 then pendingRolls[link] = nil
 		elseif msg:find(link, 1, true) then
 			for _, wp in ipairs(pats) do
-				local a, b = msg:match(wp.pat)
-				if a then
-					local name = wp.you and S.myName or a
-					local ch = IsInRaid() and "RAID" or "PARTY"
-					SendChatMessage(format(L["%s won %s"], name, link), ch)
-					pendingRolls[link] = nil
-					break
+				local caps = { msg:match(wp.pat) }
+				if #caps > 0 then
+					-- find the winner name among the captures: it is the one
+					-- that is neither the item link nor a dice number
+					local name, hasItem = wp.you and S.myName or nil, false
+					for _, c in ipairs(caps) do
+						if c:find(link, 1, true) then hasItem = true
+						elseif not name and not tonumber(c) and not c:find("|H") then name = c end
+					end
+					if name and (hasItem or wp.you) then
+						local ch = IsInRaid() and "RAID" or "PARTY"
+						SendChatMessage(format(L["%s won %s"], name, link), ch)
+						pendingRolls[link] = nil
+						break
+					end
 				end
 			end
 		end
