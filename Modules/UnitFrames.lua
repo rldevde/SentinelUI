@@ -1023,7 +1023,9 @@ function UF:CastStart(f, channel)
 	if not name then cb.casting, cb.channeling = nil, nil return end
 	local colors = self.db.colors
 	cb.Icon:SetTexture(texture)
-	cb.Text:SetText(text and text ~= "" and not channel and text or name)
+	-- "Opening - No Text" is the client's internal label for item-opening casts
+	local label = text and text ~= "" and not channel and text or name
+	cb.Text:SetText(type(label) == "string" and label:gsub("%s*%-?%s*No Text$", "") or label)
 	cb.delay = 0
 	cb.fade = nil
 	cb:SetAlpha(1)
