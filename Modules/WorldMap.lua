@@ -750,11 +750,138 @@ function WM:UpdateMapFrame()
 end
 
 -- ---------------------------------------------------------------------------
+-- fog reveal: unexplored map tiles are painted back at low alpha so the whole
+-- zone outline is visible instead of black. Tile file data lives in
+-- Modules/WorldMap/RevealData.lua keyed by map art ID.
+-- ---------------------------------------------------------------------------
+local revealPins = {}
+
+local function RevealExploredSet(mapID)
+	local seen = {}
+	local list = C_MapExplorationInfo.GetExploredMapTextures(mapID)
+	if list then
+		for _, t in ipairs(list) do
+			seen[t.textureWidth .. ":" .. t.textureHeight .. ":" .. t.offsetX .. ":" .. t.offsetY] = true
+		end
+	end
+	return seen
+end
+
+function WM:RevealOverlays(pin, fullUpdate)
+	local data = ns.MapReveal
+	if not data or not self.db.mapReveal then return end
+	local mapID = pin:GetMap():GetMapID()
+	if not mapID then return end
+	local artID = C_Map.GetMapArtID(mapID)
+	local artData = artID and data[artID]
+	if not artData then return end
+
+	local explored = RevealExploredSet(mapID)
+	local canvas = pin:GetMap():GetCanvasContainer()
+	pin.layerIndex = canvas and canvas:GetCurrentLayerIndex() or 1
+	local layers = C_Map.GetMapArtLayers(mapID)
+	local layerInfo = layers and layers[pin.layerIndex]
+	if not layerInfo then return end
+	local tileW, tileH = layerInfo.tileWidth, layerInfo.tileHeight
+	if not (tileW and tileH) then return end
+
+	local tint = self.db.revealTint or { r = 0.4, g = 0.6, b = 1, a = 0.4 }
+	for key, fileDataIDs in pairs(artData) do
+		if not explored[key] then
+			local w, h, ox, oy = strsplit(":", key)
+			w, h, ox, oy = tonumber(w), tonumber(h), tonumber(ox), tonumber(oy)
+			local ids = {}
+			for id in fileDataIDs:gmatch("%d+") do ids[#ids + 1] = tonumber(id) end
+			local numWide = ceil(w / tileW)
+			local numTall = ceil(h / tileH)
+			local pxW, fileW, pxH, fileH
+			for j = 1, numTall do
+				if j < numTall then
+					pxH, fileH = tileH, 256
+				else
+					pxH = mod(h, tileH)
+					if pxH == 0 then pxH = tileH end
+					fileH = 16
+					while fileH < pxH do fileH = fileH * 2 end
+				end
+				for k = 1, numWide do
+					if k < numWide then
+						pxW, fileW = tileW, 256
+					else
+						pxW = mod(w, tileW)
+						if pxW == 0 then pxW = tileW end
+						fileW = 16
+						while fileW < pxW do fileW = fileW * 2 end
+					end
+					local texture = pin.overlayTexturePool:Acquire()
+					texture:SetSize(pxW, pxH)
+					texture:SetTexCoord(0, pxW / fileW, 0, pxH / fileH)
+					texture:SetPoint("TOPLEFT", ox + tileW * (k - 1), -(oy + tileH * (j - 1)))
+					texture:SetTexture(ids[(j - 1) * numWide + k], nil, nil, "TRILINEAR")
+					texture:SetDrawLayer("ARTWORK", -1)
+					texture:SetVertexColor(tint.r, tint.g, tint.b)
+					texture:SetAlpha(tint.a or 0.4)
+					if fullUpdate and pin.textureLoadGroup then pin.textureLoadGroup:AddTexture(texture) end
+					texture:Show()
+				end
+			end
+		end
+	end
+end
+
+local function HookExplorationPin(pin)
+	if pin.suiRevealHooked or not pin.RefreshOverlays then return end
+	pin.suiRevealHooked = true
+	revealPins[#revealPins + 1] = pin
+	-- pool textures must come back untinted or Blizzard's own overlays inherit it
+	local pool = pin.overlayTexturePool
+	if pool and not pool.suiResetHooked then
+		pool.suiResetHooked = true
+		local orig = pool.resetterFunc
+		pool.resetterFunc = function(p, tex)
+			if orig then orig(p, tex) end
+			tex:SetVertexColor(1, 1, 1, 1)
+			tex:SetAlpha(1)
+			tex:ClearAllPoints()
+		end
+	end
+	hooksecurefunc(pin, "RefreshOverlays", function(self, fullUpdate)
+		S:SafeCall("WorldMap:Reveal", WM.RevealOverlays, WM, self, fullUpdate)
+	end)
+end
+
+local function InstallReveal()
+	if WM.revealInit or not (WorldMapFrame and WorldMapFrame.EnumeratePinsByTemplate) then return end
+	if not (C_Map and C_Map.GetMapArtID and C_Map.GetMapArtLayers
+		and C_MapExplorationInfo and C_MapExplorationInfo.GetExploredMapTextures) then return end
+	WM.revealInit = true
+	WorldMapFrame:EnumeratePinsByTemplate("MapExplorationPinTemplate", HookExplorationPin)
+	if BattlefieldMapFrame and BattlefieldMapFrame.EnumeratePinsByTemplate then
+		BattlefieldMapFrame:EnumeratePinsByTemplate("MapExplorationPinTemplate", HookExplorationPin)
+	end
+	-- late-created pins (first map open, data providers re-registered)
+	WorldMapFrame:HookScript("OnShow", function()
+		WorldMapFrame:EnumeratePinsByTemplate("MapExplorationPinTemplate", HookExplorationPin)
+		if BattlefieldMapFrame and BattlefieldMapFrame.EnumeratePinsByTemplate then
+			BattlefieldMapFrame:EnumeratePinsByTemplate("MapExplorationPinTemplate", HookExplorationPin)
+		end
+	end)
+end
+
+function WM:ApplyReveal()
+	for _, pin in ipairs(revealPins) do
+		if pin.overlayTexturePool then pin.overlayTexturePool:ReleaseAll() end
+		if pin.RefreshOverlays then pin:RefreshOverlays() end
+	end
+end
+
+-- ---------------------------------------------------------------------------
 function WM:Initialize()
 	-- world map is a load-on-demand panel on some clients
 	local function Setup()
 		SetupProvider()
 		self:ApplyZoneLevels()
+		InstallReveal()
 		InstallCursorFix() -- harmless at scale 1, essential whenever anything scales the map
 		if self.db.customMap and not ConflictingMapAddon() then SetupMapFrame() end
 	end
@@ -781,4 +908,5 @@ function WM:Update()
 	self:ApplyZoneLevels()
 	self:RefreshPins()
 	self:UpdateMapFrame()
+	if self.revealInit then self:ApplyReveal() end
 end

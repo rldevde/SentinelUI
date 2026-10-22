@@ -68,6 +68,13 @@ function NP:CreatePlate(plate)
 	f.TargetOf:SetPoint("TOPLEFT", health, "BOTTOMLEFT", 0, -2)
 	f.TargetOf:SetJustifyH("LEFT")
 
+	-- quest kill progress ("3/8") under the right bar edge
+	f.Quest = S:FontString(health, db.fontSize - 1, "OUTLINE", S.media.numberFont)
+	f.Quest:SetPoint("TOPRIGHT", health, "BOTTOMRIGHT", 0, -2)
+	f.Quest:SetJustifyH("RIGHT")
+	f.Quest:SetTextColor(1, 0.72, 0.25)
+	f.Quest:Hide()
+
 	f.RaidIcon = health:CreateTexture(nil, "OVERLAY")
 	f.RaidIcon:SetTexture([[Interface\TargetingFrame\UI-RaidTargetingIcons]])
 	f.RaidIcon:SetSize(20, 20)
@@ -110,6 +117,7 @@ function NP:LayoutPlate(f)
 	S:SetFont(f.Level, S.media.numberFont, db.fontSize, "OUTLINE")
 	S:SetFont(f.HealthText, S.media.numberFont, max(8, db.fontSize - 1), "OUTLINE")
 	S:SetFont(f.TargetOf, S.media.font, max(8, db.fontSize - 1), "OUTLINE")
+	S:SetFont(f.Quest, S.media.numberFont, max(8, db.fontSize - 1), "OUTLINE")
 	f.Castbar:SetSize(db.width - (db.castIcon and (db.castbarHeight + db.height + 6) or 0), db.castbarHeight)
 	f.Castbar.IconHolder:SetSize(db.castbarHeight + db.height + 4, db.castbarHeight + db.height + 4)
 	f.Castbar.IconHolder:ClearAllPoints()
@@ -260,6 +268,77 @@ function NP:UpdateHealth(f)
 	end
 end
 
+-- quest kill progress on mob plates: the quest log is scanned for kill
+-- objectives and the plate shows "n/m" while the unit name appears inside
+-- an unfinished objective's text. Works on every client flavor - modern
+-- C_QuestLog first, the old log globals as fallback.
+local questMobs = {}
+
+local function NormName(s)
+	return s and (s:lower():gsub("%s+", ""):gsub("[%p]", "")) or nil
+end
+
+local function AddObjective(text, num, req)
+	if not (text and num and req) then return end
+	if not num and text then num, req = text:match("(%d+)%s*/%s*(%d+)") end
+	num, req = tonumber(num), tonumber(req)
+	if not num or not req or num >= req then return end
+	local name = NormName(text)
+	if not name or #name < 4 then return end
+	questMobs[#questMobs + 1] = { name = name, num = num, req = req }
+end
+
+local function ScanQuestLog()
+	wipe(questMobs)
+	if C_QuestLog and C_QuestLog.GetNumQuestLogEntries and C_QuestLog.GetInfo and C_QuestLog.GetQuestObjectives then
+		for i = 1, (C_QuestLog.GetNumQuestLogEntries() or 0) do
+			local info = C_QuestLog.GetInfo(i)
+			if info and not info.isHeader then
+				for _, o in ipairs(C_QuestLog.GetQuestObjectives(info.questID) or {}) do
+					if not o.finished and (o.type == "monster" or o.type == "object" or o.type == "item") then
+						AddObjective(o.text, o.numFulfilled, o.numRequired)
+					end
+				end
+			end
+		end
+	elseif GetNumQuestLogEntries and GetQuestLogTitle and GetQuestLogLeaderBoard then
+		for i = 1, (GetNumQuestLogEntries() or 0) do
+			local title, _, _, isHeader = GetQuestLogTitle(i)
+			if title and not isHeader then
+				for j = 1, 40 do
+					local text, _, finished = GetQuestLogLeaderBoard(j, i)
+					if not text then break end
+					if not finished then AddObjective(text) end
+				end
+			end
+		end
+	end
+end
+
+local function QuestProgressFor(unit)
+	local un = NormName(UnitName(unit))
+	if not un or #un < 3 then return nil end
+	for _, o in ipairs(questMobs) do
+		if o.name:find(un, 1, true) then return o end
+	end
+end
+
+function NP:UpdateQuest(f)
+	if not self.db.quest then f.Quest:Hide() return end
+	local o = f.unit and QuestProgressFor(f.unit)
+	if o then
+		f.Quest:SetFormattedText("%d/%d", o.num, o.req)
+		f.Quest:Show()
+	else
+		f.Quest:Hide()
+	end
+end
+
+function NP:RefreshQuests()
+	ScanQuestLog()
+	for _, f in pairs(self.plates) do self:UpdateQuest(f) end
+end
+
 function NP:UpdateName(f)
 	local unit = f.unit
 	local barOnly = f.style == "BAR"
@@ -273,6 +352,7 @@ function NP:UpdateName(f)
 	else
 		f.Name:SetTextColor(1, 1, 1)
 	end
+	self:UpdateQuest(f)
 end
 
 function NP:UpdateTarget(f)
@@ -321,6 +401,7 @@ function NP:FullUpdate(f)
 	self:UpdateRaidIcon(f)
 	self:UpdateAuras(f)
 	self:UpdateCast(f)
+	self:UpdateQuest(f)
 end
 
 local function HideBlizzardPlate(plate)
@@ -473,6 +554,10 @@ function NP:Initialize()
 	self:RegisterEvent("RAID_TARGET_UPDATE")
 	self:RegisterEvent("PLAYER_REGEN_DISABLED", function() for _, f in pairs(NP.plates) do NP:UpdateColor(f) end end)
 	self:RegisterEvent("PLAYER_REGEN_ENABLED", function() for _, f in pairs(NP.plates) do NP:UpdateColor(f) end end)
+	self:RegisterEvent("QUEST_LOG_UPDATE", function() NP:RefreshQuests() end)
+	self:RegisterEvent("UNIT_QUEST_LOG_CHANGED", function(_, unit)
+		if unit == "player" then NP:RefreshQuests() end
+	end)
 	local ef = CreateFrame("Frame")
 	for e in pairs(plateEvents) do pcall(ef.RegisterEvent, ef, e) end
 	for e in pairs(castEvents) do pcall(ef.RegisterEvent, ef, e) end

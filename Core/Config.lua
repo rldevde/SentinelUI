@@ -1062,7 +1062,95 @@ function S:BuildOptions()
 	root.args.profiles.childGroups = "tab"
 	root.args.profiles.args.io = self:ProfileIOOptions()
 	root.args.profiles.args.spec = self:SpecProfileOptions()
+
+	-- search: filter the whole option tree, results jump to the option
+	root.args.search = {
+		type = "group", name = L["Search"], order = 0,
+		args = {
+			box = { type = "input", order = 1, width = "full", name = "",
+				get = function() return self.searchQuery or "" end,
+				set = function(_, v) self.searchQuery = v self:UpdateSearchResults() end },
+		},
+	}
+	self:UpdateSearchResults(root)
 	return root
+end
+
+local function OptName(arg)
+	local name = arg.name
+	if type(name) == "function" then
+		local ok, v = pcall(name)
+		name = ok and v or ""
+	end
+	if type(name) ~= "string" then return "" end
+	return (name:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("\n", " "))
+end
+
+local function OptHidden(arg)
+	local h = arg.hidden
+	if type(h) == "function" then local ok, v = pcall(h) return ok and v or false end
+	return h and true or false
+end
+
+local function SearchScan(args, path, trail, q, out, cap)
+	if #out >= cap then return end
+	local keys = {}
+	for k in pairs(args) do keys[#keys + 1] = k end
+	sort(keys, function(a, b) return tostring(a) < tostring(b) end)
+	for _, key in ipairs(keys) do
+		local arg = args[key]
+		if type(arg) == "table" and key ~= "search" and not OptHidden(arg) then
+			local name = OptName(arg)
+			if arg.type == "group" then
+				local p2, t2 = {}, trail
+				for i, v in ipairs(path) do p2[i] = v end
+				p2[#p2 + 1] = key
+				if name ~= "" then t2 = (t2 == "") and name or (t2 .. "  |cff888888›|r  " .. name) end
+				SearchScan(arg.args, p2, t2, q, out, cap)
+			elseif arg.type ~= "header" and arg.type ~= "description" then
+				local hay = name:lower()
+				local ok, desc = pcall(function()
+					return type(arg.desc) == "function" and arg.desc() or arg.desc
+				end)
+				if ok and type(desc) == "string" then hay = hay .. " " .. desc:lower() end
+				if name ~= "" and hay:find(q, 1, true) then
+					local p2 = {}
+					for i, v in ipairs(path) do p2[i] = v end
+					p2[#p2 + 1] = key
+					out[#out + 1] = {
+						path = p2,
+						label = (trail ~= "" and (trail .. "  |cff888888›|r  ") or "") .. name,
+					}
+					if #out >= cap then return end
+				end
+			end
+		end
+	end
+end
+
+function S:UpdateSearchResults(root)
+	root = root or self.options
+	local args = root and root.args and root.args.search and root.args.search.args
+	if not args then return end
+	for k in pairs(args) do if k ~= "box" then args[k] = nil end end
+	local q = (self.searchQuery or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
+	if #q < 2 then
+		args.hint = { type = "description", order = 2, name = L["Type at least 2 characters to search all settings. Click a result to jump to it."] }
+		ACR:NotifyChange("SentinelUI")
+		return
+	end
+	local results = {}
+	SearchScan(root.args, {}, "", q, results, 40)
+	args.count = { type = "description", order = 2, name = format(L["%d result(s)"], #results) }
+	for i, r in ipairs(results) do
+		local path = r.path
+		args["res" .. i] = {
+			type = "execute", order = 10 + i, width = "full",
+			name = r.label,
+			func = function() self:ToggleConfig(path) end,
+		}
+	end
+	ACR:NotifyChange("SentinelUI")
 end
 
 function S:ToggleConfig(section)

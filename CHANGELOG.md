@@ -10,6 +10,9 @@ standalone RLBetterItem release.
 ## [1.3.0]
 
 ### Added
+- **Options search** — new "Search" group at the top of `/sui`: type 2+ characters to filter every setting in the tree, results show their full path and jump straight to the option on click
+- **Quest progress on nameplates** — enemy plates show the unfinished kill/collect counter ("3/8") under the bar when the unit's name appears in a quest objective (Nameplates → quest)
+- **World map fog reveal** — unexplored tiles are drawn back onto the zone map at low alpha instead of staying black (World Map → mapReveal, tint color + alpha configurable)
 - **Click Cast** — Clique-style click bindings on the unit frames: each shift/ctrl/alt + left/right/middle combo can run a configured spell (name or ID) on the frame's unit while plain clicks still target. Attributes are applied out of combat to every unit frame and existing group-header child; roster changes re-apply them
 - **Aura Watch** — generic weakauras-lite: up to 3 movable watcher frames, each configured with spell (name or ID), unit (target/player/focus/pet) and kind (buff/debuff); shows icon, name, stack count and remaining duration while the aura is up (module: Aura Watch)
 - **Price History** — passive auction tracking: every browse-list update records each item's lowest per-unit buyout account-wide; item tooltips show "AH min" + age and running "AH avg". Entries older than 14 days are pruned

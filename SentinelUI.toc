@@ -53,6 +53,7 @@ Modules\DamageMeter.lua
 Modules\SeeLast.lua
 Modules\WorldMap.xml
 Modules\WorldMap\MapData.lua
+Modules\WorldMap\RevealData.lua
 Modules\WorldMap.lua
 Modules\RaidCooldowns.lua
 Modules\BossWatch\Data.lua

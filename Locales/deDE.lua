@@ -2036,5 +2036,9 @@ local T = {
 	["Mass cancel done"] = "Massen-Storno fertig",
 	["Mass cancel stopped"] = "Massen-Storno gestoppt",
 	["Nothing undercut"] = "Nichts unterboten",
+	["Map Reveal"] = "Karte aufdecken",
+	["Reveal Tint"] = "Aufdeck-Färbung",
+	["Type at least 2 characters to search all settings. Click a result to jump to it."] = "Mindestens 2 Zeichen eingeben, um alle Einstellungen zu durchsuchen. Ein Klick auf ein Ergebnis springt dorthin.",
+	["%d result(s)"] = "%d Treffer",
 }
 for k, v in pairs(T) do if not rawget(L, k) then L[k] = v end end
