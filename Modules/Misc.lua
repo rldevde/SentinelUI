@@ -121,6 +121,36 @@ function M:PLAYER_REGEN_ENABLED()
 	if self.buffReminder then self:UpdateBuffReminder() end
 end
 
+-- Auto dismount ---------------------------------------------------------------
+-- casting while mounted only raises ERR_MOUNTED; just drop the mount so the
+-- next button press already casts
+function M:UI_ERROR_MESSAGE(_, errArg, errArg2)
+	if not self.db.autoDismount then return end
+	local msg = errArg2 or errArg
+	if msg == ERR_MOUNTED and IsMounted and IsMounted() and Dismount then Dismount() end
+end
+
+-- Auto-watch reputation -------------------------------------------------------
+-- the watched-faction bar follows whichever faction gained rep last
+local repCache
+function M:UPDATE_FACTION()
+	if not self.db.autoWatch or not (GetNumFactions and GetFactionInfo and SetWatchedFactionIndex) then return end
+	repCache = repCache or {}
+	local gained
+	for i = 1, GetNumFactions() do
+		local name, _, _, _, _, value, _, _, isHeader = GetFactionInfo(i)
+		if name and not isHeader and value then
+			if repCache[name] and value > repCache[name] then gained = i end
+			repCache[name] = value
+		end
+	end
+	if gained and not self._watchLock then
+		self._watchLock = true
+		SetWatchedFactionIndex(gained)
+		self._watchLock = nil
+	end
+end
+
 -- Interrupt / dispel / steal announce ------------------------------------------
 local function Announce(channel, msg)
 	if channel == "SAY" or channel == "YELL" or channel == "EMOTE" then
@@ -1194,6 +1224,8 @@ function M:Initialize()
 	self:RegisterEvent("DUEL_REQUESTED")
 	self:RegisterEvent("PLAYER_REGEN_DISABLED")
 	self:RegisterEvent("PLAYER_REGEN_ENABLED")
+	self:RegisterEvent("UI_ERROR_MESSAGE")
+	self:RegisterEvent("UPDATE_FACTION")
 	self:RegisterEvent("MINIMAP_PING", function(_, unit)
 		if not M.db.pingAlert then return end
 		local name = UnitName(unit)

@@ -66,6 +66,8 @@ S.defaults = {
 			hideErrorFrame = true,
 			autoRepair = "GUILD",
 			autoSell = false,
+			autoDismount = true,
+			autoWatch = true,
 			maxCamera = true,
 
 			autoAcceptInvite = false,

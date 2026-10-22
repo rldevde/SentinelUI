@@ -1850,6 +1850,7 @@ local T = {
 	["Auto Watch Faction"] = "Fraktion auto-verfolgen",
 	["autoSell"] = "Grauzeug verkaufen",
 	["autoWatch"] = "Zuletzt gewonnenen Ruf verfolgen",
+	["autoDismount"] = "Auto-Absitzen beim Zaubern",
 	["maxCamera"] = "Max. Kamera-Distanz",
 	["autoRepair"] = "Auto-Reparieren",
 }

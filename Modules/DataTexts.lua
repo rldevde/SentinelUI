@@ -523,14 +523,28 @@ DT:Register("Combat", {
 	end,
 })
 
+local xpT0, xpGained, lastXP, lastMax
 DT:Register("Experience", {
 	events = { "PLAYER_XP_UPDATE", "PLAYER_LEVEL_UP", "UPDATE_EXHAUSTION", "PLAYER_ENTERING_WORLD" },
 	update = function(slot)
 		local maxLevel = (GetMaxLevelForPlayerExpansion and GetMaxLevelForPlayerExpansion()) or MAX_PLAYER_LEVEL or 60
 		if UnitLevel("player") >= maxLevel then slot.text:SetText(Label(L["XP"]) .. Value(L["Max"])) return end
 		local cur, mx = UnitXP("player"), UnitXPMax("player")
+		if not lastXP then lastXP, lastMax, xpT0, xpGained = cur, mx, GetTime(), 0 end
+		if cur ~= lastXP or mx ~= lastMax then
+			xpGained = xpGained + ((mx == lastMax and cur >= lastXP) and (cur - lastXP) or max(0, lastMax - lastXP + cur))
+			lastXP, lastMax = cur, mx
+		end
+		local txt = Label(L["XP"]) .. Value(format("%.1f%%", cur / max(1, mx) * 100))
+		local elapsed = GetTime() - xpT0
+		if xpGained > 0 and elapsed >= 60 then
+			local rate = xpGained / elapsed * 3600
+			local eta = (mx - cur) / (xpGained / elapsed)
+			local rateTxt = rate >= 10000 and format("%.0fk", rate / 1000) or rate >= 1000 and format("%.1fk", rate / 1000) or format("%d", rate)
+			txt = txt .. " |cff888888(|r" .. Value(rateTxt .. "/h") .. " |cff888888·|r " .. Value("~" .. S:FormatTime(eta)) .. "|cff888888)|r"
+		end
 		local rested = GetXPExhaustion() or 0
-		slot.text:SetText(Label(L["XP"]) .. Value(format("%.1f%%", cur / max(1, mx) * 100)) .. (rested > 0 and format(" |cff8060ff(+%.0f%%)|r", rested / max(1, mx) * 100) or ""))
+		slot.text:SetText(txt .. (rested > 0 and format(" |cff8060ff(+%.0f%%)|r", rested / max(1, mx) * 100) or ""))
 	end,
 })
 
