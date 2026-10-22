@@ -421,13 +421,27 @@ function NP:UpdateAuras(f)
 end
 
 function NP:UpdateCastTarget(f)
-	local cast = f.Castbar.casting or f.Castbar.channeling
-	if not self.db.castTarget or not cast or not f.unit then f.CastTarget:Hide() return end
+	local cb = f.Castbar
+	local cast = cb.casting or cb.channeling
+	if not self.db.castTarget or not cast or not f.unit then
+		f.CastTarget:Hide()
+		-- restore spell text to its normal right boundary
+		cb.Text:ClearAllPoints()
+		cb.Text:SetPoint("LEFT", 4, 0)
+		cb.Text:SetPoint("RIGHT", cb.Time:IsShown() and cb.Time or cb, cb.Time:IsShown() and "LEFT" or "RIGHT", -4, 0)
+		return
+	end
 	local name = UnitName(f.unit .. "target")
 	if name and name ~= "" then
 		local c = UnitIsPlayer(f.unit .. "target") and S.ClassColor(select(2, UnitClass(f.unit .. "target"))) or { r = 1, g = 1, b = 1 }
+		f.CastTarget:ClearAllPoints()
+		f.CastTarget:SetPoint("RIGHT", cb.Time:IsShown() and cb.Time or cb, cb.Time:IsShown() and "LEFT" or "RIGHT", -4, 0)
 		f.CastTarget:SetFormattedText("-> |cff%02x%02x%02x%s|r", (c.r or 1) * 255, (c.g or 1) * 255, (c.b or 1) * 255, name)
 		f.CastTarget:Show()
+		-- clip the spell name before the target text so they never overlap
+		cb.Text:ClearAllPoints()
+		cb.Text:SetPoint("LEFT", 4, 0)
+		cb.Text:SetPoint("RIGHT", f.CastTarget, "LEFT", -4, 0)
 	else
 		f.CastTarget:Hide()
 	end

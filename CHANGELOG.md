@@ -9,6 +9,9 @@ standalone RLBetterItem release.
 
 ## [1.4.0]
 
+### Fixed
+- **Nameplate cast bar overlap** — the "-> target" cast-target text sat on the same right edge as the cast timer, so spell name / timer / target painted on top of each other; the target text now anchors left of the timer and the spell name is clipped before it
+
 ### Added
 - **XP per hour + level ETA** — the "Experience" data text now tracks gains over the session and appends "(12.3k/h · ~45m)" once a minute of data exists
 - **Auto-watch reputation** — the watched-faction bar follows whichever faction gained reputation last (General → autoWatch, on by default)
