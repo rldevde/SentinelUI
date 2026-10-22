@@ -1030,6 +1030,14 @@ local function SlotOnUpdate(slot, elapsed)
 	S:SafeCall("DataTexts:" .. slot.def.name, slot.def.update, slot)
 end
 
+local measureFS -- unconstrained FontString for accurate text-width reads
+local function MeasureText(slot)
+	if not measureFS then measureFS = S:FontString(UIParent) end
+	S:SetFont(measureFS, DT.db.font and S:Fetch("font", DT.db.font) or S.media.font, DT.db.fontSize, DT.db.fontOutline or "NONE")
+	measureFS:SetText(slot.text:GetText() or "")
+	return measureFS:GetStringWidth() or 0
+end
+
 function DT:AssignSlot(slot, name)
 	local def = self.registry[name] or self.registry.None
 	if slot.eventFrame then slot.eventFrame:UnregisterAllEvents() end
@@ -1051,7 +1059,7 @@ function DT:AssignSlot(slot, name)
 	-- the slot widths so long texts are not clipped to "..." while short ones
 	-- keep unused space
 	if slot.panel and not slot.panel.layouting then
-		local w = (slot.text:GetStringWidth() or 0) + 6
+		local w = MeasureText(slot) + 6
 		if not slot.lastNeed or math.abs(w - slot.lastNeed) > 3 then
 			DT:LayoutPanel(slot.panel)
 		end
@@ -1135,7 +1143,7 @@ function DT:LayoutPanel(panel)
 	local total = 0
 	local need = {}
 	for i, slot in ipairs(panel.slots) do
-		need[i] = (slot.text:GetStringWidth() or 0) + gap
+		need[i] = MeasureText(slot) + gap
 		slot.lastNeed = need[i]
 		total = total + need[i]
 	end
