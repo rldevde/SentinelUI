@@ -10,6 +10,8 @@ standalone RLBetterItem release.
 ## [1.4.0]
 
 ### Fixed
+- **Raid check inspect crash** — `INSPECT_READY` called `ShortName` before its local declaration, so every inspect reply errored and enchant/gem data never populated
+- **Friends-list notes hook** — falls back to `FriendsFrame_UpdateFriends` on clients where `FriendsList_Update` does not exist
 - **Nameplate cast bar overlap** — the "-> target" cast-target text sat on the same right edge as the cast timer, so spell name / timer / target painted on top of each other; the target text now anchors left of the timer and the spell name is clipped before it
 
 ### Added

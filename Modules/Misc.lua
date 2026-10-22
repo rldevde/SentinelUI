@@ -244,9 +244,11 @@ end
 -- Notes in friends list -------------------------------------------------------
 local friendsHooked
 local function HookFriendsNotes()
-	if friendsHooked or not FriendsList_Update then return end
+	if friendsHooked then return end
+	local fn = FriendsList_Update and "FriendsList_Update" or FriendsFrame_UpdateFriends and "FriendsFrame_UpdateFriends"
+	if not fn then return end
 	friendsHooked = true
-	hooksecurefunc("FriendsList_Update", function()
+	hooksecurefunc(fn, function()
 		if M.db.friendsNotes == false then return end
 		local store = S.db.global.playerNotes
 		if not store then return end

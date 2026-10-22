@@ -33,6 +33,8 @@ local providers = {}      -- class -> true
 local auraPending = false
 local INSPECT_TTL = 120
 
+local function ShortName(n) return n and Ambiguate(n, "short") or n end
+
 -- spell id tables resolved to localized aura names at runtime
 local function NameSet(ids)
 	local t = {}
@@ -322,7 +324,6 @@ function RC:QueueInspects()
 end
 
 -- roster ------------------------------------------------------------------
-local function ShortName(n) return n and Ambiguate(n, "short") or n end
 
 function RC:Collect()
 	wipe(members)
