@@ -460,7 +460,8 @@ function BG:CreateBrowser()
 	B:Hide()
 
 	B.title = S:FontString(B, 14, "OUTLINE", S.media.unitFont)
-	B.title:SetPoint("TOP", 0, -8)
+	-- left-aligned so the centered title can't collide with the Phase label
+	B.title:SetPoint("TOPLEFT", 12, -8)
 	B.title:SetText("|cff66c2ffSentinelUI|r " .. (L["BiS Guide"] or "BiS Guide"))
 	B.sep = B:CreateTexture(nil, "ARTWORK")
 	B.sep:SetSize(1, 1)
