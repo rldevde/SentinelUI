@@ -108,12 +108,17 @@ function S:InitAuraButton(btn)
 		-- Up AND Down: the client runs secure clicks on key-down when the
 		-- ActionButtonUseKeyDown cvar is set (default on modern classic) - with
 		-- only "Up" registered the right click never reaches the handler.
-		if not InCombatLockdown() then
-			btn:RegisterForClicks("RightButtonUp", "RightButtonDown")
-			btn:SetAttribute("unit", header:GetAttribute("unit") or "player")
-			btn:SetAttribute("filter", btn.filter)
-			btn:SetAttribute("type2", "cancelaura")
+		-- protected attribute writes are blocked mid-combat; buttons spawning
+		-- during a fight get their cancel-click wiring after regen instead of
+		-- silently never getting it
+		local function WireSecure(btn2)
+			if InCombatLockdown() then return S:RunOutOfCombat(WireSecure, btn2) end
+			btn2:RegisterForClicks("RightButtonUp", "RightButtonDown")
+			btn2:SetAttribute("unit", header:GetAttribute("unit") or "player")
+			btn2:SetAttribute("filter", btn2.filter)
+			btn2:SetAttribute("type2", "cancelaura")
 		end
+		WireSecure(btn)
 		local db = A.db[btn.filter == "HARMFUL" and "debuffs" or "buffs"]
 		S:CreateBackdrop(btn, "Default")
 		btn.icon = btn:CreateTexture(nil, "ARTWORK")
