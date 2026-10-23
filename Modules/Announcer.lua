@@ -121,6 +121,8 @@ end
 local function makeEdit(parent, w, hint)
 	local eb = CreateFrame("EditBox", nil, parent)
 	eb:SetSize(w, 20)
+	eb:SetFont(S.media.font or STANDARD_TEXT_FONT, 11, "OUTLINE")
+	eb:SetTextColor(1, 1, 1)
 	eb:SetAutoFocus(false)
 	eb:SetScript("OnEscapePressed", function(b) b:ClearFocus() end)
 	S:SkinEditBox(eb)
