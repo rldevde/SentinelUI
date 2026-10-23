@@ -156,9 +156,16 @@ function DB:UpdateExperience()
 	bar.quest:SetStatusBarColor(0.35, 0.9, 0.35, 0.55)
 	bar.quest:SetOrientation(db.orientation or "HORIZONTAL")
 	bar.quest:SetShown(qxp > 0)
-	local suffix = rested > 0 and format(" |cffb080ff(R %.0f%%)|r", rested / mx * 100) or ""
-	if qxp > 0 then suffix = suffix .. format(" |cff8aff80(+%s %s)|r", BreakUpLargeNumbers(qxp), L["quest XP"]) end
-	bar.text:SetText(FormatText(db.text, cur, mx, suffix ~= "" and suffix or nil))
+	-- text: "12.3% - 21.6k left" + rested/quest-XP extras + LEVEL UP marker
+	local suffix = format(" - |cffdddddd%s|r %s", S:Abbrev(mx - cur), L["left"])
+	if rested > 0 then suffix = suffix .. format(" |cffb080ff(R %.0f%%)|r", rested / mx * 100) end
+	if qxp > 0 then
+		suffix = suffix .. format(" |cff8aff80(+%s %s)|r", BreakUpLargeNumbers(qxp), L["quest XP"])
+		if cur + rested + qxp >= mx then
+			suffix = suffix .. " |cffffd100» " .. L["LEVEL UP!"] .. "|r"
+		end
+	end
+	bar.text:SetText(FormatText(db.text, cur, mx, suffix))
 end
 
 function DB:Tooltip_experience(bar)
