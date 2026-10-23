@@ -7,41 +7,41 @@ Note on versions: `## Version` is SentinelUI's own release number. The embedded
 BetterItem module reports `## X-BetterItem-Version` and must always equal the
 standalone RLBetterItem release.
 
+## [1.4.2]
+
+### Added
+- **XP bar: pending quest XP** — completed quests in the log paint a green segment behind the rested fill; the bar text now reads "10.1% - 21.6k fehlt (+8.5k Quest-EP)" plus a gold LEVEL-UP! marker when turn-ins complete the level. Tooltip lists pending XP, quest count and post-turn-in result (via Questie's QuestXP database with client-API fallbacks)
+- **Per-unit frame styles** — every unit frame group has a Style dropdown: "Sentinel (edge + power rail)", "Edge accent only" or "Classic (stacked bars)"; solo frames default to Sentinel, group frames to Classic — previous look unchanged
+
+### Changed
+- **Navigation module rewritten** — rebuilt from scratch (arrow, world-map pins + route, minimap edge pin, quest nav, corpse waypoint, TomTom facade, /sway); the arrow never retargets to stale waypoints and disappears after arrival unless the same chain continues
+- **Navigation defers to a real TomTom install** — when TomTom is loaded it keeps its own arrow/pins; SentinelUI forwards every waypoint (with the crazy flag so the arrow actually reacts), a local mirror keeps quest-chain advancing working
+- **Quest items dock to the QuestScope tracker** — the usable-quest-item bar anchors under the tracker window and moves with it instead of floating on its own
+
+### Fixed
+- **Buffs/debuffs broken after combat-block workaround** — `SecureAuraHeader_Update` is file-local in the restricted env on this client and unreachable from addon code; headers now re-trigger via a benign `unit` attribute re-set, contents fill by scanning real children, combat-spawned buttons get their cancel-click wiring after regen, and stale slot contents are cleared
+- **Group-header combat blocks (final)** — the secure headers' own OnEvent/OnUpdate scripts kept running `SecureGroupHeader_Update` mid-combat (SetPoint on protected children -> ADDON_ACTION_BLOCKED); scripts are detached and the module drives roster/pet refreshes itself
+- **R-key whisper reply crashed** — the REPLY binding calls `ReplyTell` directly on this client; the messenger hooks it so R opens the conversation window instead of erroring in UpdateHeader
+- **Roll summary announced "Ihr" as the winner** — the German "Ihr gewann %s" matched the generic pattern first; you-win formats are matched first and a captured localized "You" resolves to your character name
+- **Questie->TomTom RemoveWaypoint crash** — Questie's tracker removes uids TomTom already cleared on arrival; SentinelUI wraps `TomTom:RemoveWaypoint` with a dead-uid guard
+- **Nav arrow retargeted to stale waypoints** — after arrival the arrow fell back to the closest waypoint in the whole DB (old quest picks, corpse markers); it now only advances within the same chain or hides
+- **Mana/energy tick bar never showed** — started only on `UNIT_POWER_UPDATE` which is unreliable on this client; now also `UNIT_POWER_FREQUENT` plus combat/login kicks
+- **AFK screen** — character model no longer loops its animation (re-entrant toggle guard); yellow "You are AFK" spam stopped (anti-AFK defers while the screen is shown)
+- **Party frames dropped members** — explicit `unitsPerColumn`/`maxColumns` + forced unit reassignment on roster changes
+- **Protected group-header SetPoint error** — visibility state driver moved from the protected secure header to its unprotected holder frame
+- **BetterItem slot overlays** — overlapping score/durability/compare numbers on char/inspect slots removed via one-time migration, only the quality-colored iLvl stays (all re-enableable in options; embedded BetterItem 1.9.5)
+- **BetterItem: average iLvl** — unscorable items counted ilvl 0 into the average; now counts real level, prefers `GetDetailedItemLevelInfo`
+
 ## [1.4.1]
 
 ### Added
-- **XP bar: pending quest XP** — completed quests in the quest log now paint a green segment behind the rested fill and the text shows "+X quest XP"; the tooltip lists the pending amount, quest count and whether turning them in levels you up (or how much is still missing)
-- **Per-unit frame styles** — every unit frame group (player, target, focus, pet, party, raid, raid40, boss, arena, maintank, …) now has a Style dropdown in its settings: "Sentinel (edge + power rail)", "Edge accent only" or "Classic (stacked bars)". Solo frames default to Sentinel, group frames (party/raid/maintank) default to Classic — the previous look is unchanged
 - **Nameplate style "Hidden" for friendly units** — friendlyStyle gains a HIDE option that suppresses friendly nameplates entirely (SentinelUI plate + Blizzard bar pinned at 0 alpha); switch takes effect live, enemy plates unaffected
 
 ### Changed
-- **Quest items dock to the QuestScope tracker** — the usable-quest-item button bar now anchors under the quest tracker window and moves with it instead of floating on its own; per-quest item buttons in the tracker rows remain as before
-- **Navigation defers to a real TomTom install** — when TomTom is loaded it keeps its own arrow/pins; SentinelUI forwards every waypoint into it (local mirror stays for chain tracking), the own arrow/minimap pin stand down, and a light arrival watcher keeps quest-chain advancing working
-- **Navigation module rewritten** — the navigator was rebuilt from scratch with the same surface (arrow with title/distance/ETA, world-map pins + route line, minimap edge pin, quest navigation, corpse waypoint, TomTom facade, `/sway`) but leaner internals: no more conv diagnostics, and the arrow never retargets to stale waypoints on its own
 - **Aggro alert off by default** — the module now defaults to disabled (was noisy for tanks); enable via Modules → Aggro Alert
 - **Cursor ring off by default** — the mouse-follow ring now defaults to disabled for new profiles
 
 ### Fixed
-- **Buffs/debuffs never spawned** — `SecureAuraHeader_Update` is file-local in the restricted env on this client (unreachable from addon code), so the refresh was a silent no-op; headers now re-trigger via a benign `filter` attribute re-set which re-enters the template's own update path, and content fill scans real children
-- **Empty buff/debuff squares** — removing the insecure `OnAttributeChanged` hook also removed the only code path that filled aura contents (icon/timer/stacks); header refreshes now always run the module-side content pass afterwards
-- **Navigation dead with real TomTom installed** — forwarded waypoints never set TomTom's crazy flag (its autoqueue profile default can be off), so the TomTom arrow never reacted; target waypoints now pass `crazy=true`
-- **Quest-XP on the XP bar** — client quest-XP APIs don't exist on this flavor; completed-quest XP now resolves through Questie's QuestXP database first, with client-API fallbacks
-- **Questie->TomTom RemoveWaypoint crash** — Questie's tracker calls `TomTom:RemoveWaypoint` on uids TomTom already cleared on arrival, which crashes inside TomTom on nil coords; SentinelUI now wraps `TomTom:RemoveWaypoint` with a dead-uid guard when a real TomTom is installed
-- **R-key whisper reply crashed** — the REPLY binding calls `ReplyTell` directly on this client, whose internal `UpdateHeader` errors when the chat-type lookup misses; the messenger now hooks `ReplyTell` too so R opens the conversation window instead of erroring
-- **Party/raid header combat blocks (final)** — the secure group headers' own OnEvent/OnUpdate scripts kept calling `SecureGroupHeader_Update` mid-combat (`SetPoint` on protected children -> ADDON_ACTION_BLOCKED); the scripts are detached and the module drives roster/pet refreshes itself, deferred to regen when in combat
-- **Mana/energy tick bar never showed** — the bar only started on `UNIT_POWER_UPDATE`, which is unreliable on this client; it now also listens on `UNIT_POWER_FREQUENT` and kicks on combat start / entering world
-- **BetterItem: overlapping numbers on char/inspect slots** — score, durability-% and compare-% texts piled onto the item icons together with the iLvl; a one-time migration now switches all of them off so only the quality-colored iLvl remains (all can be re-enabled in the options; embedded BetterItem 1.9.5)
-- **Aura-header combat block hardened** — the secure aura template's OnEvent/OnUpdate scripts and all its event registrations are now fully detached; the module drives aura updates itself (full update out of combat, contents-only refresh mid-combat)
-- **Roll summary announced "Ihr" as the winner** — the German "Ihr gewann %s" line also matched the generic "%s gewann %s" pattern, so your own wins posted as "Ihr gewann ..."; you-win formats are now matched first and a captured localized "You" resolves to your character name
-- **Nav arrow retargeted to stale waypoints** — after reaching a waypoint the arrow fell back to the *closest* waypoint in the whole database, which resurrected leftover quest picks, old corpse markers and other-zone points instead of just disappearing. Arrival now only advances to the next pick of the *same* chain; with no continuation the arrow hides. The zone-change auto-retarget is removed too — the arrow only points where you (or a quest) explicitly sent it
-- **ADDON_ACTION_BLOCKED on buff/debuff icons in combat** — the secure aura header's internal `UNIT_AURA` handler ran `SecureAuraHeader_Update` mid-combat, calling `ClearAllPoints` on protected aura buttons. The header's own `UNIT_AURA` registration is removed and the module drives updates itself: out of combat the full secure update runs, in combat only the contents of already-mapped buttons refresh and a full update is queued for regen
-- **ADDON_ACTION_BLOCKED on group headers in combat** — the visibility state driver sat on the protected secure header, so a state flip mid-combat (member joins, raid size crossing the @raid6 threshold) triggered `SecureGroupHeader_Update` -> `SetPoint` on protected unit buttons and got blocked. The driver now drives the unprotected holder frame that parents each header, so only show/hide happens in combat
-- **BetterItem: char/inspect slot numbers unreadable** — the iLvl, score, durability and compare texts on paper-doll slots were 8px with a thin outline and got lost in the item icons; now 9-10px THICKOUTLINE with a black drop shadow so they stay legible on any icon (embedded BetterItem 1.9.5)
-- **BetterItem: average item level dragged down by unscorable gear** — items the score table can't value contributed item level 0 to the Ø iLvl on tooltips and char/inspect summary instead of their real level; unscored items now count their actual ilvl. iLvl displays (tooltip line, slot overlay, average) also prefer `GetDetailedItemLevelInfo` when available (embedded BetterItem 1.9.5)
-- **Party frames dropped group members** — the party header never set `unitsPerColumn`/`maxColumns`, so the client's fallback could wrap extra members into an invisible second column; both attributes are now set explicitly. `GROUP_ROSTER_UPDATE` also forces the secure headers to reassign units, so members who joined while the header was hidden or mid-combat are no longer left out
-- AFK screen: character model no longer loops/restarts its animation while AFK (re-entrant toggle guard)
-- AFK screen: yellow "You are AFK" chat message no longer spams permanently — Anti-AFK no longer fights the flag while the screen is shown, the auto-clear is deferred to just before the idle logout
-- **Mana tick bar never showed for energy users** — the bar only started on a readable power change, but UNIT_POWER_UPDATE fires with secret values on this client so rogues and cat-form druids never saw the bar; it now starts on any tracked power event. Shapeshifting into a tracked form also starts the bar, and the title switches between "Mana Tick" / "Energy Tick"
 - **Threat meter width** — the window was a fixed 180px, so names overlapped or clipped into the percentage. Width now adapts to the widest visible name or the title (110–400px), measured on an unconstrained font string so anchoring cannot skew the read
 - **Roll summary showed the dice result as the winner** — roll-result lines also contain the item link and were mistaken for the win line; only lines matching `LOOT_ROLL_WON`/`LOOT_ROLL_YOU_WON` are announced now, and the winner is picked by capture analysis (the non-numeric, non-link capture) so arg order cannot swap name and dice result
 - **Event-arg off-by-one in 12 handlers** — anonymous `RegisterEvent` handlers receive `(owner, event, payload…)`, but 12 sites bound the payload to the 2nd parameter, so they got the event name instead of real data. Silently killed: loot-roll summary (`GetLootRollItemLink` usage error), minimap ping names, aggro warning, banish timer, external-buff icons, fishing skill-ups, hunter ammo-on-aura check, nameplate quest refresh, purge icon, session XP/kill tracking, soulstone tracking
