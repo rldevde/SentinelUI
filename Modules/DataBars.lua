@@ -89,11 +89,22 @@ local function PendingQuestXP()
 		end
 		if hdr then done = nil end
 		if done and qid then
-			-- several APIs exist across clients: questID-based on modern,
-			-- selected-entry on old classic — try them all in order
-			local xp = (C_QuestLog and C_QuestLog.GetQuestLogRewardXP and C_QuestLog.GetQuestLogRewardXP(qid))
-				or (C_QuestLog and C_QuestLog.GetQuestRewardXP and C_QuestLog.GetQuestRewardXP(qid))
-				or (C_QuestInfo and C_QuestInfo.GetQuestRewardXP and C_QuestInfo.GetQuestRewardXP(qid))
+			-- Questie ships a full per-quest XP table; client APIs either need
+			-- the log entry selected or don't exist at all on this client
+			local xp
+			local loader = _G.QuestieLoader
+			if loader and loader.ImportModule then
+				local ok, QXP = pcall(loader.ImportModule, loader, "QuestXP")
+				if ok and QXP and QXP.GetQuestLogRewardXP then
+					local ok2, r = pcall(QXP.GetQuestLogRewardXP, QXP, qid)
+					if ok2 then xp = r end
+				end
+			end
+			if not xp or S.IsSecret(xp) or xp == 0 then
+				xp = (C_QuestLog and C_QuestLog.GetQuestLogRewardXP and C_QuestLog.GetQuestLogRewardXP(qid))
+					or (C_QuestLog and C_QuestLog.GetQuestRewardXP and C_QuestLog.GetQuestRewardXP(qid))
+					or (C_QuestInfo and C_QuestInfo.GetQuestRewardXP and C_QuestInfo.GetQuestRewardXP(qid))
+			end
 			if (not xp or S.IsSecret(xp) or xp == 0) and SelectQuestLogEntry and GetQuestLogRewardXP then
 				pcall(SelectQuestLogEntry, i)
 				xp = GetQuestLogRewardXP(i) or GetQuestLogRewardXP()

@@ -18,10 +18,13 @@ local HBD = LibStub and (LibStub("HereBeDragonsQuestie-2.0", true) or LibStub("H
 -- local waypoint mirror (QuestScope liveness tracking) and forward everything
 local RealTomTom
 
-local function ForwardAdd(wp, mapID)
+local function ForwardAdd(wp, mapID, crazy)
 	if not RealTomTom then return end
 	local ok, uid = pcall(RealTomTom.AddWaypoint, RealTomTom, mapID, wp.x, wp.y, {
 		title = wp.title, from = "SentinelUI", persistent = false, silent = true,
+		-- explicit crazy flag: TomTom's own default is its autoqueue profile
+		-- setting, which may be off -> the arrow would never react
+		crazy = crazy,
 	})
 	if ok then wp.ttuid = uid end
 end
@@ -100,10 +103,11 @@ function NAV:AddWaypoint(mapID, x, y, title, opts)
 		S:Print(format(L["Waypoint set: %s (%.1f, %.1f)"], wp.title, x * 100, y * 100))
 	end
 	self:RefreshPins()
-	ForwardAdd(wp, mapID)
 	-- non-silent waypoints become the arrow target immediately; silent ones
 	-- (multi-spawn chain picks) wait in the queue
-	if opts.crazy ~= false and not opts.silent then
+	local isTarget = opts.crazy ~= false and not opts.silent
+	ForwardAdd(wp, mapID, isTarget)
+	if isTarget then
 		self.active = { mapID = mapID, wp = wp }
 		if self.arrow then self.arrow.title:SetText(wp.title) self.arrow:Show() end
 		ForwardArrow()
