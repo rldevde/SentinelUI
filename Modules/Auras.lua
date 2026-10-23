@@ -233,15 +233,15 @@ function A:CombatRefresh(header)
 end
 
 -- SecureAuraHeader_Update is a file-local on this client (not reachable from
--- addon code); the template's own OnAttributeChanged calls it internally.
--- Re-setting "filter" re-enters that path -> full spawn/layout update.
+-- addon code); the template's own OnAttributeChanged calls it internally when
+-- "unit" changes -> re-set it to re-enter the full spawn/layout path.
 function A:RefreshHeaders(unit)
 	if unit and unit ~= "player" then return end
 	for _, header in pairs({ self.buffs, self.debuffs }) do
 		if InCombatLockdown() then
 			self:CombatRefresh(header)
 		else
-			header:SetAttribute("filter", header:GetAttribute("filter"))
+			header:SetAttribute("unit", header:GetAttribute("unit") or "player")
 			self:CombatRefresh(header)
 		end
 	end
@@ -274,4 +274,8 @@ function A:Initialize()
 	self:RegisterEvent("UNIT_AURA")
 	self:RegisterEvent("UNIT_INVENTORY_CHANGED")
 	self:RegisterEvent("GROUP_ROSTER_UPDATE")
+	-- initial fill + refresh after zoning/reloads (attribute re-set path is
+	-- safe out of combat; inside combat only contents refresh)
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", function() A:RefreshHeaders() end)
+	self:RefreshHeaders()
 end
