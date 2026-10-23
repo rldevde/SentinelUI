@@ -1946,8 +1946,7 @@ function UF:Initialize()
 		if child then UF:UpdateFrame(child) end
 	end)
 	self:RegisterEvent("RAID_TARGET_UPDATE", function() for _, f in ipairs(UF.frames) do UF:UpdateRaidIcon(f) end end)
-	self:RegisterEvent("GROUP_ROSTER_UPDATE", function()
-		for _, f in ipairs(UF.frames) do if f.unit then UF:UpdateIndicators(f) end end
+	local function RefreshSecureHeaders()
 		-- force the secure headers to reassign units to their children; members
 		-- who joined while the header was hidden or mid-combat otherwise keep a
 		-- stale roster until the next visibility change
@@ -1960,6 +1959,14 @@ function UF:Initialize()
 				end
 			end
 		end
+	end
+	UF.RefreshSecureHeaders = RefreshSecureHeaders
+	self:RegisterEvent("GROUP_ROSTER_UPDATE", function()
+		for _, f in ipairs(UF.frames) do if f.unit then UF:UpdateIndicators(f) end end
+		RefreshSecureHeaders()
+	end)
+	self:RegisterEvent("UNIT_PET", function(_, _, unit)
+		if unit == "player" then RefreshSecureHeaders() end
 	end)
 	self:RegisterEvent("PARTY_LEADER_CHANGED", function() for _, f in ipairs(UF.frames) do if f.unit then UF:UpdateIndicators(f) end end end)
 	pcall(self.RegisterEvent, self, "PLAYER_ROLES_ASSIGNED", function() for _, f in ipairs(UF.frames) do if f.unit then UF:UpdateIndicators(f) end end end)

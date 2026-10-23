@@ -223,6 +223,13 @@ function UF:CreateHeader(key, title, pos, opts)
 	header.InitChild = function(h, childName)
 		S:SafeCall("UnitFrames:InitChild", UF.InitGroupChild, UF, h, _G[childName])
 	end
+	-- the template's own OnEvent/OnUpdate scripts run SecureGroupHeader_Update
+	-- even mid-combat -> SetPoint on protected children -> ADDON_ACTION_BLOCKED.
+	-- Detach them; the module drives refreshes itself (GROUP_ROSTER_UPDATE,
+	-- UNIT_PET) and defers combat updates to regen
+	header:SetScript("OnEvent", nil)
+	header:SetScript("OnUpdate", nil)
+	header:UnregisterAllEvents()
 	header:SetAttribute("template", "SecureUnitButtonTemplate")
 	header:SetAttribute("initialConfigFunction", initialConfig)
 	header:SetAttribute("showParty", opts.party or false)
