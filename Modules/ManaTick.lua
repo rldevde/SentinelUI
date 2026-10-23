@@ -123,7 +123,10 @@ function MT:Initialize()
 	if cls == "WARRIOR" or cls == "DEATHKNIGHT" or cls == "HUNTER" then return end
 	self:BuildBar()
 	self.prev = {}
-	self:RegisterEvent("UNIT_POWER_UPDATE", function(_, _, unit, ptype)
+	-- UNIT_POWER_UPDATE can be unreliable on this client; catch the alternates
+	-- too and kick the bar on combat start / entering world regardless
+	for _, ev in ipairs({ "UNIT_POWER_UPDATE", "UNIT_POWER_FREQUENT" }) do
+		pcall(self.RegisterEvent, self, ev, function(_, _, unit, ptype)
 		if unit ~= "player" then return end
 		local pt = (ptype == "ENERGY") and ENERGY or (ptype == "MANA") and MANA
 		if not pt or not MT:TrackedPower() then return end
@@ -141,7 +144,11 @@ function MT:Initialize()
 			if MT:TrackedPower() and not MT.running then MT:Start() end
 		end
 		MT.prev[pt] = cur
-	end)
+		end)
+	end
+	-- kick the bar on login/combat so it shows even when no power event fired
+	self:RegisterEvent("PLAYER_REGEN_DISABLED", function() if MT:TrackedPower() then MT:Start() end end)
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", function() if MT:TrackedPower() then MT:Start() end end)
 	-- hide while a druid is in a form (the druid mana strip covers it) and
 	-- pause while the active resource is untracked
 	self:RegisterEvent("UPDATE_SHAPESHIFT_FORM", function()
