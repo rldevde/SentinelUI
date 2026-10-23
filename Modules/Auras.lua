@@ -202,7 +202,39 @@ function A:CreateHeader(kind)
 	S:CreateMover(holder, kind, kind == "buffs" and L["Player Buffs"] or L["Player Debuffs"], pos, "auras")
 	self:ConfigureHeader(header)
 	header:Show()
+	-- the client's SecureAuraHeader_OnEvent runs SecureAuraHeader_Update even
+	-- mid-combat, which calls ClearAllPoints on the protected aura buttons ->
+	-- ADDON_ACTION_BLOCKED. Take over UNIT_AURA ourselves: out of combat the
+	-- real update runs; in combat only the contents of already-mapped buttons
+	-- refresh (new auras queue a full update for regen)
+	header:UnregisterEvent("UNIT_AURA")
 	self[kind] = header
+end
+
+function A:CombatRefresh(header)
+	for i = 1, 40 do
+		local child = header:GetAttribute("child" .. i)
+		if not child then break end
+		local index = child:GetAttribute("index")
+		if index then
+			S:SafeCall("Auras:CombatUpdate", self.UpdateAura, self, child, index)
+		else
+			local slot = child:GetAttribute("target-slot")
+			if slot then S:SafeCall("Auras:CombatWeapon", self.UpdateWeapon, self, child, slot) end
+		end
+	end
+end
+
+function A:UNIT_AURA(_, unit)
+	if unit ~= "player" then return end
+	for _, header in pairs({ self.buffs, self.debuffs }) do
+		if InCombatLockdown() then
+			self:CombatRefresh(header)
+			if SecureAuraHeader_Update then S:RunOutOfCombat(SecureAuraHeader_Update, header) end
+		elseif SecureAuraHeader_Update then
+			SecureAuraHeader_Update(header)
+		end
+	end
 end
 
 function A:DisableBlizzard()
@@ -225,4 +257,5 @@ function A:Initialize()
 	if self.private.disableBlizzard then self:DisableBlizzard() end
 	self:CreateHeader("buffs")
 	self:CreateHeader("debuffs")
+	self:RegisterEvent("UNIT_AURA")
 end
