@@ -20,6 +20,7 @@ standalone RLBetterItem release.
 - **Cursor ring off by default** — the mouse-follow ring now defaults to disabled for new profiles
 
 ### Fixed
+- **R-key whisper reply crashed** — the REPLY binding calls `ReplyTell` directly on this client, whose internal `UpdateHeader` errors when the chat-type lookup misses; the messenger now hooks `ReplyTell` too so R opens the conversation window instead of erroring
 - **Party/raid header combat blocks (final)** — the secure group headers' own OnEvent/OnUpdate scripts kept calling `SecureGroupHeader_Update` mid-combat (`SetPoint` on protected children -> ADDON_ACTION_BLOCKED); the scripts are detached and the module drives roster/pet refreshes itself, deferred to regen when in combat
 - **Mana/energy tick bar never showed** — the bar only started on `UNIT_POWER_UPDATE`, which is unreliable on this client; it now also listens on `UNIT_POWER_FREQUENT` and kicks on combat start / entering world
 - **BetterItem: overlapping numbers on char/inspect slots** — score, durability-% and compare-% texts piled onto the item icons together with the iLvl; a one-time migration now switches all of them off so only the quality-colored iLvl remains (all can be re-enabled in the options; embedded BetterItem 1.9.5)

@@ -1072,7 +1072,9 @@ function MS:Initialize()
 		end
 		return true
 	end
-	for _, fn in ipairs({ "ChatFrame_ReplyTell", "ChatFrame_ReplyTell2", "ChatEdit_ReplyTell" }) do
+	-- "ReplyTell" is the function the R-key binding calls directly on this
+	-- client (its internal UpdateHeader crashes when chatType lookup fails)
+	for _, fn in ipairs({ "ChatFrame_ReplyTell", "ChatFrame_ReplyTell2", "ChatEdit_ReplyTell", "ReplyTell" }) do
 		local orig = _G[fn]
 		if orig then
 			_G[fn] = function(...)
