@@ -505,6 +505,14 @@ function NP:NAME_PLATE_UNIT_ADDED(_, unit)
 	if self.disabled or UnitIsUnit(unit, "player") then return end
 	local plate = C_NamePlate.GetNamePlateForUnit(unit, issecure and issecure() or false)
 	if not plate or (plate.IsForbidden and plate:IsForbidden()) then return end
+	if StyleFor(unit, self.db) == "HIDE" then
+		plate.suiHidden = true
+		plate.suiActive = true -- keeps the alpha hook pinning Blizzard's bar at 0
+		HideBlizzardPlate(plate)
+		if plate.suiPlate then plate.suiPlate:Hide() end
+		return
+	end
+	plate.suiHidden = nil
 	local f = plate.suiPlate or self:CreatePlate(plate)
 	f.unit = unit
 	f.Castbar.unit = unit
@@ -578,10 +586,19 @@ end
 
 function NP:Update()
 	self.layoutVersion = (self.layoutVersion or 0) + 1
-	for _, f in pairs(self.plates) do
-		self:LayoutPlate(f)
-		f.layoutVersion = self.layoutVersion
-		self:FullUpdate(f)
+	for unit, f in pairs(self.plates) do
+		if StyleFor(unit, self.db) == "HIDE" then
+			f:Hide()
+			f.Castbar:Hide()
+			local plate = f:GetParent()
+			plate.suiHidden = true
+			self.plates[unit] = nil
+			f.unit = nil
+		else
+			self:LayoutPlate(f)
+			f.layoutVersion = self.layoutVersion
+			self:FullUpdate(f)
+		end
 	end
 end
 

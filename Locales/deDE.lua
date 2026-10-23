@@ -2115,3 +2115,8 @@ local T = {
 	["Raid only"] = "Nur Schlachtzug",
 }
 for k, v in pairs(T) do if not rawget(L, k) then L[k] = v end end
+
+local T = {
+	["Hidden"] = "Versteckt",
+}
+for k, v in pairs(T) do if not rawget(L, k) then L[k] = v end end

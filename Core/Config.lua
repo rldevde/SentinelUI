@@ -27,6 +27,9 @@ local NP_STYLES = {
 	STANDARD = L["Standard (name above)"], INLINE = L["Inline (name inside bar)"], CENTER = L["Centered (name inside bar)"],
 	UNDER = L["Name below the bar"], PLATE = L["Plate (big bar, all inside)"], SLIM = L["Slim (thin bar)"], BAR = L["Bar only (no texts)"],
 }
+local NP_FSTYLES = {}
+for k, v in pairs(NP_STYLES) do NP_FSTYLES[k] = v end
+NP_FSTYLES.HIDE = L["Hidden"]
 
 local selects = {
 	fontOutline = OUTLINES, unitFontOutline = OUTLINES,
@@ -63,7 +66,7 @@ local selects = {
 	healthText = function(path) if path[1] == "nameplates" then return { NONE = L["None"], PERCENT = L["Percent"], CURRENT = L["Current"], BOTH = L["Both"] } end end,
 
 	enemyStyle = function(path) if path[1] == "nameplates" then return NP_STYLES end end,
-	friendlyStyle = function(path) if path[1] == "nameplates" then return NP_STYLES end end,
+	friendlyStyle = function(path) if path[1] == "nameplates" then return NP_FSTYLES end end,
 	moneyFormat = { SMART = L["Smart"], FULL = L["Full"], SHORT = L["Gold only"] }, goldFormat = { SMART = L["Smart"], FULL = L["Full"], SHORT = L["Gold only"] },
 	sortMethod = function(path)
 		if path[1] == "unitframes" or path[1] == "raidgrid" then return { INDEX = L["Index"], NAME = L["Name"] } end
