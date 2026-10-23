@@ -44,7 +44,7 @@ function addon:InitializeDB()
         ttHideInCombat = false,
         ttInstantFade = false,
         ttMouseAnchor = false,
-        charSlotILvl = false,
+        charSlotILvl = true,
         charGearText = true,
         gearTextUnlock = false,
         gearTextPos = nil,
