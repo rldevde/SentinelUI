@@ -96,14 +96,6 @@ function A:UpdateWeapon(btn, slot)
 	btn.suiBackdrop:SetBackdropBorderColor(0.6, 0.2, 0.9)
 end
 
-local function OnAttributeChanged(btn, attr, value)
-	if attr == "index" and value then
-		S:SafeCall("Auras:Update", A.UpdateAura, A, btn, value)
-	elseif attr == "target-slot" and value then
-		S:SafeCall("Auras:Weapon", A.UpdateWeapon, A, btn, value)
-	end
-end
-
 -- Called from the XML template OnLoad
 function S:InitAuraButton(btn)
 	S:SafeCall("Auras:Init", function()
@@ -144,7 +136,10 @@ function S:InitAuraButton(btn)
 		btn:SetScript("OnUpdate", UpdateTimer)
 		btn:SetScript("OnEnter", OnEnter)
 		btn:SetScript("OnLeave", GameTooltip_Hide)
-		btn:HookScript("OnAttributeChanged", OnAttributeChanged)
+		-- deliberately no OnAttributeChanged hook here: an insecure hook on a
+		-- protected button taints the secure aura-update call chain mid-combat
+		-- -> ClearAllPoints ADDON_ACTION_BLOCKED. Contents refresh via our own
+		-- UNIT_AURA driver (combat-safe partial refresh) instead.
 		local index = btn:GetAttribute("index")
 		if index then A:UpdateAura(btn, index) end
 	end)
