@@ -211,31 +211,34 @@ function A:CreateHeader(kind)
 end
 
 function A:CombatRefresh(header)
-	for i = 1, 40 do
-		local child = header:GetAttribute("child" .. i)
-		if not child then break end
-		local index = child:GetAttribute("index")
-		if index then
-			S:SafeCall("Auras:CombatUpdate", self.UpdateAura, self, child, index)
-		else
-			local slot = child:GetAttribute("target-slot")
-			if slot then S:SafeCall("Auras:CombatWeapon", self.UpdateWeapon, self, child, slot) end
+	-- contents of already-spawned buttons are plain display ops (icon, timer,
+	-- stacks) -> safe even in combat; new buttons only appear via the
+	-- out-of-combat header update
+	for _, child in ipairs({ header:GetChildren() }) do
+		if child.GetAttribute then
+			local index = child:GetAttribute("index")
+			if index then
+				S:SafeCall("Auras:CombatUpdate", self.UpdateAura, self, child, index)
+			else
+				local slot = child:GetAttribute("target-slot")
+				if slot then S:SafeCall("Auras:CombatWeapon", self.UpdateWeapon, self, child, slot) end
+			end
 		end
 	end
 end
 
+-- SecureAuraHeader_Update is a file-local on this client (not reachable from
+-- addon code); the template's own OnAttributeChanged calls it internally.
+-- Re-setting "filter" re-enters that path -> full spawn/layout update.
 function A:RefreshHeaders(unit)
 	if unit and unit ~= "player" then return end
 	for _, header in pairs({ self.buffs, self.debuffs }) do
 		if InCombatLockdown() then
 			self:CombatRefresh(header)
-			if SecureAuraHeader_Update then S:RunOutOfCombat(SecureAuraHeader_Update, header) end
-		elseif SecureAuraHeader_Update then
-			SecureAuraHeader_Update(header)
+		else
+			header:SetAttribute("filter", header:GetAttribute("filter"))
+			self:CombatRefresh(header)
 		end
-		-- no insecure OnAttributeChanged hook on the protected buttons anymore,
-		-- so contents (icon/timer/stacks) are filled here after every update
-		self:CombatRefresh(header)
 	end
 end
 
