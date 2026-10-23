@@ -118,12 +118,24 @@ local function makeButton(parent, w, h, label)
 	return b
 end
 
-local function makeEdit(parent, w)
+local function makeEdit(parent, w, hint)
 	local eb = CreateFrame("EditBox", nil, parent)
 	eb:SetSize(w, 20)
 	eb:SetAutoFocus(false)
 	eb:SetScript("OnEscapePressed", function(b) b:ClearFocus() end)
 	S:SkinEditBox(eb)
+	-- grey hint shown while the box is empty (idiot-proof: explains the field)
+	if hint then
+		eb.hint = S:FontString(eb, 10, "OUTLINE")
+		eb.hint:SetPoint("LEFT", 4, 0)
+		eb.hint:SetText(hint)
+		eb.hint:SetTextColor(0.5, 0.5, 0.5)
+		local function UpdHint(b) b.hint:SetShown((b:GetText() or "") == "") end
+		eb:HookScript("OnEditFocusGained", UpdHint)
+		eb:HookScript("OnEditFocusLost", UpdHint)
+		eb:HookScript("OnTextChanged", UpdHint)
+		UpdHint(eb)
+	end
 	return eb
 end
 
@@ -167,10 +179,19 @@ function AN:BuildWindow()
 	stopAll:SetPoint("LEFT", startAll, "RIGHT", 6, 0)
 	stopAll:SetScript("OnClick", function() AN:StopAll() AN:RefreshRows() end)
 
-	-- column header
-	local hdr = S:FontString(f, 10)
-	hdr:SetText(L["On"] .. "  |  " .. L["Channel"] .. "  |  " .. L["Min"] .. "  |  " .. L["Message"])
-	hdr:SetPoint("TOPLEFT", 12, -32)
+	-- column headers, aligned over each control
+	local labels = {
+		{ L["On/Off"], 14 },
+		{ L["Channel"], 62 },
+		{ L["Interval"], 196 },
+		{ L["Message"], 300 },
+	}
+	for _, lb in ipairs(labels) do
+		local h = S:FontString(f, 10)
+		h:SetText(lb[1])
+		h:SetTextColor(0.7, 0.7, 0.7)
+		h:SetPoint("TOPLEFT", lb[2], -32)
+	end
 
 	local scroll = CreateFrame("ScrollFrame", "SentinelUIAnnouncerScroll", f, "UIPanelScrollFrameTemplate")
 	scroll:SetPoint("TOPLEFT", 8, -46)
@@ -250,15 +271,21 @@ function AN:GetRow(i)
 	row.chanBtn = makeButton(row, 84, 18, "")
 	row.chanBtn:SetPoint("LEFT", row.toggle, "RIGHT", 4, 0)
 
-	row.chanName = makeEdit(row, 62)
+	row.chanName = makeEdit(row, 62, L["channel"])
 	row.chanName:SetPoint("LEFT", row.chanBtn, "RIGHT", 4, 0)
 
-	row.interval = makeEdit(row, 30)
-	row.interval:SetPoint("LEFT", row.chanBtn, "RIGHT", 4, 0)
+	-- "alle [ 5 ] Min." — makes the interval field self-explanatory
+	row.everyLbl = S:FontString(row, 10, "OUTLINE")
+	row.everyLbl:SetText(L["every"])
+	row.everyLbl:SetTextColor(0.7, 0.7, 0.7)
+	row.interval = makeEdit(row, 34)
 	row.interval:SetNumeric(true)
 	row.interval:SetMaxLetters(4)
+	row.minLbl = S:FontString(row, 10, "OUTLINE")
+	row.minLbl:SetText(L["min."])
+	row.minLbl:SetTextColor(0.7, 0.7, 0.7)
 
-	row.text = makeEdit(row, 240)
+	row.text = makeEdit(row, 240, L["your message here..."])
 
 	row.del = CreateFrame("Button", nil, row)
 	row.del:SetSize(18, 18)
@@ -296,18 +323,23 @@ function AN:RefreshRows()
 		row.chanName:SetScript("OnEnterPressed", function(eb) msg.channelName = gsub(eb:GetText(), "^%s*(.-)%s*$", "%1") eb:ClearFocus() end)
 		row.chanName:SetScript("OnEditFocusLost", function(eb) msg.channelName = gsub(eb:GetText(), "^%s*(.-)%s*$", "%1") end)
 
-		row.interval:ClearAllPoints()
+		-- chain: [channelName?] alle [interval] Min. [message]
+		row.everyLbl:ClearAllPoints()
 		if msg.channel == "CHANNEL" then
-			row.interval:SetPoint("LEFT", row.chanName, "RIGHT", 4, 0)
+			row.everyLbl:SetPoint("LEFT", row.chanName, "RIGHT", 6, 0)
 		else
-			row.interval:SetPoint("LEFT", row.chanBtn, "RIGHT", 4, 0)
+			row.everyLbl:SetPoint("LEFT", row.chanBtn, "RIGHT", 6, 0)
 		end
+		row.interval:ClearAllPoints()
+		row.interval:SetPoint("LEFT", row.everyLbl, "RIGHT", 4, 0)
+		row.minLbl:ClearAllPoints()
+		row.minLbl:SetPoint("LEFT", row.interval, "RIGHT", 4, 0)
 		row.interval:SetText(tostring(msg.interval or 5))
 		row.interval:SetScript("OnEnterPressed", function(eb) msg.interval = tonumber(eb:GetText()) or 5 eb:ClearFocus() if msg.active then AN:StartMessage(msg) end end)
 		row.interval:SetScript("OnEditFocusLost", function(eb) msg.interval = tonumber(eb:GetText()) or msg.interval end)
 
 		row.text:ClearAllPoints()
-		row.text:SetPoint("LEFT", row.interval, "RIGHT", 4, 0)
+		row.text:SetPoint("LEFT", row.minLbl, "RIGHT", 6, 0)
 		row.text:SetPoint("RIGHT", row.del, "LEFT", -4, 0)
 		row.text:SetText(msg.text or "")
 		row.text:SetScript("OnEnterPressed", function(eb) msg.text = eb:GetText() eb:ClearFocus() end)
