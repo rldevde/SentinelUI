@@ -271,7 +271,11 @@ function NAV:SetArrowToNext(chain, seq)
 			return
 		end
 	end
-	self:SetArrowToClosest()
+	-- chain exhausted (or no chain): the arrow disappears instead of jumping
+	-- to whatever stale waypoint happens to be closest (old quest picks,
+	-- corpse markers, other-zone leftovers)
+	self.active = nil
+	if self.arrow then self.arrow:Hide() end
 end
 
 -- crazy arrow ---------------------------------------------------------------
@@ -1308,7 +1312,7 @@ function NAV:Initialize()
 	end
 	self:SetupWaypointFacade()
 	self:RegisterEvent("PLAYER_DEAD", function() C_Timer.After(1, function() NAV:CorpseWaypoint() end) end)
-	self:RegisterEvent("ZONE_CHANGED_NEW_AREA", function() NAV:RefreshPins() if NAV.active == nil and NAV.db.autoQueue ~= false then NAV:SetArrowToClosest() end end)
+	self:RegisterEvent("ZONE_CHANGED_NEW_AREA", function() NAV:RefreshPins() end)
 	S:RegisterChatCommand("sway", function(msg) NAV:Slash(msg) end)
 	S:RegisterChatCommand("suiway", function(msg) NAV:Slash(msg) end)
 	S:LogInfo("nav", format("apis: unitPos=%s worldPos=%s facing=%s", tostring(UnitPosition ~= nil),
