@@ -21,6 +21,7 @@ standalone RLBetterItem release.
 - **Cursor ring off by default** — the mouse-follow ring now defaults to disabled for new profiles
 
 ### Fixed
+- **Empty buff/debuff squares** — removing the insecure `OnAttributeChanged` hook also removed the only code path that filled aura contents (icon/timer/stacks); header refreshes now always run the module-side content pass afterwards
 - **Navigation dead with real TomTom installed** — forwarded waypoints never set TomTom's crazy flag (its autoqueue profile default can be off), so the TomTom arrow never reacted; target waypoints now pass `crazy=true`
 - **Quest-XP on the XP bar** — client quest-XP APIs don't exist on this flavor; completed-quest XP now resolves through Questie's QuestXP database first, with client-API fallbacks
 - **Questie->TomTom RemoveWaypoint crash** — Questie's tracker calls `TomTom:RemoveWaypoint` on uids TomTom already cleared on arrival, which crashes inside TomTom on nil coords; SentinelUI now wraps `TomTom:RemoveWaypoint` with a dead-uid guard when a real TomTom is installed

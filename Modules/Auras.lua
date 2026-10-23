@@ -233,6 +233,9 @@ function A:RefreshHeaders(unit)
 		elseif SecureAuraHeader_Update then
 			SecureAuraHeader_Update(header)
 		end
+		-- no insecure OnAttributeChanged hook on the protected buttons anymore,
+		-- so contents (icon/timer/stacks) are filled here after every update
+		self:CombatRefresh(header)
 	end
 end
 
