@@ -60,10 +60,28 @@ local function NewButton(i)
 	return btn
 end
 
+local function Dock()
+	-- the bar belongs to QuestScope: ride along the tracker window instead of
+	-- floating on its own (falls back to the mover when no tracker exists)
+	local tracker = _G.SentinelUIQuestTracker
+	if tracker and not f.docked then
+		f.docked = true
+		f:ClearAllPoints()
+		f:SetPoint("TOPLEFT", tracker, "BOTTOMLEFT", 0, -6)
+		f:SetParent(tracker)
+	elseif not tracker and f.docked then
+		f.docked = nil
+		f:SetParent(UIParent)
+		f:ClearAllPoints()
+		f:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -235, -260)
+	end
+end
+
 function QI:Rebuild()
 	if not f then return end
 	if InCombatLockdown() then pending = true return end
 	pending = false
+	Dock()
 	local items = Collect()
 	for i = 1, MAX do
 		local btn = buttons[i] or NewButton(i)
