@@ -238,12 +238,15 @@ function DC:BuildFrame()
 	f.cells = {}
 	self.frame = f
 	S:CreateMover(f, "decurse", L["Decurse"], { "CENTER", "UIParent", "CENTER", -560, 0 }, "general")
+	-- the tiny 14px corner square was nearly impossible to grab; the whole
+	-- top strip of the frame is the drag handle now
 	local handle = CreateFrame("Button", nil, f, S.BackdropTemplate)
-	handle:SetSize(14, 14)
-	handle:SetPoint("TOPLEFT", f, "TOPLEFT", 4, -16)
+	handle:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
+	handle:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 0)
+	handle:SetHeight(18)
 	handle:SetBackdrop(BUTTON_BACKDROP)
-	handle:SetBackdropColor(0.2, 0.2, 0.2, 1)
-	handle:SetBackdropBorderColor(1, 1, 0, 1)
+	handle:SetBackdropColor(0.2, 0.2, 0.2, 0.6)
+	handle:SetBackdropBorderColor(1, 1, 0, 0.8)
 	handle:EnableMouse(true)
 	S:AttachMoverDrag(handle, "decurse")
 	f.handle = handle
