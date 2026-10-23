@@ -14,6 +14,7 @@ standalone RLBetterItem release.
 - **Nameplate style "Hidden" for friendly units** — friendlyStyle gains a HIDE option that suppresses friendly nameplates entirely (SentinelUI plate + Blizzard bar pinned at 0 alpha); switch takes effect live, enemy plates unaffected
 
 ### Changed
+- **Navigation defers to a real TomTom install** — when TomTom is loaded it keeps its own arrow/pins; SentinelUI forwards every waypoint into it (local mirror stays for chain tracking), the own arrow/minimap pin stand down, and a light arrival watcher keeps quest-chain advancing working
 - **Navigation module rewritten** — the navigator was rebuilt from scratch with the same surface (arrow with title/distance/ETA, world-map pins + route line, minimap edge pin, quest navigation, corpse waypoint, TomTom facade, `/sway`) but leaner internals: no more conv diagnostics, and the arrow never retargets to stale waypoints on its own
 - **Aggro alert off by default** — the module now defaults to disabled (was noisy for tanks); enable via Modules → Aggro Alert
 - **Cursor ring off by default** — the mouse-follow ring now defaults to disabled for new profiles

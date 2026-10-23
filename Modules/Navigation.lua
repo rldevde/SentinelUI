@@ -14,6 +14,32 @@ local PI2 = math.pi * 2
 
 local HBD = LibStub and (LibStub("HereBeDragonsQuestie-2.0", true) or LibStub("HereBeDragons-2.0", true))
 
+-- when the real TomTom addon is installed it owns the arrow/pins; we keep a
+-- local waypoint mirror (QuestScope liveness tracking) and forward everything
+local RealTomTom
+
+local function ForwardAdd(wp, mapID)
+	if not RealTomTom then return end
+	local ok, uid = pcall(RealTomTom.AddWaypoint, RealTomTom, mapID, wp.x, wp.y, {
+		title = wp.title, from = "SentinelUI", persistent = false, silent = true,
+	})
+	if ok then wp.ttuid = uid end
+end
+
+local function ForwardRemove(wp)
+	if RealTomTom and wp and wp.ttuid and RealTomTom.RemoveWaypoint then
+		pcall(RealTomTom.RemoveWaypoint, RealTomTom, wp.ttuid)
+	end
+end
+
+local function ForwardArrow()
+	local a = NAV.active
+	if not (RealTomTom and a and a.wp.ttuid) then return end
+	if RealTomTom.SetCrazyArrow then
+		pcall(RealTomTom.SetCrazyArrow, RealTomTom, a.wp.ttuid, NAV.db.arrival or 15, a.wp.title)
+	end
+end
+
 local function CurrentMap()
 	return C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player")
 end
@@ -74,11 +100,13 @@ function NAV:AddWaypoint(mapID, x, y, title, opts)
 		S:Print(format(L["Waypoint set: %s (%.1f, %.1f)"], wp.title, x * 100, y * 100))
 	end
 	self:RefreshPins()
+	ForwardAdd(wp, mapID)
 	-- non-silent waypoints become the arrow target immediately; silent ones
 	-- (multi-spawn chain picks) wait in the queue
 	if opts.crazy ~= false and not opts.silent then
 		self.active = { mapID = mapID, wp = wp }
 		if self.arrow then self.arrow.title:SetText(wp.title) self.arrow:Show() end
+		ForwardArrow()
 	end
 	return wp
 end
@@ -87,6 +115,7 @@ function NAV:RemoveWaypoint(mapID, index)
 	local list = WP()[mapID]
 	if not list then return end
 	local removed = tremove(list, index)
+	ForwardRemove(removed)
 	if not next(list) then WP()[mapID] = nil end
 	if removed and self.active and self.active.wp == removed then
 		self.active = nil
@@ -99,7 +128,7 @@ function NAV:RemoveWaypointRef(mapID, wp)
 	local list = WP()[mapID]
 	if not (list and wp) then return end
 	for i, w in ipairs(list) do
-		if w == wp then tremove(list, i) break end
+		if w == wp then tremove(list, i) ForwardRemove(wp) break end
 	end
 	if not next(list) then WP()[mapID] = nil end
 	if self.active and self.active.wp == wp then
@@ -117,9 +146,17 @@ function NAV:IsWaypointLive(mapID, wp)
 end
 
 function NAV:ClearWaypoints(mapID)
+	if RealTomTom then
+		for m, list in pairs(WP()) do
+			if not mapID or m == mapID then
+				for _, wp in ipairs(list) do ForwardRemove(wp) end
+			end
+		end
+	end
 	if mapID then WP()[mapID] = nil else wipe(WP()) end
 	self.active = nil
 	if self.arrow then self.arrow:Hide() end
+	if RealTomTom and RealTomTom.ClearWaypoint then pcall(RealTomTom.ClearWaypoint, RealTomTom) end
 	self:RefreshPins()
 end
 
@@ -142,6 +179,7 @@ function NAV:SetArrowToClosest()
 		if best then self.arrow.title:SetText(best.wp.title or L["Waypoint"]) self.arrow:Show()
 		else self.arrow:Hide() end
 	end
+	ForwardArrow()
 end
 
 -- arrival: continue the same chain (pick 2/n, 3/n ...); never jump to an
@@ -160,6 +198,7 @@ function NAV:SetArrowToNext(chain, seq)
 		if nxt then
 			self.active = nxt
 			if self.arrow then self.arrow.title:SetText(nxt.wp.title or L["Waypoint"]) self.arrow:Show() end
+			ForwardArrow()
 			return
 		end
 	end
@@ -320,6 +359,12 @@ end
 function NAV:RefreshPins()
 	local wmf = _G.WorldMapFrame
 	if not wmf or not self.pins then return end
+	-- real TomTom draws its own pins; ours would double every marker
+	if RealTomTom then
+		for _, pin in ipairs(self.pins) do pin:Hide() end
+		self:UpdateRoute()
+		return
+	end
 	for _, pin in ipairs(self.pins) do pin:Hide() end
 	local canvas = MapCanvas()
 	if not (canvas and wmf:IsShown() and self.db.worldmapPin) then self:UpdateRoute() return end
@@ -949,12 +994,15 @@ end
 
 -- TomTom-compat facade -----------------------------------------------------------
 function NAV:SetupWaypointFacade()
-	local TT = _G.TomTom
-	if TT then
-		TT.__sui_orig = TT.__sui_orig or { AddWaypoint = TT.AddWaypoint, RemoveWaypoint = TT.RemoveWaypoint }
-	else
-		TT = { version = "SentinelUI", api = "compat" }
+	-- a real TomTom install keeps its own methods and drives everything;
+	-- we only forward into it (no fake facade, no method overrides)
+	if _G.TomTom and _G.TomTom.AddWaypoint then
+		RealTomTom = _G.TomTom
+		if S.LogInfo then S:LogInfo("navigation", "real TomTom detected - forwarding waypoints") end
+		return
 	end
+	local TT = { version = "SentinelUI", api = "compat" }
+		TT.__sui_orig = TT.__sui_orig or { AddWaypoint = TT.AddWaypoint, RemoveWaypoint = TT.RemoveWaypoint }
 	local function WpTitle(opts)
 		return type(opts) == "table" and (opts.title or opts.minimap_desc or opts.worldmap_desc) or nil
 	end
@@ -1007,10 +1055,21 @@ function NAV:Initialize()
 	self.db = S.db.profile.navigation
 	if self.db.enable == false then return end
 	self.pins = {}
-	self:BuildArrow()
-	self:BuildMinimapPin()
+	-- a real TomTom install owns the arrow/pins; we stay a waypoint front-end.
+	-- TomTom may load after us -> also re-check on ADDON_LOADED.
+	if _G.TomTom and _G.TomTom.AddWaypoint then RealTomTom = _G.TomTom end
+	if not RealTomTom then
+		self:BuildArrow()
+		self:BuildMinimapPin()
+	end
 	self:HookWorldMap()
 	self:RegisterEvent("ADDON_LOADED", function(_, _, addon)
+		if addon == "TomTom" and _G.TomTom and _G.TomTom.AddWaypoint and not RealTomTom then
+			RealTomTom = _G.TomTom
+			if NAV.arrow then NAV.arrow:Hide() end
+			if NAV.mmPin then NAV.mmPin:Hide() end
+			NAV:RefreshPins()
+		end
 		if addon == "Blizzard_WorldMap" then NAV:HookWorldMap() NAV:RefreshPins() end
 		if addon == "Blizzard_QuestLog" or addon == "Blizzard_WorldMap" then
 			S:SafeCall("Nav:QuestLog", function() NAV:HookQuestLog() end)
@@ -1025,6 +1084,26 @@ function NAV:Initialize()
 		end)
 	end
 	self:SetupWaypointFacade()
+	-- with real TomTom driving the arrow there is no OnUpdate ticker of our
+	-- own: watch arrival so chains still advance and waypoint pins clear up
+	if RealTomTom then
+		local w = CreateFrame("Frame")
+		w.t = 0
+		w:SetScript("OnUpdate", function(s, e)
+			s.t = s.t + e
+			if s.t < 0.5 then return end
+			s.t = 0
+			local a = NAV.active
+			if not a then return end
+			local dist = VectorTo(a.mapID, a.wp.x, a.wp.y)
+			if dist and dist <= (NAV.db.arrival or 15) then
+				if NAV.db.pingOnArrive ~= false then pcall(PlaySound, 3175) end
+				local chain, seq = a.wp.chain, a.wp.seq
+				NAV:RemoveActiveWaypoint()
+				NAV:SetArrowToNext(chain, seq)
+			end
+		end)
+	end
 	self:RegisterEvent("PLAYER_DEAD", function() C_Timer.After(1, function() NAV:CorpseWaypoint() end) end)
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA", function() NAV:RefreshPins() end)
 	S:RegisterChatCommand("sway", function(msg) NAV:Slash(msg) end)
