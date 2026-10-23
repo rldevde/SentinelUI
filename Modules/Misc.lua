@@ -172,10 +172,27 @@ local function ScanQuestObjectives()
 end
 
 -- Anti-AFK -------------------------------------------------------------------
--- clears the AFK flag the moment it appears so the idle logout never starts
+-- clears the AFK flag so the idle logout never starts. With the AFK screen
+-- enabled it owns the flag for display: clearing instantly would fight the
+-- screen and spam the yellow AFK message on every re-flag, so the clear is
+-- deferred to just before the ~30 min idle logout instead.
+local lastAntiAfk = 0
 function M:PLAYER_FLAGS_CHANGED()
 	if self.db.antiAFK == false or not UnitIsAFK or not SendChatMessage then return end
-	if UnitIsAFK("player") then SendChatMessage("", "AFK") end -- toggles the flag off
+	if not UnitIsAFK("player") then return end
+	if S.db.profile.general.afk then
+		if not self.antiAfkTimer then
+			self.antiAfkTimer = C_Timer.After(28 * 60, function()
+				self.antiAfkTimer = nil
+				if UnitIsAFK("player") then SendChatMessage("", "AFK") end
+			end)
+		end
+		return
+	end
+	local now = GetTime()
+	if now - lastAntiAfk < 10 then return end -- re-flag loops: one toggle per 10s
+	lastAntiAfk = now
+	SendChatMessage("", "AFK") -- toggles the flag off
 end
 
 -- Auto-fill delete confirm ----------------------------------------------------

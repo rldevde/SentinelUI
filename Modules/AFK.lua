@@ -185,6 +185,9 @@ end
 function AFK:Toggle(show)
 	local f = self.frame
 	if show then
+		-- re-entrant guard: PLAYER_FLAGS_CHANGED fires for every flag flip,
+		-- re-running the show path restarted the model animation and timer
+		if self.active then return end
 		if InCombatLockdown() or (CinematicFrame and CinematicFrame:IsShown()) or (MovieFrame and MovieFrame:IsShown()) then return end
 		if UnitCastingInfo("player") then return end
 		self.start = GetTime()
