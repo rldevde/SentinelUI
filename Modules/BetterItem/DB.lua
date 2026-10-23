@@ -101,6 +101,16 @@ function addon:InitializeDB()
         RLBetterItemDB.sellButtonShow = false
     end
 
+    -- one-time migration: only item level stays on char slots; score and
+    -- durability overlays get switched off (numbers piled up on the icons).
+    -- users can still re-enable them in the options
+    if not RLBetterItemDB._charSlotsMig then
+        RLBetterItemDB._charSlotsMig = true
+        RLBetterItemDB.charSlotScores = false
+        RLBetterItemDB.durabilityWarn = false
+        RLBetterItemDB.inspectScores = false
+    end
+
     self.db = RLBetterItemDB
 
     -- per-character profile: scale/outfit/sell-quality are stored per

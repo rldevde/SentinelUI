@@ -19,6 +19,7 @@ standalone RLBetterItem release.
 - **Cursor ring off by default** — the mouse-follow ring now defaults to disabled for new profiles
 
 ### Fixed
+- **BetterItem: overlapping numbers on char/inspect slots** — score, durability-% and compare-% texts piled onto the item icons together with the iLvl; a one-time migration now switches all of them off so only the quality-colored iLvl remains (all can be re-enabled in the options; embedded BetterItem 1.9.5)
 - **Aura-header combat block hardened** — the secure aura template's OnEvent/OnUpdate scripts and all its event registrations are now fully detached; the module drives aura updates itself (full update out of combat, contents-only refresh mid-combat)
 - **Roll summary announced "Ihr" as the winner** — the German "Ihr gewann %s" line also matched the generic "%s gewann %s" pattern, so your own wins posted as "Ihr gewann ..."; you-win formats are now matched first and a captured localized "You" resolves to your character name
 - **Nav arrow retargeted to stale waypoints** — after reaching a waypoint the arrow fell back to the *closest* waypoint in the whole database, which resurrected leftover quest picks, old corpse markers and other-zone points instead of just disappearing. Arrival now only advances to the next pick of the *same* chain; with no continuation the arrow hides. The zone-change auto-retarget is removed too — the arrow only points where you (or a quest) explicitly sent it
