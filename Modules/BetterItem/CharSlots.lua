@@ -24,8 +24,10 @@ local function ScoreText(button, unit, slotId, enabled)
         return
     end
     if not fs then
-        fs = button:CreateFontString(nil, "OVERLAY")
-        fs:SetFont("Fonts\\FRIZQT__.TTF", 9, "OUTLINE")
+        fs = button:CreateFontString(nil, "OVERLAY", nil, 7)
+        fs:SetFont("Fonts\\FRIZQT__.TTF", 10, "THICKOUTLINE")
+        fs:SetShadowColor(0, 0, 0, 1)
+        fs:SetShadowOffset(1, -1)
         fs:SetPoint("BOTTOM", button, "BOTTOM", 0, 2)
         button.rlScoreText = fs
     end
@@ -51,8 +53,10 @@ local function ILvlText(button, unit, slotId, enabled)
         return
     end
     if not fs then
-        fs = button:CreateFontString(nil, "OVERLAY")
-        fs:SetFont("Fonts\\FRIZQT__.TTF", 8, "OUTLINE")
+        fs = button:CreateFontString(nil, "OVERLAY", nil, 7)
+        fs:SetFont("Fonts\\FRIZQT__.TTF", 10, "THICKOUTLINE")
+        fs:SetShadowColor(0, 0, 0, 1)
+        fs:SetShadowOffset(1, -1)
         fs:SetPoint("TOPLEFT", button, "TOPLEFT", 1, -1)
         button.rlILvlText = fs
     end
@@ -158,8 +162,10 @@ local function DurabilityText(button, slotId, enabled)
     local pct = cur / max * 100
     if pct >= 60 then return Hide() end -- only warn below 60%
     if not fs then
-        fs = button:CreateFontString(nil, "OVERLAY")
-        fs:SetFont("Fonts\\FRIZQT__.TTF", 8, "OUTLINE")
+        fs = button:CreateFontString(nil, "OVERLAY", nil, 7)
+        fs:SetFont("Fonts\\FRIZQT__.TTF", 9, "THICKOUTLINE")
+        fs:SetShadowColor(0, 0, 0, 1)
+        fs:SetShadowOffset(1, -1)
         fs:SetPoint("TOPRIGHT", button, "TOPRIGHT", -1, -1)
         button.rlDurText = fs
     end
@@ -181,8 +187,10 @@ local function CompareText(button, unit, slotId, enabled)
     local score, baseline = addon:GetUpgradeInfo(link)
     if not score then return Hide() end
     if not fs then
-        fs = button:CreateFontString(nil, "OVERLAY")
-        fs:SetFont("Fonts\\FRIZQT__.TTF", 8, "OUTLINE")
+        fs = button:CreateFontString(nil, "OVERLAY", nil, 7)
+        fs:SetFont("Fonts\\FRIZQT__.TTF", 9, "THICKOUTLINE")
+        fs:SetShadowColor(0, 0, 0, 1)
+        fs:SetShadowOffset(1, -1)
         fs:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -1, 1)
         button.rlCmpText = fs
     end
