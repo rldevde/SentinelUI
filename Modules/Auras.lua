@@ -197,12 +197,16 @@ function A:CreateHeader(kind)
 	S:CreateMover(holder, kind, kind == "buffs" and L["Player Buffs"] or L["Player Debuffs"], pos, "auras")
 	self:ConfigureHeader(header)
 	header:Show()
-	-- the client's SecureAuraHeader_OnEvent runs SecureAuraHeader_Update even
-	-- mid-combat, which calls ClearAllPoints on the protected aura buttons ->
-	-- ADDON_ACTION_BLOCKED. Take over UNIT_AURA ourselves: out of combat the
-	-- real update runs; in combat only the contents of already-mapped buttons
-	-- refresh (new auras queue a full update for regen)
-	header:UnregisterEvent("UNIT_AURA")
+	-- the client's SecureAuraHeader event/update scripts run
+	-- SecureAuraHeader_Update even mid-combat, which calls ClearAllPoints on
+	-- the protected aura buttons -> ADDON_ACTION_BLOCKED. Removing the
+	-- template's scripts and events entirely cuts every entry point into that
+	-- path; the module drives updates itself: out of combat the real update
+	-- runs, in combat only the contents of already-mapped buttons refresh
+	-- (new auras get their buttons at regen via the queued full update)
+	header:SetScript("OnEvent", nil)
+	header:SetScript("OnUpdate", nil)
+	header:UnregisterAllEvents()
 	self[kind] = header
 end
 
@@ -220,8 +224,8 @@ function A:CombatRefresh(header)
 	end
 end
 
-function A:UNIT_AURA(_, unit)
-	if unit ~= "player" then return end
+function A:RefreshHeaders(unit)
+	if unit and unit ~= "player" then return end
 	for _, header in pairs({ self.buffs, self.debuffs }) do
 		if InCombatLockdown() then
 			self:CombatRefresh(header)
@@ -231,6 +235,10 @@ function A:UNIT_AURA(_, unit)
 		end
 	end
 end
+
+function A:UNIT_AURA(_, unit) self:RefreshHeaders(unit) end
+function A:UNIT_INVENTORY_CHANGED(_, unit) self:RefreshHeaders(unit) end
+function A:GROUP_ROSTER_UPDATE() self:RefreshHeaders() end
 
 function A:DisableBlizzard()
 	for _, name in ipairs({ "BuffFrame", "DebuffFrame", "TemporaryEnchantFrame" }) do
@@ -253,4 +261,6 @@ function A:Initialize()
 	self:CreateHeader("buffs")
 	self:CreateHeader("debuffs")
 	self:RegisterEvent("UNIT_AURA")
+	self:RegisterEvent("UNIT_INVENTORY_CHANGED")
+	self:RegisterEvent("GROUP_ROSTER_UPDATE")
 end

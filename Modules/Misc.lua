@@ -296,10 +296,12 @@ local function WinPatterns()
 		local p = "^" .. fmt:gsub("([%^%$%(%)%%%.%[%]%+%-%?])", "%%%1"):gsub("%%%%s", "(.-)"):gsub("%%%%d", "(%%d+)") .. "$"
 		winPats[#winPats + 1] = { pat = p, you = you }
 	end
-	Add(_G.LOOT_ROLL_WON)
+	-- "you won" formats first: e.g. the German "Ihr gewann %s" also matches the
+	-- generic "%s gewann %s" pattern and would be announced as winner "Ihr"
 	Add(_G.LOOT_ROLL_YOU_WON, true)
-	Add(_G.LOOT_ROLL_WON_NO_ROLL)
 	Add(_G.LOOT_ROLL_YOU_WON_NO_ROLL, true)
+	Add(_G.LOOT_ROLL_WON)
+	Add(_G.LOOT_ROLL_WON_NO_ROLL)
 	if #winPats == 0 then winPats = false end
 	return winPats
 end
@@ -326,6 +328,9 @@ function M:CHAT_MSG_LOOT(_, msg)
 						if c:find(link, 1, true) then hasItem = true
 						elseif not name and not tonumber(c) and not c:find("|H") then name = c end
 					end
+					-- localized "You" captured as a name (generic pattern hit a
+					-- you-format line first) means the local player won
+					if name and _G.YOU and name == _G.YOU then name = S.myName end
 					if name and (hasItem or wp.you) then
 						local ch = IsInRaid() and "RAID" or "PARTY"
 						SendChatMessage(format(L["%s won %s"], name, link), ch)
