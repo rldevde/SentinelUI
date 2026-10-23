@@ -7,14 +7,26 @@ Note on versions: `## Version` is SentinelUI's own release number. The embedded
 BetterItem module reports `## X-BetterItem-Version` and must always equal the
 standalone RLBetterItem release.
 
+## [1.4.1]
+
+### Added
+- **Nameplate style "Hidden" for friendly units** — friendlyStyle gains a HIDE option that suppresses friendly nameplates entirely (SentinelUI plate + Blizzard bar pinned at 0 alpha); switch takes effect live, enemy plates unaffected
+
+### Changed
+- **Aggro alert off by default** — the module now defaults to disabled (was noisy for tanks); enable via Modules → Aggro Alert
+- **Cursor ring off by default** — the mouse-follow ring now defaults to disabled for new profiles
+
+### Fixed
+- **Threat meter width** — the window was a fixed 180px, so names overlapped or clipped into the percentage. Width now adapts to the widest visible name or the title (110–400px), measured on an unconstrained font string so anchoring cannot skew the read
+- **Roll summary showed the dice result as the winner** — roll-result lines also contain the item link and were mistaken for the win line; only lines matching `LOOT_ROLL_WON`/`LOOT_ROLL_YOU_WON` are announced now, and the winner is picked by capture analysis (the non-numeric, non-link capture) so arg order cannot swap name and dice result
+- **Event-arg off-by-one in 12 handlers** — anonymous `RegisterEvent` handlers receive `(owner, event, payload…)`, but 12 sites bound the payload to the 2nd parameter, so they got the event name instead of real data. Silently killed: loot-roll summary (`GetLootRollItemLink` usage error), minimap ping names, aggro warning, banish timer, external-buff icons, fishing skill-ups, hunter ammo-on-aura check, nameplate quest refresh, purge icon, session XP/kill tracking, soulstone tracking
+- **Quest Items crash on load** — the module file was missing its `ns`/`S` bootstrap lines, so it errored at startup and the whole module never initialized
+- **Outfit bar drag error** — dragging the outfit bar while docked to the bottom bar threw "Frame is not movable"; the drag handler now checks movability first
+- **Data text slots overlapping** — slot widths were measured on font strings clamped to their slot box, so the read could under-report and texts bled into each other ("Neue Post" over the next slot); widths are now measured on an unconstrained font string
+
 ## [1.4.0]
 
 ### Fixed
-- **Threat meter width** — the window was a fixed 180px, so names overlapped or clipped into the percentage. Width now adapts to the widest visible name (110–400px) and long names ellipsize before hitting the % value
-- **Roll summary showed the dice result as the winner** — the roll-result lines ("9 würfelt …") also contain the item link and fell back to grabbing the first word of the line, announcing "9 gewann [Item]" instead of the player name. Only lines matching the actual win formats (`LOOT_ROLL_WON` / `LOOT_ROLL_YOU_WON`) are announced now
-- **Event-arg off-by-one in 12 handlers** — anonymous `RegisterEvent` handlers receive `(owner, event, payload…)`, but 12 sites bound the payload to the 2nd parameter, so they got the event name instead of real data. Silently killed: loot-roll summary (`GetLootRollItemLink` usage error), minimap ping names, aggro warning, banish timer, external-buff icons, fishing skill-ups, hunter ammo-on-aura check, nameplate quest refresh, purge icon, session XP/kill tracking, soulstone tracking
-- **Quest Items crash on load** — the module file was missing its `ns`/`S` bootstrap lines, so it errored 6x at startup and the whole module never initialized
-- **Outfit bar drag error** — dragging the outfit bar while docked to the bottom bar threw "Frame is not movable"; the drag handler now checks movability first
 - **Raid check inspect crash** — `INSPECT_READY` called `ShortName` before its local declaration, so every inspect reply errored and enchant/gem data never populated
 - **Friends-list notes hook** — falls back to `FriendsFrame_UpdateFriends` on clients where `FriendsList_Update` does not exist
 - **Nameplate cast bar overlap** — the "-> target" cast-target text sat on the same right edge as the cast timer, so spell name / timer / target painted on top of each other; the target text now anchors left of the timer and the spell name is clipped before it
