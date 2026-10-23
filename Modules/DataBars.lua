@@ -55,27 +55,37 @@ function DB:ApplyBarSettings(bar)
 end
 
 -- sums reward XP of completed-but-not-turned-in quests in the log
+local pendingScan
 local function PendingQuestXP()
+	if pendingScan then return 0, 0 end -- re-entrancy guard for sync event bursts
+	pendingScan = true
 	local total, count = 0, 0
 	local n = (C_QuestLog and C_QuestLog.GetNumQuestLogEntries and C_QuestLog.GetNumQuestLogEntries())
 		or (GetNumQuestLogEntries and GetNumQuestLogEntries())
+	local sel = GetQuestLogSelection and GetQuestLogSelection()
 	for i = 1, n or 0 do
 		local a, _, _, isHeader, _, isComplete, _, questID = GetQuestLogTitle and GetQuestLogTitle(i)
-		local done, qid, idx
+		local done, qid
 		if type(a) == "table" then
 			done = a.isComplete and a.isComplete ~= -1
 			qid = a.questID
 		else
 			done = isComplete == 1 or isComplete == true
 			qid = questID
-			idx = i
 		end
 		if done and qid then
-			local xp = (C_QuestLog and C_QuestLog.GetQuestLogRewardXP and C_QuestLog.GetQuestLogRewardXP(qid))
-				or (GetQuestLogRewardXP and GetQuestLogRewardXP(idx))
+			-- modern API takes the questID; the classic one returns the reward
+			-- of the *selected* log entry -> temporarily select, restore after
+			local xp = C_QuestLog and C_QuestLog.GetQuestLogRewardXP and C_QuestLog.GetQuestLogRewardXP(qid)
+			if (not xp or S.IsSecret(xp) or xp == 0) and SelectQuestLogEntry and GetQuestLogRewardXP then
+				pcall(SelectQuestLogEntry, i)
+				xp = GetQuestLogRewardXP()
+			end
 			if xp and not S.IsSecret(xp) and xp > 0 then total = total + xp count = count + 1 end
 		end
 	end
+	if sel and SelectQuestLogEntry then pcall(SelectQuestLogEntry, sel) end
+	pendingScan = false
 	return total, count
 end
 
