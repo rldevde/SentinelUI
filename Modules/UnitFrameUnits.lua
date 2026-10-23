@@ -203,7 +203,7 @@ function UF:ApplyHeaderAttributes(header)
 	end
 	if type(db.visibility) == "string" and db.visibility ~= "" then visibility = db.visibility end
 	if not db.enable then visibility = "hide" end
-	RegisterStateDriver(header, "visibility", visibility)
+	RegisterStateDriver(header.holder, "visibility", visibility)
 	S:DisableMover(header.key, not db.enable)
 end
 
@@ -212,7 +212,11 @@ function UF:CreateHeader(key, title, pos, opts)
 	local name = "SentinelUI_" .. key:gsub("^%l", string.upper) .. "Header"
 	local holder = CreateFrame("Frame", name .. "Holder", UIParent)
 	holder:SetSize(db.width, db.height)
-	local header = CreateFrame("Frame", name, UIParent, opts.template or "SecureGroupHeaderTemplate")
+	-- header is parented to the holder: the visibility state driver goes on the
+	-- unprotected holder, so a state flip in combat only hides/shows the holder
+	-- instead of running SecureGroupHeader_Update (SetPoint on protected
+	-- children -> ADDON_ACTION_BLOCKED)
+	local header = CreateFrame("Frame", name, holder, opts.template or "SecureGroupHeaderTemplate")
 	header.key, header.title, header.holder = key, title, holder
 	header.isRaid = opts.raid
 	header.groupFilter = opts.groupFilter
@@ -231,7 +235,8 @@ function UF:CreateHeader(key, title, pos, opts)
 
 	-- pre-create all buttons out of combat so nothing protected happens later
 	local total = opts.raid and ((db.unitsPerColumn or 5) * (db.maxColumns or 8)) or 5
-	UnregisterStateDriver(header, "visibility")
+	UnregisterStateDriver(holder, "visibility")
+	holder:Show()
 	header:Show()
 	header:SetAttribute("startingIndex", -total + 1)
 	header:SetAttribute("startingIndex", 1)
