@@ -74,8 +74,10 @@ function AN:StartMessage(msg)
 	msg.interval = tonumber(msg.interval) or 5
 	if msg.interval < 0.1 then msg.interval = 0.1 end
 	self.timers[msg.id] = C_Timer.NewTicker(msg.interval * 60, function()
+		msg.nextPost = GetTime() + msg.interval * 60
 		S:SafeCall("Announcer:Post", AN.PostMessage, AN, msg)
 	end)
+	msg.nextPost = GetTime() + msg.interval * 60
 	-- first post right away so the user gets feedback it is running
 	self:PostMessage(msg)
 end
@@ -205,6 +207,18 @@ function AN:BuildWindow()
 	scroll:SetScrollChild(child)
 	f.child = child
 	f.rows = {}
+	-- live countdown on running rows (only ticks while the window is open)
+	f:SetScript("OnUpdate", function(self, e)
+		self.t = (self.t or 0) + e
+		if self.t < 0.5 then return end
+		self.t = 0
+		for _, r in ipairs(self.rows) do
+			if r:IsShown() and r.countdown and r.countdown:IsShown() and r.msg and r.msg.nextPost then
+				local left = max(0, r.msg.nextPost - GetTime())
+				r.countdown:SetFormattedText(L["next in %d:%02d"], floor(left / 60), floor(left % 60))
+			end
+		end
+	end)
 	self.frame = f
 end
 
@@ -287,6 +301,10 @@ function AN:GetRow(i)
 	row.minLbl:SetText(L["min."])
 	row.minLbl:SetTextColor(0.7, 0.7, 0.7)
 
+	row.countdown = S:FontString(row, 10, "OUTLINE")
+	row.countdown:SetTextColor(0.4, 0.9, 0.4)
+	row.countdown:Hide()
+
 	row.text = makeEdit(row, 240, L["your message here..."])
 
 	row.del = CreateFrame("Button", nil, row)
@@ -339,6 +357,19 @@ function AN:RefreshRows()
 		row.interval:SetText(tostring(msg.interval or 5))
 		row.interval:SetScript("OnEnterPressed", function(eb) msg.interval = tonumber(eb:GetText()) or 5 eb:ClearFocus() if msg.active then AN:StartMessage(msg) end end)
 		row.interval:SetScript("OnEditFocusLost", function(eb) msg.interval = tonumber(eb:GetText()) or msg.interval end)
+
+		-- while running, the interval field turns into a live countdown
+		local running = msg.active and msg.nextPost ~= nil
+		row.countdown:ClearAllPoints()
+		row.countdown:SetPoint("LEFT", row.everyLbl, "LEFT", 0, 0)
+		row.countdown:SetShown(running)
+		row.everyLbl:SetShown(not running)
+		row.interval:SetShown(not running)
+		row.minLbl:SetShown(not running)
+		if running then
+			local left = max(0, msg.nextPost - GetTime())
+			row.countdown:SetFormattedText(L["next in %d:%02d"], floor(left / 60), floor(left % 60))
+		end
 
 		row.text:ClearAllPoints()
 		row.text:SetPoint("LEFT", row.minLbl, "RIGHT", 6, 0)

@@ -2146,4 +2146,5 @@ L["channel"] = "Kanal"
 L["your message here..."] = "Nachricht eingeben..."
 L["Interval"] = "Intervall"
 L["On/Off"] = "An/Aus"
+L["next in %d:%02d"] = "nächste in %d:%02d"
 
