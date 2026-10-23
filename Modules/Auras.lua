@@ -52,7 +52,15 @@ function A:UpdateAura(btn, index)
 	local header = btn.header
 	local unit = header:GetAttribute("unit") or "player"
 	local aura = S.GetAura(unit, index, btn.filter)
-	if not aura then return end
+	if not aura then
+		-- assigned slot but the aura is gone: clear stale contents so the
+		-- button doesn't linger as an empty or outdated square
+		btn.icon:SetTexture(nil)
+		btn.count:SetText("")
+		btn.time:SetText("")
+		btn.cd:Hide()
+		return
+	end
 	btn.icon:SetTexture(aura.icon)
 	local count = aura.applications
 	if IsSecret(count) then
