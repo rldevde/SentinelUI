@@ -2128,3 +2128,8 @@ local T = {
 	["Classic (stacked bars)"] = "Klassisch (gestapelte Balken)",
 }
 for k, v in pairs(T) do if not rawget(L, k) then L[k] = v end end
+
+local T = {
+	["Energy Tick"] = "Energie-Tick",
+}
+for k, v in pairs(T) do if not rawget(L, k) then L[k] = v end end

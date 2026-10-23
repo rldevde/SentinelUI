@@ -53,6 +53,10 @@ function MT:Start()
 		local now = GetTime()
 		local power = MT:TrackedPower()
 		if not power then MT.frame:Hide() return end
+		if MT.powerShown ~= power then
+			MT.powerShown = power
+			MT.frame.title:SetText(power == "ENERGY" and L["Energy Tick"] or L["Mana Tick"])
+		end
 		-- only show while the info matters: five-second rule active, resource
 		-- not full yet, or in combat — parked at 100% out of combat = hidden
 		local pt = (power == "ENERGY") and ENERGY or MANA
@@ -122,7 +126,10 @@ function MT:Initialize()
 	self:RegisterEvent("UNIT_POWER_UPDATE", function(_, _, unit, ptype)
 		if unit ~= "player" then return end
 		local pt = (ptype == "ENERGY") and ENERGY or (ptype == "MANA") and MANA
-		if not pt then return end
+		if not pt or not MT:TrackedPower() then return end
+		-- power events still fire while the value itself is a secret on this
+		-- client; only spend/tick detection needs a readable number
+		MT:Start()
 		local cur = UnitPower("player", pt)
 		if not cur or S.IsSecret(cur) then return end
 		local prev = MT.prev[pt] or 0
@@ -138,8 +145,7 @@ function MT:Initialize()
 	-- hide while a druid is in a form (the druid mana strip covers it) and
 	-- pause while the active resource is untracked
 	self:RegisterEvent("UPDATE_SHAPESHIFT_FORM", function()
-		if MT:TrackedPower() and MT.running then return end
-		if not MT:TrackedPower() then MT:Stop() end
+		if MT:TrackedPower() then MT:Start() else MT:Stop() end
 	end)
 end
 
