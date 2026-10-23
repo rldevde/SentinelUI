@@ -18,6 +18,7 @@ standalone RLBetterItem release.
 - **Cursor ring off by default** — the mouse-follow ring now defaults to disabled for new profiles
 
 ### Fixed
+- **BetterItem: average item level dragged down by unscorable gear** — items the score table can't value contributed item level 0 to the Ø iLvl on tooltips and char/inspect summary instead of their real level; unscored items now count their actual ilvl. iLvl displays (tooltip line, slot overlay, average) also prefer `GetDetailedItemLevelInfo` when available (embedded BetterItem 1.9.5)
 - **Party frames dropped group members** — the party header never set `unitsPerColumn`/`maxColumns`, so the client's fallback could wrap extra members into an invisible second column; both attributes are now set explicitly. `GROUP_ROSTER_UPDATE` also forces the secure headers to reassign units, so members who joined while the header was hidden or mid-combat are no longer left out
 - AFK screen: character model no longer loops/restarts its animation while AFK (re-entrant toggle guard)
 - AFK screen: yellow "You are AFK" chat message no longer spams permanently — Anti-AFK no longer fights the flag while the screen is shown, the auto-clear is deferred to just before the idle logout

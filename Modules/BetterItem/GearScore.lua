@@ -67,6 +67,16 @@ function addon:GSQualityColor(score)
 end
 
 -- returns gearScore, itemLevel (0 for heirlooms on classic), r, g, b
+-- real item level of a link/id: prefers the effective level (upgrades,
+-- scaled items) when the client provides it, falls back to the base level
+local function ItemLevelOf(link)
+	local f = (C_Item and C_Item.GetDetailedItemLevelInfo) or GetDetailedItemLevelInfo
+	local ilvl = f and f(link)
+	if not ilvl or ilvl <= 0 then ilvl = select(4, GetItemInfo(link)) end
+	return ilvl or 0
+end
+addon.ItemLevelOf = ItemLevelOf
+
 function addon:GearScoreForItem(link)
 	if not link then return 0, 0, 0.1, 0.1, 0.1 end
 	local _, _, rarity, ilvl, _, _, _, _, equipLoc = GetItemInfo(link)
@@ -125,15 +135,21 @@ function addon:GearScoreForLinks(links, class)
 						pcall(C_Item.RequestLoadItemDataByID, id)
 					end
 				else
-					local s, ilvl = self:GearScoreForItem(item)
+					local s = self:GearScoreForItem(item)
+					-- the ilvl average covers every equipped piece, even ones
+					-- the score table can't value; scoring them as 0 used to
+					-- drag the average down
+					local ilvl = ItemLevelOf(item)
 					if hunter then
 						if i == 16 or i == 17 then s = s * 0.3164
 						elseif i == 18 then s = s * 5.3224 end
 					end
 					if both2H and (i == 16 or i == 17) then s = s * 0.5 end
 					gs = gs + s
-					count = count + 1
-					levelTotal = levelTotal + ilvl
+					if ilvl > 0 then
+						count = count + 1
+						levelTotal = levelTotal + ilvl
+					end
 				end
 			end
 		end

@@ -637,7 +637,9 @@ function addon:AddUpgradeLines(tooltip, link)
 
     -- item details: level, id, vendor price (one gray line)
     if self.db.itemTipExtra then
-        local _, _, _, ilvl, _, _, _, _, _, _, sellPrice = GetItemInfo(link)
+        local ilvl = self.ItemLevelOf and self.ItemLevelOf(link)
+            or select(4, GetItemInfo(link))
+        local sellPrice = select(11, GetItemInfo(link))
         local id = (GetItemInfoInstant and GetItemInfoInstant(link))
             or tonumber(string.match(link, "item:(%d+)") or "")
         local parts = {}

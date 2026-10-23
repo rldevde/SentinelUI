@@ -43,7 +43,9 @@ local function ILvlText(button, unit, slotId, enabled)
         return
     end
     local link = GetInventoryItemLink(unit, slotId)
-    local ilvl = link and select(4, GetItemInfo(link))
+    local ilvl = link and (
+        (addon.ItemLevelOf and addon.ItemLevelOf(link))
+        or select(4, GetItemInfo(link)))
     if not ilvl or ilvl <= 0 then
         if fs then fs:Hide() end
         return

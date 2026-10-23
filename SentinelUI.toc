@@ -7,7 +7,7 @@
 ## IconTexture: Interface\AddOns\SentinelUI\Media\Textures\Logo
 ## X-Website: https://xrl-dev.de/
 ## X-BugTracker: https://xrl-dev.de/bugtracker
-## X-BetterItem-Version: 1.9.4
+## X-BetterItem-Version: 1.9.5
 ## Category: xRL-Dev
 ## Category-deDE: xRL-Dev
 ## SavedVariables: SentinelUIDB, SentinelUILog, RLBetterItemDB, RLRaidDungeonResetDB, SentinelUIInstanceDB, SentinelUIBuffDB, SentinelUIGuildDB
