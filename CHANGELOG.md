@@ -21,6 +21,7 @@ standalone RLBetterItem release.
 - **Quest items dock to the QuestScope tracker** — the usable-quest-item bar anchors under the tracker window and moves with it instead of floating on its own
 
 ### Fixed
+- **QuestScope ignored its enable toggle** — the module initialized fully even when disabled (double trackers next to Questie); `Initialize` now respects the private/db enable flag and `Update` hides the tracker + map pins on runtime toggle-off
 - **Buffs/debuffs broken after combat-block workaround** — `SecureAuraHeader_Update` is file-local in the restricted env on this client and unreachable from addon code; headers now re-trigger via a benign `unit` attribute re-set, contents fill by scanning real children, combat-spawned buttons get their cancel-click wiring after regen, and stale slot contents are cleared
 - **Group-header combat blocks (final)** — the secure headers' own OnEvent/OnUpdate scripts kept running `SecureGroupHeader_Update` mid-combat (SetPoint on protected children -> ADDON_ACTION_BLOCKED); scripts are detached and the module drives roster/pet refreshes itself
 - **R-key whisper reply crashed** — the REPLY binding calls `ReplyTell` directly on this client; the messenger hooks it so R opens the conversation window instead of erroring in UpdateHeader

@@ -1480,6 +1480,9 @@ end
 -- module lifecycle
 -- ---------------------------------------------------------------------------
 function QS:Initialize()
+	-- respect the module toggle: a disabled QuestScope must not spawn its
+	-- tracker, pins, tickers or hooks (users running Questie saw double trackers)
+	if (self.private and self.private.enable == false) or (self.db and self.db.enable == false) then return end
 	QD = _G.SUIQuestScopeData or ns.QuestScopeData
 	if not (QD and QD.Quest and QD.Npc and QD.AreaToMap) then
 		S:Print(L["QuestScope: no quest data for this client flavor."] or "QuestScope: no quest data for this client flavor.")
@@ -1648,5 +1651,12 @@ function QS:Initialize()
 end
 
 function QS:Update()
+	-- runtime disable: hide everything the module drew; the framework only
+	-- gates Initialize, so a toggled-off module would linger without this
+	if (self.private and self.private.enable == false) or (self.db and self.db.enable == false) then
+		if self.tracker then self.tracker:Hide() end
+		for _, pin in pairs(self.mapPins or {}) do if pin.Hide then pin:Hide() end end
+		return
+	end
 	self:ScheduleRefresh()
 end
