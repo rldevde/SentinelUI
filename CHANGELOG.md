@@ -21,6 +21,7 @@ standalone RLBetterItem release.
 - **Cursor ring off by default** — the mouse-follow ring now defaults to disabled for new profiles
 
 ### Fixed
+- **Questie->TomTom RemoveWaypoint crash** — Questie's tracker calls `TomTom:RemoveWaypoint` on uids TomTom already cleared on arrival, which crashes inside TomTom on nil coords; SentinelUI now wraps `TomTom:RemoveWaypoint` with a dead-uid guard when a real TomTom is installed
 - **R-key whisper reply crashed** — the REPLY binding calls `ReplyTell` directly on this client, whose internal `UpdateHeader` errors when the chat-type lookup misses; the messenger now hooks `ReplyTell` too so R opens the conversation window instead of erroring
 - **Party/raid header combat blocks (final)** — the secure group headers' own OnEvent/OnUpdate scripts kept calling `SecureGroupHeader_Update` mid-combat (`SetPoint` on protected children -> ADDON_ACTION_BLOCKED); the scripts are detached and the module drives roster/pet refreshes itself, deferred to regen when in combat
 - **Mana/energy tick bar never showed** — the bar only started on `UNIT_POWER_UPDATE`, which is unreliable on this client; it now also listens on `UNIT_POWER_FREQUENT` and kicks on combat start / entering world

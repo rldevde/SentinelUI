@@ -998,6 +998,17 @@ function NAV:SetupWaypointFacade()
 	-- we only forward into it (no fake facade, no method overrides)
 	if _G.TomTom and _G.TomTom.AddWaypoint then
 		RealTomTom = _G.TomTom
+		-- other addons (Questie tracker) call RemoveWaypoint on uids TomTom
+		-- already cleared on arrival -> internal nil arithmetic. Guard it.
+		if RealTomTom.RemoveWaypoint and not RealTomTom.__suiGuardedRemove then
+			RealTomTom.__suiGuardedRemove = true
+			local origRemove = RealTomTom.RemoveWaypoint
+			RealTomTom.RemoveWaypoint = function(self, uid)
+				if uid == nil or (type(uid) == "table" and uid[1] == nil and uid.m == nil) then return end
+				local ok, err = pcall(origRemove, self, uid)
+				if not ok and S.LogWarn then S:LogWarn("navigation", "TomTom RemoveWaypoint ignored: " .. tostring(err)) end
+			end
+		end
 		if S.LogInfo then S:LogInfo("navigation", "real TomTom detected - forwarding waypoints") end
 		return
 	end

@@ -65,7 +65,12 @@ local function PendingQuestXP()
 	local sel = GetQuestLogSelection and GetQuestLogSelection()
 	for i = 1, n or 0 do
 		local a, _, _, isHeader, _, isComplete, _, questID = GetQuestLogTitle and GetQuestLogTitle(i)
-		local done, qid
+		local done, qid, hdr
+		if type(a) == "table" then
+			hdr = a.isHeader
+		else
+			hdr = isHeader
+		end
 		if type(a) == "table" then
 			done = a.isComplete and a.isComplete ~= -1
 			qid = a.questID
@@ -73,13 +78,25 @@ local function PendingQuestXP()
 			done = isComplete == 1 or isComplete == true
 			qid = questID
 		end
+		-- isComplete is unreliable/secret on some clients: cross-check with the
+		-- questID-based completion APIs
+		if not done and qid then
+			local ok, complete = pcall(function()
+				return (C_QuestLog and C_QuestLog.IsComplete and C_QuestLog.IsComplete(qid))
+					or (IsQuestComplete and IsQuestComplete(qid))
+			end)
+			if ok and (complete == true or complete == 1) then done = true end
+		end
+		if hdr then done = nil end
 		if done and qid then
-			-- modern API takes the questID; the classic one returns the reward
-			-- of the *selected* log entry -> temporarily select, restore after
-			local xp = C_QuestLog and C_QuestLog.GetQuestLogRewardXP and C_QuestLog.GetQuestLogRewardXP(qid)
+			-- several APIs exist across clients: questID-based on modern,
+			-- selected-entry on old classic — try them all in order
+			local xp = (C_QuestLog and C_QuestLog.GetQuestLogRewardXP and C_QuestLog.GetQuestLogRewardXP(qid))
+				or (C_QuestLog and C_QuestLog.GetQuestRewardXP and C_QuestLog.GetQuestRewardXP(qid))
+				or (C_QuestInfo and C_QuestInfo.GetQuestRewardXP and C_QuestInfo.GetQuestRewardXP(qid))
 			if (not xp or S.IsSecret(xp) or xp == 0) and SelectQuestLogEntry and GetQuestLogRewardXP then
 				pcall(SelectQuestLogEntry, i)
-				xp = GetQuestLogRewardXP()
+				xp = GetQuestLogRewardXP(i) or GetQuestLogRewardXP()
 			end
 			if xp and not S.IsSecret(xp) and xp > 0 then total = total + xp count = count + 1 end
 		end
