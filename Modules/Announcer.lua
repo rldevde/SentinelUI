@@ -279,7 +279,7 @@ function AN:GetRow(i)
 	row.everyLbl:SetText(L["every"])
 	row.everyLbl:SetTextColor(0.7, 0.7, 0.7)
 	row.interval = makeEdit(row, 34)
-	row.interval:SetNumeric(true)
+	if row.interval.SetNumeric then row.interval:SetNumeric(true) end
 	row.interval:SetMaxLetters(4)
 	row.minLbl = S:FontString(row, 10, "OUTLINE")
 	row.minLbl:SetText(L["min."])
