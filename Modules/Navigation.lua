@@ -216,7 +216,7 @@ function NAV:RemoveActiveWaypoint()
 	local list = WP()[active.mapID]
 	if list then
 		for i, wp in ipairs(list) do
-			if wp == active.wp then tremove(list, i) break end
+			if wp == active.wp then tremove(list, i) ForwardRemove(wp) break end
 		end
 		if not next(list) then WP()[active.mapID] = nil end
 	end
