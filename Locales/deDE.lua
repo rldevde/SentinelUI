@@ -2133,3 +2133,10 @@ local T = {
 	["Energy Tick"] = "Energie-Tick",
 }
 for k, v in pairs(T) do if not rawget(L, k) then L[k] = v end end
+L["Pending quest XP"] = "Offene Quest-EP"
+L["quest XP"] = "Quest-EP"
+L["quests"] = "Quests"
+L["Turn-in result"] = "Nach Abgabe"
+L["LEVEL UP!"] = "LEVEL-UP!"
+L["After turn-in"] = "Nach Abgabe"
+L["still missing"] = "fehlen noch"

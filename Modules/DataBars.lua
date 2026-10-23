@@ -54,6 +54,31 @@ function DB:ApplyBarSettings(bar)
 	bar.text:SetShown(db.height >= 8 and db.text ~= "NONE")
 end
 
+-- sums reward XP of completed-but-not-turned-in quests in the log
+local function PendingQuestXP()
+	local total, count = 0, 0
+	local n = (C_QuestLog and C_QuestLog.GetNumQuestLogEntries and C_QuestLog.GetNumQuestLogEntries())
+		or (GetNumQuestLogEntries and GetNumQuestLogEntries())
+	for i = 1, n or 0 do
+		local a, _, _, isHeader, _, isComplete, _, questID = GetQuestLogTitle and GetQuestLogTitle(i)
+		local done, qid, idx
+		if type(a) == "table" then
+			done = a.isComplete and a.isComplete ~= -1
+			qid = a.questID
+		else
+			done = isComplete == 1 or isComplete == true
+			qid = questID
+			idx = i
+		end
+		if done and qid then
+			local xp = (C_QuestLog and C_QuestLog.GetQuestLogRewardXP and C_QuestLog.GetQuestLogRewardXP(qid))
+				or (GetQuestLogRewardXP and GetQuestLogRewardXP(idx))
+			if xp and not S.IsSecret(xp) and xp > 0 then total = total + xp count = count + 1 end
+		end
+	end
+	return total, count
+end
+
 -- Experience
 function DB:UpdateExperience()
 	local bar = self.bars.experience
@@ -80,7 +105,22 @@ function DB:UpdateExperience()
 	bar.rested:SetValue(min(mx, cur + rested))
 	bar.rested:SetStatusBarColor(db.rested.r, db.rested.g, db.rested.b, db.rested.a)
 	bar.rested:SetOrientation(db.orientation or "HORIZONTAL")
-	bar.text:SetText(FormatText(db.text, cur, mx, rested > 0 and format(" |cffb080ff(R %.0f%%)|r", rested / mx * 100) or nil))
+	-- green segment behind the rested fill: XP waiting in completed quests
+	local qxp, qcount = PendingQuestXP()
+	if not bar.quest then
+		bar.quest = CreateFrame("StatusBar", nil, bar)
+		bar.quest:SetAllPoints()
+		bar.quest:SetStatusBarTexture(S.media.statusbar)
+		bar.quest:SetFrameLevel(max(1, bar.rested:GetFrameLevel() - 1))
+	end
+	bar.quest:SetMinMaxValues(0, mx)
+	bar.quest:SetValue(min(mx, cur + rested + qxp))
+	bar.quest:SetStatusBarColor(0.35, 0.9, 0.35, 0.55)
+	bar.quest:SetOrientation(db.orientation or "HORIZONTAL")
+	bar.quest:SetShown(qxp > 0)
+	local suffix = rested > 0 and format(" |cffb080ff(R %.0f%%)|r", rested / mx * 100) or ""
+	if qxp > 0 then suffix = suffix .. format(" |cff8aff80(+%s %s)|r", BreakUpLargeNumbers(qxp), L["quest XP"]) end
+	bar.text:SetText(FormatText(db.text, cur, mx, suffix ~= "" and suffix or nil))
 end
 
 function DB:Tooltip_experience(bar)
@@ -92,6 +132,15 @@ function DB:Tooltip_experience(bar)
 	GameTooltip:AddDoubleLine(L["XP"], format("%s / %s (%.1f%%)", BreakUpLargeNumbers(cur), BreakUpLargeNumbers(mx), cur / mx * 100), 1, 1, 1, 1, 1, 1)
 	GameTooltip:AddDoubleLine(L["Remaining"], format("%s (%.1f%%)", BreakUpLargeNumbers(mx - cur), (mx - cur) / mx * 100), 1, 1, 1, 1, 1, 1)
 	if rested > 0 then GameTooltip:AddDoubleLine(L["Rested"], format("%s (%.1f%%)", BreakUpLargeNumbers(rested), rested / mx * 100), 1, 1, 1, 0.7, 0.5, 1) end
+	local qxp, qcount = PendingQuestXP()
+	if qxp > 0 then
+		GameTooltip:AddDoubleLine(L["Pending quest XP"], format("%s (%d %s)", BreakUpLargeNumbers(qxp), qcount, L["quests"]), 0.4, 0.9, 0.4, 1, 1, 1)
+		if cur + qxp >= mx then
+			GameTooltip:AddDoubleLine(L["Turn-in result"], "|cff8aff80" .. L["LEVEL UP!"] .. "|r", 0.4, 0.9, 0.4)
+		else
+			GameTooltip:AddDoubleLine(L["After turn-in"], format("%s %s", BreakUpLargeNumbers(mx - cur - qxp), L["still missing"]), 1, 1, 1, 0.8, 0.8, 0.8)
+		end
+	end
 	GameTooltip:Show()
 end
 
@@ -204,7 +253,7 @@ function DB:Initialize()
 	self.bars.reputation:SetScript("OnMouseUp", function() ToggleCharacter("ReputationFrame") end)
 	self:Update()
 
-	for _, e in ipairs({ "PLAYER_XP_UPDATE", "PLAYER_LEVEL_UP", "UPDATE_EXHAUSTION", "DISABLE_XP_GAIN", "ENABLE_XP_GAIN" }) do self:RegisterEvent(e, "UpdateExperience") end
+	for _, e in ipairs({ "PLAYER_XP_UPDATE", "PLAYER_LEVEL_UP", "UPDATE_EXHAUSTION", "DISABLE_XP_GAIN", "ENABLE_XP_GAIN", "QUEST_LOG_UPDATE", "QUEST_TURNED_IN" }) do self:RegisterEvent(e, "UpdateExperience") end
 	for _, e in ipairs({ "UPDATE_FACTION", "COMBAT_TEXT_UPDATE", "MAJOR_FACTION_RENOWN_LEVEL_CHANGED" }) do self:RegisterEvent(e, "UpdateReputation") end
 	if UnitHonor then
 		self:RegisterEvent("HONOR_XP_UPDATE", "UpdateHonor")

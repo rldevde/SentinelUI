@@ -10,6 +10,7 @@ standalone RLBetterItem release.
 ## [1.4.1]
 
 ### Added
+- **XP bar: pending quest XP** — completed quests in the quest log now paint a green segment behind the rested fill and the text shows "+X quest XP"; the tooltip lists the pending amount, quest count and whether turning them in levels you up (or how much is still missing)
 - **Per-unit frame styles** — every unit frame group (player, target, focus, pet, party, raid, raid40, boss, arena, maintank, …) now has a Style dropdown in its settings: "Sentinel (edge + power rail)", "Edge accent only" or "Classic (stacked bars)". Solo frames default to Sentinel, group frames (party/raid/maintank) default to Classic — the previous look is unchanged
 - **Nameplate style "Hidden" for friendly units** — friendlyStyle gains a HIDE option that suppresses friendly nameplates entirely (SentinelUI plate + Blizzard bar pinned at 0 alpha); switch takes effect live, enemy plates unaffected
 
