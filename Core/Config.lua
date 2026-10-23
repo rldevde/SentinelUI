@@ -53,7 +53,10 @@ local selects = {
 	shape = { ROUND = L["Round (radar)"], SQUARE = L["Square"] },
 	classIconSide = { LEFT = L["Left"], RIGHT = L["Right"] },
 	side = { LEFT = L["Left"], RIGHT = L["Right"] },
-	style = { ["2D"] = L["2D picture (static)"], ["3D"] = L["3D model (animated)"] },
+	style = function(path)
+		if path[#path] == "portrait" then return { ["2D"] = L["2D picture (static)"], ["3D"] = L["3D model (animated)"] } end
+		if path[1] == "unitframes" then return { SENTINEL = L["Sentinel (edge + power rail)"], EDGE = L["Edge accent only"], CLASSIC = L["Classic (stacked bars)"] } end
+	end,
 	healthMode = function(path)
 		if path[1] == "raidgrid" then return { CLASS = L["Class colored bar"], GRADIENT = L["Health gradient (green to red)"] } end
 		return { DARK = L["Dark (class color on edge + name)"], CLASS = L["Class colored bar"] }

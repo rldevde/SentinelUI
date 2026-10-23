@@ -2120,3 +2120,11 @@ local T = {
 	["Hidden"] = "Versteckt",
 }
 for k, v in pairs(T) do if not rawget(L, k) then L[k] = v end end
+
+local T = {
+	["Style"] = "Stil",
+	["Sentinel (edge + power rail)"] = "Sentinel (Kante + schwebende Leiste)",
+	["Edge accent only"] = "Nur Kanten-Akzent",
+	["Classic (stacked bars)"] = "Klassisch (gestapelte Balken)",
+}
+for k, v in pairs(T) do if not rawget(L, k) then L[k] = v end end

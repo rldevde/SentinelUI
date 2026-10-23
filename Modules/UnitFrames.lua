@@ -1584,8 +1584,10 @@ function UF:ConfigureFrame(f)
 	local padL = portraitRight and 0 or portraitW
 	local padR = portraitRight and portraitW or 0
 
-	-- "rail" style: the power bar floats over the bottom edge, inset from both sides
-	local rail = self.db.style ~= "CLASSIC" and not f.isGroup and powerH > 0 and not db.power.detached
+	-- per-unit frame style: SENTINEL = edge strip + floating power rail,
+	-- EDGE = edge strip only, CLASSIC = plain stacked bars
+	local style = db.style or "SENTINEL"
+	local rail = style == "SENTINEL" and not f.isGroup and powerH > 0 and not db.power.detached
 	f.isRail = rail
 	health:ClearAllPoints()
 	health:SetPoint("TOPLEFT", f, "TOPLEFT", m + padL, -m)
@@ -1594,7 +1596,7 @@ function UF:ConfigureFrame(f)
 	else
 		health:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -m - padR, m + (powerH > 0 and powerH + m or 0))
 	end
-	f.Edge:SetShown(self.db.style ~= "CLASSIC" and not f.isGroup)
+	f.Edge:SetShown(style ~= "CLASSIC")
 	health:SetStatusBarTexture(S:Fetch("statusbar", self.db.statusbar, "Sentinel"))
 	health.bg:SetTexture(S:Fetch("statusbar", self.db.statusbar, "Sentinel"))
 
