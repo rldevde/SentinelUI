@@ -143,6 +143,8 @@ function UF:ApplyHeaderAttributes(header)
 	header:SetAttribute("showPlayer", db.showPlayer ~= false)
 	header:SetAttribute("sortMethod", db.sortMethod == "NAME" and "NAME" or "INDEX")
 	header:SetAttribute("sortDir", db.sortDir == "DESC" and "DESC" or "ASC")
+	-- always set the grid layout: when unitsPerColumn/maxColumns are missing the
+	-- client's fallback can wrap extra members into an invisible second column
 	if header.isRaid then
 		header:SetAttribute("maxColumns", db.maxColumns or 8)
 		header:SetAttribute("unitsPerColumn", db.unitsPerColumn or 5)
@@ -150,6 +152,9 @@ function UF:ApplyHeaderAttributes(header)
 		header:SetAttribute("groupingOrder", db.groupBy == "CLASS" and "WARRIOR,PALADIN,DEATHKNIGHT,DEMONHUNTER,ROGUE,MONK,DRUID,HUNTER,SHAMAN,MAGE,WARLOCK,PRIEST,EVOKER" or db.groupBy == "ROLE" and "TANK,HEALER,DAMAGER,NONE" or "1,2,3,4,5,6,7,8")
 		header:SetAttribute("raidWideSorting", db.raidWideSorting and true or false)
 		header:SetAttribute("startFromCenter", db.startFromCenter and true or false)
+	else
+		header:SetAttribute("maxColumns", db.maxColumns or 1)
+		header:SetAttribute("unitsPerColumn", db.unitsPerColumn or 5)
 	end
 	if header.isRaid or header.groupFilter then
 		local gf = db.groupFilter

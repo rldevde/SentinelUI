@@ -18,6 +18,7 @@ standalone RLBetterItem release.
 - **Cursor ring off by default** — the mouse-follow ring now defaults to disabled for new profiles
 
 ### Fixed
+- **Party frames dropped group members** — the party header never set `unitsPerColumn`/`maxColumns`, so the client's fallback could wrap extra members into an invisible second column; both attributes are now set explicitly. `GROUP_ROSTER_UPDATE` also forces the secure headers to reassign units, so members who joined while the header was hidden or mid-combat are no longer left out
 - AFK screen: character model no longer loops/restarts its animation while AFK (re-entrant toggle guard)
 - AFK screen: yellow "You are AFK" chat message no longer spams permanently — Anti-AFK no longer fights the flag while the screen is shown, the auto-clear is deferred to just before the idle logout
 - **Mana tick bar never showed for energy users** — the bar only started on a readable power change, but UNIT_POWER_UPDATE fires with secret values on this client so rogues and cat-form druids never saw the bar; it now starts on any tracked power event. Shapeshifting into a tracked form also starts the bar, and the title switches between "Mana Tick" / "Energy Tick"
