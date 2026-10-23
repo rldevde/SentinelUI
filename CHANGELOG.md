@@ -10,6 +10,7 @@ standalone RLBetterItem release.
 ## [1.4.2]
 
 ### Added
+- **XP bar: kill-rate level ETA** — combat XP gains are tracked over a rolling 10-minute window; the bar appends "~23m (142 Kills)" estimating time and kills left to level up
 - **Announcer: live countdown per running message** — while a message is On, its interval field switches to a green "nächste in M:SS" countdown that ticks down to the next post; editing resumes when stopped
 - **XP bar: pending quest XP** — completed quests in the log paint a green segment behind the rested fill; the bar text now reads "10.1% - 21.6k fehlt (+8.5k Quest-EP)" plus a gold LEVEL-UP! marker when turn-ins complete the level. Tooltip lists pending XP, quest count and post-turn-in result (via Questie's QuestXP database with client-API fallbacks)
 - **Per-unit frame styles** — every unit frame group has a Style dropdown: "Sentinel (edge + power rail)", "Edge accent only" or "Classic (stacked bars)"; solo frames default to Sentinel, group frames to Classic — previous look unchanged

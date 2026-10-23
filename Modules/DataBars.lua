@@ -117,6 +117,30 @@ local function PendingQuestXP()
 	return total, count
 end
 
+-- rolling kill-rate tracking (last 10 min) for the "kills / time to level" text
+local killLog, xpLog, lastXP = {}, {}
+local WINDOW = 600
+local function KillETA(remaining)
+	local now = GetTime()
+	local nk, xp, firstT = 0, 0
+	for i = #killLog, 1, -1 do
+		if killLog[i] < now - WINDOW then break end
+		nk = nk + 1
+	end
+	for i = #xpLog, 1, -1 do
+		local e = xpLog[i]
+		if e.t < now - WINDOW then break end
+		xp, firstT = xp + e.a, e.t
+	end
+	if nk < 3 or xp <= 0 then return end
+	local span = max(30, now - (firstT or now))
+	local killsLeft = math.ceil(remaining / (xp / nk))
+	local mins = remaining / (xp / span) / 60
+	local dur = mins >= 60 and format("%dh %dm", floor(mins / 60), floor(mins % 60))
+		or format("%dm", max(1, floor(mins + 0.5)))
+	return killsLeft, dur
+end
+
 -- Experience
 function DB:UpdateExperience()
 	local bar = self.bars.experience
@@ -164,6 +188,10 @@ function DB:UpdateExperience()
 		if cur + rested + qxp >= mx then
 			suffix = suffix .. " |cffffd100» " .. L["LEVEL UP!"] .. "|r"
 		end
+	end
+	local kills, dur = KillETA(mx - cur)
+	if kills then
+		suffix = suffix .. format(" |cff7ec8ff· ~%s (%d %s)|r", dur, kills, L["kills"])
 	end
 	bar.text:SetText(FormatText(db.text, cur, mx, suffix))
 end
@@ -299,6 +327,14 @@ function DB:Initialize()
 	self:Update()
 
 	for _, e in ipairs({ "PLAYER_XP_UPDATE", "PLAYER_LEVEL_UP", "UPDATE_EXHAUSTION", "DISABLE_XP_GAIN", "ENABLE_XP_GAIN", "QUEST_LOG_UPDATE", "QUEST_TURNED_IN" }) do self:RegisterEvent(e, "UpdateExperience") end
+	-- kill-rate tracking for the level-up ETA (combat XP messages = kills)
+	self:RegisterEvent("CHAT_MSG_COMBAT_XP_GAIN", function()
+		local now = GetTime()
+		killLog[#killLog + 1] = now
+		local cur = UnitXP("player")
+		if lastXP and not S.IsSecret(cur) and cur > lastXP then xpLog[#xpLog + 1] = { t = now, a = cur - lastXP } end
+		lastXP = cur
+	end)
 	for _, e in ipairs({ "UPDATE_FACTION", "COMBAT_TEXT_UPDATE", "MAJOR_FACTION_RENOWN_LEVEL_CHANGED" }) do self:RegisterEvent(e, "UpdateReputation") end
 	if UnitHonor then
 		self:RegisterEvent("HONOR_XP_UPDATE", "UpdateHonor")
