@@ -63,11 +63,11 @@ end
 -- mover frames always exist with real positions, even when the header
 -- itself is hidden or its children were never laid out
 local GROUPS = {
-	{ mover = "party", n = 5, cols = 1, w = 190, h = 44 },
-	{ mover = "raid", n = 10, cols = 5, w = 90, h = 36 },
-	{ mover = "raid", n = 25, cols = 5, w = 80, h = 32 },
-	{ mover = "raid40", n = 40, cols = 8, w = 70, h = 28 },
-	{ mover = "maintank", n = 2, cols = 1, w = 160, h = 44 },
+	{ mover = "party", header = "SentinelUI_PartyHeader", n = 5, cols = 1, w = 190, h = 44 },
+	{ mover = "raid", header = "SentinelUI_RaidHeader", n = 10, cols = 5, w = 90, h = 36 },
+	{ mover = "raid", header = "SentinelUI_RaidHeader", n = 25, cols = 5, w = 80, h = 32 },
+	{ mover = "raid40", header = "SentinelUI_Raid40Header", n = 40, cols = 8, w = 70, h = 28 },
+	{ mover = "maintank", header = "SentinelUI_MaintankHeader", n = 2, cols = 1, w = 160, h = 44 },
 }
 
 local START = { party = 1, raid = 6, raid25 = 16, raid40 = 41, maintank = 81 }
@@ -83,7 +83,7 @@ function PV:Toggle(which)
 			end
 		else
 			groupShown[g.mover] = not groupShown[g.mover]
-			local anchor = _G["SentinelUIMover_" .. g.mover] or (S.movers and S.movers[g.mover])
+			local anchor = _G["SentinelUIMover_" .. g.mover] or (S.movers and S.movers[g.mover]) or _G[g.header]
 			if groupShown[g.mover] then
 				S:Print(g.mover .. ": " .. (anchor and ("@" .. (anchor:GetName() or "?")) or "NO MOVER"))
 			end
