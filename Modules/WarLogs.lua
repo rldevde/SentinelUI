@@ -106,7 +106,7 @@ end
 function WL:CombatEnd()
 	if not cur then return end
 	cur.dur = GetTime() - cur.t0
-	cur.name = cur.boss or (UnitExists("target") and UnitName("target")) or "Trash"
+	cur.name = cur.boss or (UnitExists("target") and UnitName("target")) or (L["Trash"] or "Trash")
 	if cur.dur >= 5 and next(cur.dmg) then
 		tinsert(sess.fights, cur)
 		-- boss kill = fight target died this pull; no kill + player deaths = wipe
@@ -259,7 +259,7 @@ function WL:RefreshList()
 		li = li + 1
 		local r = frame.listRows[li]
 		r.sidx = "live"
-		r.txt:SetText(format("|cff66ff66LIVE|r %s", sess.inst or "?"))
+		r.txt:SetText(format("|cff66ff66" .. (L["LIVE"] or "LIVE") .. "|r %s", sess.inst or "?"))
 		r:Show()
 	end
 	for i = #s, 1, -1 do
@@ -463,7 +463,7 @@ function WL:Export()
 		f:SetScript("OnDragStart", f.StartMoving) f:SetScript("OnDragStop", f.StopMovingOrSizing)
 		S:SetTemplate(f, "Default", "MEDIUM")
 		local t = S:FontString(f, 11, "OUTLINE")
-		t:SetPoint("TOP", 0, -10) t:SetText(L["Export log"] or "Export log")
+		t:SetPoint("TOP", 0, -10) t:SetText(L["Export Log"] or "Export Log")
 		local sc = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate")
 		sc:SetPoint("TOPLEFT", 12, -36) sc:SetPoint("BOTTOMRIGHT", -32, 40)
 		local eb = CreateFrame("EditBox", nil, sc)
@@ -515,7 +515,7 @@ function WL:Initialize()
 		onLeft = function() WL:Toggle() end,
 		tooltip = function()
 			GameTooltip:AddLine("SentinelUI WarLogs")
-			GameTooltip:AddLine("Left-click: open raid logs", 1, 1, 1)
+			GameTooltip:AddLine(L["Left-click: open raid logs"] or "Left-click: open raid logs", 1, 1, 1)
 		end,
 	})
 	SLASH_SUILOG1, SLASH_SUILOG2 = "/suilog", "/suiwarlogs"
