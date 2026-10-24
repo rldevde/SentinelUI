@@ -89,6 +89,25 @@ function WB:BuildFrame()
 	f.title = S:FontString(f, 9, "OUTLINE")
 	f.title:SetPoint("TOP", 0, -4)
 	f.title:SetText("|cffff7c0aWild|r")
+	-- direct drag on the title strip (mover still works via /suim)
+	f:SetMovable(true)
+	local grip = CreateFrame("Button", nil, f)
+	grip:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
+	grip:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 0)
+	grip:SetHeight(14)
+	grip:EnableMouse(true)
+	grip:RegisterForDrag("LeftButton")
+	grip:SetScript("OnDragStart", function() if not InCombatLockdown() then f:StartMoving() end end)
+	grip:SetScript("OnDragStop", function()
+		f:StopMovingOrSizing()
+		-- keep the mover anchor in sync so /suim does not snap it back
+		local m = f.suiMover or (S.movers and S.movers.wildbuffs)
+		if m and m.SetPoint then
+			m:ClearAllPoints()
+			m:SetPoint("CENTER", f, "CENTER")
+			if m.SavePosition then pcall(m.SavePosition, m) end
+		end
+	end)
 	f.mark = BuildRow(f, -18, "Mark")
 	f.thorns = BuildRow(f, -42, "Thorns")
 	S:CreateMover(f, "wildbuffs", L["Wild Buffs"], { "TOPLEFT", "UIParent", "TOPLEFT", 60, -420 }, "wildbuffs")
@@ -102,7 +121,7 @@ local function SetSpell(btn, mouse, id, unit)
 	if not name then return end
 	btn:SetAttribute("type" .. mouse, "spell")
 	btn:SetAttribute("spell" .. mouse, name)
-	btn:SetAttribute("unit" .. mouse, unit)
+	btn:SetAttribute("unit" .. mouse, unit or "player")
 end
 
 local function RefreshRow(btn, iconTex, label, missing, minLeft, total)
