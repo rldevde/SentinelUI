@@ -45,18 +45,44 @@ local function Dummy(parent, i)
 	return f
 end
 
+local LEVELS = { 21, 24, 27, 31, 33, 40 }
+
 local function Fill(f, i, w, h)
 	f:SetSize(w, h)
 	local cls = CLASSES[(i % #CLASSES) + 1]
 	local c = RAID_CLASS_COLORS and RAID_CLASS_COLORS[cls]
 	local r, g, b = c and c.r or 0.4, c and c.g or 0.4, c and c.b or 0.4
 	local hp = 0.4 + (i % 6) * 0.11
+	local lvl = LEVELS[(i % #LEVELS) + 1]
+	local name = NAMES[(i % #NAMES) + 1]
+	-- real UF look: name left in white, hp% right, level on power bar
 	f.health:SetVertexColor(r, g, b)
 	f.health:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -2, 6)
 	f.health:SetPoint("TOPLEFT", f, "TOPLEFT", 2, -(h - 6) * (1 - hp) - 2)
-	f.power:SetVertexColor(0.2, 0.4, 0.9)
-	f.name:SetText(NAMES[(i % #NAMES) + 1] .. "-" .. cls:sub(1, 4))
+	f.power:SetVertexColor(0.15, 0.35, 0.85)
+	f.name:ClearAllPoints()
+	f.name:SetPoint("LEFT", f, "LEFT", 5, 0)
+	f.name:SetText(name)
+	f.pct:ClearAllPoints()
+	f.pct:SetPoint("RIGHT", f, "RIGHT", -4, 0)
 	f.pct:SetText((math.floor(hp * 100)) .. "%")
+	f.lvl:SetText("|cffcc9999" .. lvl .. "|r")
+	-- interactive like a real frame: tooltip + click feedback
+	f:EnableMouse(true)
+	f:SetScript("OnEnter", function()
+		GameTooltip:SetOwner(f, "ANCHOR_TOP")
+		GameTooltip:AddLine(name, r, g, b)
+		GameTooltip:AddLine("Level " .. lvl .. "  " .. cls, 0.6, 0.6, 0.6)
+		GameTooltip:AddLine("HP " .. math.floor(hp * 100) .. "%", 0.4, 0.9, 0.4)
+		GameTooltip:Show()
+	end)
+	f:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	f:SetScript("OnMouseDown", function()
+		S:SetTemplate(f, "Transparent") -- border flash on click
+	end)
+	f:SetScript("OnMouseUp", function()
+		S:SetTemplate(f, "Default")
+	end)
 	f:Show()
 end
 
