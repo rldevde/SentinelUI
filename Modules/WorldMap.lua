@@ -973,9 +973,12 @@ function WM:ApplyChrome()
 	WorldMapFrame:HookScript("OnShow", function() S:SafeCall("WorldMap:Chrome", WM.ApplyChrome, WM) end)
 	self._chromeDone = true
 	-- backdrop around the whole map window in our dark template style
-	if WorldMapFrame.NineSlice then WorldMapFrame.NineSlice:Hide() end
-	if WorldMapFrame.BorderFrame then WorldMapFrame.BorderFrame:Hide() end
-	S:SetTemplate(WorldMapFrame, "Default", "MEDIUM")
+	local okSkin = pcall(function()
+		if WorldMapFrame.NineSlice then WorldMapFrame.NineSlice:Hide() end
+		if WorldMapFrame.BorderFrame then WorldMapFrame.BorderFrame:Hide() end
+		S:SetTemplate(WorldMapFrame, "Default", "MEDIUM")
+	end)
+	if not okSkin then S:LogWarn("worldmap", "skin apply failed - frame protected") end
 	-- accent title strip
 	local strip = CreateFrame("Frame", "SentinelUIWorldMapStrip", WorldMapFrame)
 	strip:SetPoint("TOPLEFT", WorldMapFrame, "TOPLEFT", 1, -1)
@@ -1032,6 +1035,7 @@ function WM:ApplyChrome()
 			coords:SetText(format("%.1f, %.1f", cx * 100, cy * 100))
 		else coords:SetText("") end
 	end)
+	S:LogInfo("worldmap", "chrome applied")
 	-- fade the whole window slightly when the cursor leaves it
 	WorldMapFrame:HookScript("OnEnter", function() WorldMapFrame:SetAlpha(1) end)
 	WorldMapFrame:HookScript("OnLeave", function()
