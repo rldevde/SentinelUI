@@ -137,17 +137,39 @@ local function BuildUI()
 		f.listRows[i] = r
 	end
 
-	-- right: detail (tabs + rows)
+	-- right: detail with tabs (damage / healing / deaths / interrupts)
 	detail = CreateFrame("Frame", nil, f)
 	detail:SetPoint("TOPLEFT", list, "TOPRIGHT", 6, 0)
 	detail:SetSize(348, 340)
 	S:SetTemplate(detail, "Default")
+	f.tabs = {}
+	local tabDefs = { { "Damage", "dmg" }, { "Healing", "heal" }, { "Deaths", "deaths" }, { "Interrupts", "inter" } }
+	for i, td in ipairs(tabDefs) do
+		local tb = CreateFrame("Button", nil, detail)
+		tb:SetSize(82, 18)
+		tb:SetPoint("TOPLEFT", 4 + (i - 1) * 86, -3)
+		S:SetTemplate(tb, "Default")
+		tb.txt = S:FontString(tb, 9, "OUTLINE")
+		tb.txt:SetAllPoints() tb.txt:SetText(td[1])
+		tb.key = td[2]
+		tb:SetScript("OnClick", function() WL.tab = tb.key WL:ShowFight(WL._lastIdx) end)
+		f.tabs[i] = tb
+	end
 	f.detailRows = {}
-	for i = 1, 13 do
+	for i = 1, 12 do
 		local r = S:FontString(detail, 9, "OUTLINE")
-		r:SetPoint("TOPLEFT", 6, -((i - 1) * 25) - 6)
+		r:SetPoint("TOPLEFT", 6, -((i - 1) * 26) - 26)
 		r:SetJustifyH("LEFT")
 		f.detailRows[i] = r
+	end
+	f.detailBars = {}
+	for i = 1, 12 do
+		local b = detail:CreateTexture(nil, "BACKGROUND")
+		b:SetPoint("TOPLEFT", detail, "TOPLEFT", 6, -((i - 1) * 26) - 26)
+		b:SetHeight(12)
+		b:SetTexture(S.media.statusbar or "Interface/Buttons/WHITE8x8")
+		b:SetVertexColor(0.4, 0.4, 0.4, 0.4)
+		f.detailBars[i] = b
 	end
 	f.title = S:FontString(detail, 10, "OUTLINE")
 	f.title:SetPoint("BOTTOM", 0, 6)
@@ -187,25 +209,32 @@ end
 function WL:ShowFight(idx)
 	local f = self.db.history[idx]
 	if not f then return end
-	local dur = f.dur or 1
-	local rows = {}
-	local dmg, heal = SortDesc(f.dmg), SortDesc(f.heal)
-	local n = math.max(#dmg, #heal, 4)
-	for i = 1, math.min(n, 13) do
-		local d, h = dmg[i], heal[i]
-		local line = ""
-		if d then
-			local dd = f.deaths[d.n] or 0
-			line = format("%s: |cff00ff00%s|r (|cffffcc00%s|r dps%s)", d.n, FmtK(d.v),
-				FmtK(d.v / dur), dd > 0 and format(", %dx |cffff5555tot|r", dd) or "")
-		end
-		if h then
-			line = line .. (line ~= "" and "  |cff555555||  " or "")
-				.. format("|cff66ccff%s|r hps", FmtK(h.v / dur))
-		end
-		rows[#rows + 1] = line
+	WL._lastIdx = idx
+	local tab = self.tab or "dmg"
+	for _, tb in ipairs(frame.tabs) do
+		tb.txt:SetTextColor(tb.key == tab and S.accent.r or 0.6, tb.key == tab and S.accent.g or 0.6, tb.key == tab and S.accent.b or 0.6)
 	end
-	for i, r in ipairs(frame.detailRows) do r:SetText(rows[i] or "") end
+	local dur = f.dur or 1
+	local data = tab == "dmg" and f.dmg or tab == "heal" and f.heal or tab == "deaths" and f.deaths or f.inter
+	local arr = SortDesc(data)
+	local mx = arr[1] and arr[1].v or 1
+	local perSec = (tab == "dmg" or tab == "heal")
+	for i, r in ipairs(frame.detailRows) do
+		local e = arr[i]
+		if e then
+			local sec = perSec and format(" |cff888888(%s/s)|r", FmtK(e.v / dur)) or ""
+			local dd = tab == "dmg" and (f.deaths[e.n] or 0)
+			r:SetText(format("%d. %s: |cff00ff00%s|r%s%s", i, e.n, FmtK(e.v), sec,
+				dd and dd > 0 and format(" |cffff5555(x%d)|r", dd) or ""))
+			local b = frame.detailBars[i]
+			b:SetWidth(330 * (e.v / mx))
+			b:SetVertexColor(tab == "dmg" and 0.8 or 0.2, tab == "heal" and 0.6 or 0.3, tab == "deaths" and 0.15 or 0.9, 0.35)
+			b:Show()
+		else
+			r:SetText("")
+			frame.detailBars[i]:Hide()
+		end
+	end
 	frame.title:SetText(format("%s - %s | %ds | %s %d",
 		f.zone or "?", f.ts or "", floor(dur), L["players:"] or "players:",
 		(function() local c = 0 for _ in pairs(f.names or {}) do c = c + 1 end return c end)()))
