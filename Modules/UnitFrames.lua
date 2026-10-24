@@ -528,6 +528,17 @@ function UF:UpdateIndicators(f)
 			f.ClassIcon:Hide()
 		end
 	end
+	if UnitIsPVP then
+		if not f.PVPIcon and f.Health then
+			f.PVPIcon = f:CreateTexture(nil, "OVERLAY")
+			f.PVPIcon:SetSize(14, 14)
+			f.PVPIcon:SetPoint("TOPRIGHT", f.Health, "TOPRIGHT", -2, -2)
+			f.PVPIcon:SetTexture([[Interface/TargetingFrame/UI-PVP-Alliance]])
+			local _, fac = UnitFactionGroup("player")
+			if fac == "Horde" then f.PVPIcon:SetTexture([[Interface/TargetingFrame/UI-PVP-Horde]]) end
+		end
+		if f.PVPIcon then f.PVPIcon:SetShown(UnitIsPVP(unit) or false) end
+	end
 	if f.RestingIcon then f.RestingIcon:SetShown(f.db.restingIcon and IsResting() or false) end
 	if f.CombatIcon then f.CombatIcon:SetShown(f.db.combatIcon and UnitAffectingCombat("player") or false) end
 	-- incoming resurrection icon (center) where the client exposes the API

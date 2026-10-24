@@ -15,6 +15,7 @@ local singles = {
 	{ key = "focustarget", unit = "focustarget", title = L["Focus Target"], pos = { "TOPLEFT", "SentinelUIMover_focus", "BOTTOMLEFT", 0, -36 }, poll = true, noClassic = true },
 	{ key = "pet", unit = "pet", title = L["Pet"], pos = { "BOTTOMRIGHT", "SentinelUIMover_player", "BOTTOMLEFT", -8, 0 } },
 	{ key = "pettarget", unit = "pettarget", title = L["Pet Target"], pos = { "TOPRIGHT", "SentinelUIMover_pet", "BOTTOMRIGHT", 0, -8 }, poll = true },
+	{ key = "targettargettarget", unit = "targettargettarget", title = L["Target of Target of Target"], pos = { "BOTTOMLEFT", "SentinelUIMover_targettarget", "BOTTOMRIGHT", 8, 0 }, poll = true },
 }
 
 function UF:CreateSingle(info)
