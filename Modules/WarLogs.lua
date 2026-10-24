@@ -500,7 +500,7 @@ function WL:Initialize()
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA", "ZoneChange")
 	if self.private then self.private.minimap = self.private.minimap or {} end
 	self.minimapBtn = S:CreateMinimapButton({
-		key = "warlogs", icon = [[Interface\Icons\INV_Misc_Book_09]],
+		name = "warlogs", icon = [[Interface\Icons\INV_Misc_Book_09]],
 		store = (self.private and self.private.minimap) or nil,
 		tooltip = L["War Logs"],
 		onClick = function() WL:Toggle() end,
