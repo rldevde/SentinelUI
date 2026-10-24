@@ -274,6 +274,35 @@ local function OpenChannelMenu(msg)
 	ToggleDropDownMenu(1, nil, chanMenu, "cursor", 0, 0)
 end
 
+
+-- preset messages: one click fills the message box instead of typing
+local PRESETS = {
+	L["LFM - need more for group"],
+	L["LFG - looking for group"],
+	L["BRB in 5 minutes"],
+	L["Pulling in 10 sec"],
+	L["Please assist main tank"],
+	L["Repair break - 2 min"],
+	L["Raid invite whisper me"],
+	L["Guild recruiting - whisper me"],
+}
+local presetMenu = CreateFrame("Frame", "SentinelAnnouncerPresetMenu",
+	UIParent, "UIDropDownMenuTemplate")
+local function OpenPresetMenu(row)
+	UIDropDownMenu_Initialize(presetMenu, function(_, level)
+		for _, p in ipairs(PRESETS) do
+			local info = UIDropDownMenu_CreateInfo()
+			info.text = p
+			info.func = function()
+				row.text:SetText(p)
+				if row.msg then row.msg.text = p end
+			end
+			UIDropDownMenu_AddButton(info, level)
+		end
+	end)
+	ToggleDropDownMenu(1, nil, presetMenu, row.preset or row, 0, 0)
+end
+
 function AN:GetRow(i)
 	local row = self.frame.rows[i]
 	if row then return row end
@@ -306,6 +335,10 @@ function AN:GetRow(i)
 	row.countdown:Hide()
 
 	row.text = makeEdit(row, 240, L["your message here..."])
+
+	row.preset = makeButton(row, 22, 18, "...")
+	row.preset:SetPoint("RIGHT", row, "RIGHT", -22, 0)
+	row.preset:SetScript("OnClick", function() OpenPresetMenu(row) end)
 
 	row.del = CreateFrame("Button", nil, row)
 	row.del:SetSize(18, 18)
@@ -373,7 +406,7 @@ function AN:RefreshRows()
 
 		row.text:ClearAllPoints()
 		row.text:SetPoint("LEFT", row.minLbl, "RIGHT", 6, 0)
-		row.text:SetPoint("RIGHT", row.del, "LEFT", -4, 0)
+		row.text:SetPoint("RIGHT", row.preset, "LEFT", -4, 0)
 		row.text:SetText(msg.text or "")
 		row.text:SetScript("OnEnterPressed", function(eb) msg.text = eb:GetText() eb:ClearFocus() end)
 		row.text:SetScript("OnEditFocusLost", function(eb) msg.text = eb:GetText() end)
