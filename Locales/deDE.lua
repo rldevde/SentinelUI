@@ -2148,4 +2148,8 @@ L["Interval"] = "Intervall"
 L["On/Off"] = "An/Aus"
 L["next in %d:%02d"] = "nächste in %d:%02d"
 L["kills"] = "Kills"
+L["Unlist"] = "Abmelden"
+L["Listing removed"] = "Eintrag entfernt"
+L["No delist API on this client"] = "Keine Abmelde-API auf diesem Client"
+L["Remove your own group listing"] = "Eigenen Gruppeneintrag entfernen"
 

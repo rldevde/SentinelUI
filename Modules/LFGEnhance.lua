@@ -139,6 +139,47 @@ local function HookRows(frame, depth)
 	end
 end
 
+-- blizzard's finder has no delist button on this client; try every API the
+-- various flavors expose to leave your own listing
+local function Delist()
+	local tries = {
+		function() return C_LFGList and C_LFGList.RemoveListing and C_LFGList.RemoveListing() end,
+		function() return C_LFGList and C_LFGList.ClearActiveGroupFinderActivity and C_LFGList.ClearActiveGroupFinderActivity() end,
+		function() return LFGRemoveListing and LFGRemoveListing() end,
+		function() return LFGListRemoveListing and LFGListRemoveListing() end,
+		function() return LeaveLFGQueue and LeaveLFGQueue() end,
+	}
+	for _, fn in ipairs(tries) do
+		local ok, r = pcall(fn)
+		if ok and r ~= false then return true end
+	end
+end
+
+local function AddDelistButton(parent)
+	if not parent or parent.suiDelist then return end
+	local btn = CreateFrame("Button", "SentinelUILFGDelist", parent)
+	btn:SetSize(90, 20)
+	btn:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 8, 6)
+	if S.SkinButton then S:SkinButton(btn) else S:SetTemplate(btn, "Default") end
+	local fs = S:FontString(btn, 11, "OUTLINE")
+	fs:SetAllPoints()
+	fs:SetText(L["Unlist"] or "Unlist")
+	btn:SetScript("OnClick", function()
+		if Delist() then
+			S:Print(L["Listing removed"] or "Listing removed")
+		else
+			S:Print(L["No delist API on this client"] or "No delist API on this client")
+		end
+	end)
+	btn:SetScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_TOP")
+		GameTooltip:AddLine(L["Remove your own group listing"] or "Remove your own group listing")
+		GameTooltip:Show()
+	end)
+	btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	parent.suiDelist = btn
+end
+
 function LE:Setup()
 	if self.done then return end
 	-- frame names differ across clients: TBC group finder uses
@@ -147,8 +188,8 @@ function LE:Setup()
 	local browse = _G.LFGBrowseFrame or _G.LFGListFrame
 	local listing = _G.LFGListingFrame or _G.LFGListFrame
 	if not browse and not listing then return end
-	if browse then HookRows(browse) end
-	if listing then HookRows(listing) end
+	if browse then HookRows(browse) AddDelistButton(browse) end
+	if listing then HookRows(listing) AddDelistButton(listing) end
 	-- rows can be created lazily after first data
 	if browse and not self.rescan then
 		self.rescan = true
