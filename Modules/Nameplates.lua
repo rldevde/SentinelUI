@@ -403,6 +403,7 @@ function NP:UpdateTarget(f)
 	local hasTarget = UnitExists("target")
 	f:SetAlpha((not hasTarget or isTarget) and 1 or db.nonTargetAlpha)
 	f.Health:SetScale(isTarget and db.targetScale or 1)
+	self:StyleFilter(f)
 end
 
 function NP:UpdateRaidIcon(f)
@@ -476,6 +477,33 @@ function NP:UpdateCast(f)
 	self:UpdateCastTarget(f)
 end
 
+-- style filter: compact rule engine - first matching rules stack their
+-- effects (scale bump, name color). Quest mobs, elites/rares/bosses and the
+-- current target get visual priority without any user config yet.
+function NP:StyleFilter(f)
+	local unit = f.unit
+	if not unit or not f.Name then return end
+	local scale, nameColor
+	if f.Quest and f.Quest:IsShown() then
+		scale = 1.15
+		nameColor = { 1, 0.72, 0.25 }
+	end
+	local c = UnitClassification(unit)
+	if c == "worldboss" then
+		scale, nameColor = math.max(scale or 1, 1.2), { 1, 0.4, 0.4 }
+	elseif c == "elite" or c == "rareelite" or c == "rare" then
+		scale = math.max(scale or 1, 1.08)
+		if not nameColor then nameColor = { 1, 0.85, 0.35 } end
+	end
+	if UnitIsUnit(unit, "target") then scale = math.max(scale or 1, 1.1) end
+	scale = scale or 1
+	if f.suiScale ~= scale then
+		f.suiScale = scale
+		f:SetScale(scale)
+	end
+	if nameColor then f.Name:SetTextColor(nameColor[1], nameColor[2], nameColor[3]) end
+end
+
 function NP:FullUpdate(f)
 	self:UpdateHealth(f)
 	self:UpdateColor(f)
@@ -487,6 +515,7 @@ function NP:FullUpdate(f)
 	self:UpdateCast(f)
 	self:UpdateQuest(f)
 	self:UpdateCustomTexts(f)
+	self:StyleFilter(f)
 end
 
 local function HideBlizzardPlate(plate)
