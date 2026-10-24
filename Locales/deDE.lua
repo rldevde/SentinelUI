@@ -2153,4 +2153,6 @@ L["Listing removed"] = "Eintrag entfernt"
 L["No delist API on this client"] = "Keine Abmelde-API auf diesem Client"
 L["Remove your own group listing"] = "Eigenen Gruppeneintrag entfernen"
 L["Marked Targets"] = "Markierte Ziele"
+L["Tanks"] = "Tanks"
+L["Tank Frames"] = "Tank-Frames"
 

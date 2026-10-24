@@ -132,6 +132,7 @@ Modules\PullTimer.lua
 Modules\Screenshots.lua
 Modules\ManaTick.lua
 Modules\MarkedTargets.lua
+Modules\TankFrames.lua
 Modules\SwingTimer.lua
 Modules\SummonHelper.lua
 Modules\ProfCooldowns.lua
