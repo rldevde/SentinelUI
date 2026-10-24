@@ -157,9 +157,9 @@ end
 -- -------------------------------------------------------------------------
 -- UI
 local TABS = {
-	{ "Summary", "summary" }, { "Damage", "dmg" }, { "Healing", "heal" },
-	{ "Deaths", "deaths" }, { "Interrupts", "inter" }, { "Loot", "loot" },
-	{ "Fights", "fights" },
+	{ L["Summary"] or "Summary", "summary" }, { L["Damage"] or "Damage", "dmg" }, { L["Healing"] or "Healing", "heal" },
+	{ L["Deaths"] or "Deaths", "deaths" }, { L["Interrupts"] or "Interrupts", "inter" }, { L["Loot"] or "Loot", "loot" },
+	{ L["Fights"] or "Fights", "fights" },
 }
 
 local function BuildUI()
@@ -222,6 +222,7 @@ local function BuildUI()
 		b:SetPoint("TOPLEFT", detail, "TOPLEFT", 6, -((i - 1) * 26) - 28)
 		b:SetHeight(12)
 		b:SetTexture(S.media.statusbar or "Interface/Buttons/WHITE8x8")
+		b:Hide()
 		f.bars[i] = b
 		local r = S:FontString(detail, 9, "OUTLINE")
 		r:SetPoint("TOPLEFT", 6, -((i - 1) * 26) - 28)
@@ -230,6 +231,9 @@ local function BuildUI()
 	end
 	f.foot = S:FontString(detail, 9, "OUTLINE")
 	f.foot:SetPoint("BOTTOM", 0, 8)
+	f.empty = S:FontString(detail, 11, "OUTLINE")
+	f.empty:SetPoint("CENTER", 0, -30)
+	f.empty:SetText("|cff888888" .. (L["No raid logs yet - join a raid to start recording"] or "No raid logs yet - join a raid to start recording") .. "|r")
 
 	local function Btn(txt, x, fn)
 		local b = CreateFrame("Button", nil, f)
@@ -286,7 +290,12 @@ end
 
 function WL:ShowSession(idx)
 	local s = MergeSessions(idx)
-	if not s then return end
+	frame.empty:SetShown(s == nil)
+	if not s then
+		for i, r in ipairs(frame.rows) do r:SetText("") frame.bars[i]:Hide() end
+		frame.foot:SetText("")
+		return
+	end
 	WL._lastIdx = idx
 	local tab = self.tab or "summary"
 	for _, tb in ipairs(frame.tabs) do
@@ -373,6 +382,7 @@ function WL:Toggle()
 	if frame:IsShown() then frame:Hide() return end
 	self:RefreshList()
 	frame:Show()
+	frame.empty:SetShown(#self.db.sessions == 0 and not sess)
 	if sess then self:ShowSession("live") elseif #self.db.sessions > 0 then self:ShowSession(#self.db.sessions) end
 end
 
