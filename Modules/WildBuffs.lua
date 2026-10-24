@@ -1,7 +1,7 @@
--- WildBuffs: druid buff manager in Blessings style. Rows for Mark/Gift of
--- the Wild and Thorns: missing count + min remaining time, left-click casts
--- the group spell, right-click singles the first missing member. Tooltip
--- lists who is missing. Druid only.
+-- WildBuffs: druid buff manager in Blessings style. One row per raid group
+-- (G1..G8, solo = "You"): Gift / Mark / Thorns icons with missing badges and
+-- timers. Left-click casts, right-click singles the next missing member -
+-- clicks rotate through the missing list in order. Position persists.
 local _, ns = ...
 local S = ns.S
 local L = S.L
@@ -9,12 +9,11 @@ local WB = S:NewModule("WildBuffs", "wildbuffs")
 
 local CreateFrame = CreateFrame
 local GetTime, InCombatLockdown = GetTime, InCombatLockdown
-local UnitName, UnitClass, UnitExists, UnitIsDeadOrGhost = UnitName, UnitClass, UnitExists, UnitIsDeadOrGhost
-local IsInGroup, IsInRaid = IsInGroup, IsInRaid
-local GetNumGroupMembers, GetNumSubgroupMembers = GetNumGroupMembers, GetNumSubgroupMembers
-local format, floor = format, math.floor
+local UnitName, UnitClass, UnitExists = UnitName, UnitClass, UnitExists
+local IsInRaid = IsInRaid
+local GetRaidRosterInfo = GetRaidRosterInfo
+local format, floor, min = format, math.floor, math.min
 
--- spell ids -> localized names via GetSpellInfo at runtime
 local MARK_ID, GIFT_ID, THORNS_ID = 9885, 26990, 26992
 local function SpellName(id)
 	if S.GetSpellInfo then return S.GetSpellInfo(id) end
@@ -22,37 +21,39 @@ local function SpellName(id)
 end
 
 local frame
+local rows = {} -- per-group row tables
 
-local function GroupUnits()
-	-- scan by unit existence instead of group APIs: party1-4 or raid1-40,
-	-- whichever exist, plus the player. Works grouped or solo.
-	local units = { "player" }
-	for i = 1, 40 do
-		local u = "raid" .. i
-		if UnitExists(u) then units[#units + 1] = u end
+-- units grouped by raid subgroup (party = single bucket) ---------------
+local function Groups()
+	if IsInRaid() and GetRaidRosterInfo then
+		local g = {}
+		for i = 1, GetNumGroupMembers and GetNumGroupMembers() or 40 do
+			local _, _, sub = GetRaidRosterInfo(i)
+			if sub then
+				g[sub] = g[sub] or {}
+				tinsert(g[sub], "raid" .. i)
+			end
+		end
+		if next(g) then return g end
 	end
+	local g1 = {}
 	for i = 1, 4 do
-		local u = "party" .. i
-		if UnitExists(u) then units[#units + 1] = u end
+		if UnitExists("party" .. i) then tinsert(g1, "party" .. i) end
 	end
-	return units
+	tinsert(g1, "player")
+	return { [1] = g1 }
 end
 
 local function HasAuraName(unit, ...)
 	if not S.GetAura then return end
 	for i = 1, 40 do
 		local r = S.GetAura(unit, i)
-		-- compat layer may return a table or a value list; handle both
 		local name, exp, dur
 		if type(r) == "table" then
-			name = r.name or r[1]
-			exp = r.expirationTime
-			dur = r.duration
+			name, exp, dur = r.name or r[1], r.expirationTime, r.duration
 		else
 			local a = { S.GetAura(unit, i) }
-			name = a[1]
-			exp = a[6]
-			dur = a[5]
+			name, exp, dur = a[1], a[6], a[5]
 		end
 		if not name then break end
 		for _, want in ipairs({ ... }) do
@@ -65,78 +66,22 @@ local function HasAuraName(unit, ...)
 	end
 end
 
-local function ScanBuff(...)
-	local missing, minLeft, count = {}, nil, 0
-	for _, u in ipairs(GroupUnits()) do
-		count = count + 1
+local function ScanUnits(units, ...)
+	local missing, minLeft = {}, nil
+	for _, u in ipairs(units) do
 		local has, left = HasAuraName(u, ...)
 		if has then
 			if left and (not minLeft or left < minLeft) then minLeft = left end
 		else
-			missing[#missing + 1] = u
+			tinsert(missing, u)
 		end
 	end
-	return missing, minLeft, count
-end
-
-local function BuildRow(parent, x, label)
-	-- small icon button: count badge on the icon, mini timer under it
-	local b = CreateFrame("Button", "SentinelUIWild" .. label, parent, "SecureActionButtonTemplate")
-	b:SetSize(30, 30)
-	b:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -16)
-	S:SetTemplate(b, "Default")
-	-- AnyDown/AnyUp variants so the secure click fires on every client
-	b:RegisterForClicks("AnyDown", "AnyUp", "LeftButtonUp", "RightButtonUp")
-	local icon = b:CreateTexture(nil, "ARTWORK")
-	icon:SetAllPoints()
-	icon:SetTexCoord(0.06, 0.94, 0.06, 0.94)
-	local cnt = S:FontString(b, 11, "OUTLINE", S.media.numberFont)
-	cnt:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -2, 1)
-	local timer = S:FontString(b, 9, "OUTLINE", S.media.numberFont)
-	timer:SetPoint("TOP", b, "BOTTOM", 0, -1)
-	b.icon, b.fs, b.timer = icon, cnt, timer
-	return b
+	return missing, minLeft
 end
 
 local function FmtTime(sec)
 	if not sec then return "--" end
 	return format("%d:%02d", floor(sec / 60), floor(sec % 60))
-end
-
-function WB:BuildFrame()
-	if frame or select(2, UnitClass("player")) ~= "DRUID" then return end
-	local f = CreateFrame("Frame", "SentinelUIWildBuffs", UIParent, S.BackdropTemplate)
-	f:SetSize(112, 50)
-	f:SetFrameStrata("LOW")
-	S:SetTemplate(f, "Default", "MEDIUM")
-	f.title = S:FontString(f, 9, "OUTLINE")
-	f.title:SetPoint("TOP", 0, -4)
-	f.title:SetText("|cffff7c0aWild|r")
-	-- direct drag on the title strip (mover still works via /suim)
-	f:SetMovable(true)
-	local grip = CreateFrame("Button", nil, f)
-	grip:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
-	grip:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 0)
-	grip:SetHeight(12)
-	grip:EnableMouse(true)
-	grip:RegisterForDrag("LeftButton")
-	grip:SetScript("OnDragStart", function() if not InCombatLockdown() then f:StartMoving() end end)
-	grip:SetScript("OnDragStop", function()
-		f:StopMovingOrSizing()
-		-- keep the mover anchor in sync so /suim does not snap it back
-		local m = f.suiMover or (S.movers and S.movers.wildbuffs)
-		if m and m.SetPoint then
-			m:ClearAllPoints()
-			m:SetPoint("CENTER", f, "CENTER")
-			if m.SavePosition then pcall(m.SavePosition, m) end
-		end
-	end)
-	f.gift = BuildRow(f, 8, "Gift")
-	f.mark = BuildRow(f, 42, "Mark")
-	f.thorns = BuildRow(f, 76, "Thorns")
-	S:CreateMover(f, "wildbuffs", L["Wild Buffs"], { "TOPLEFT", "UIParent", "TOPLEFT", 60, -420 }, "wildbuffs")
-	f:Hide()
-	frame = f
 end
 
 local function SetSpell(btn, mouse, id, unit)
@@ -149,23 +94,82 @@ local function SetSpell(btn, mouse, id, unit)
 	btn:SetAttribute("unit" .. sfx, unit or "player")
 end
 
-local function RefreshRow(btn, iconTex, label, missing, minLeft, total)
+local function BuildIcon(parent, x, key)
+	local b = CreateFrame("Button", "SentinelUIWild" .. key, parent, "SecureActionButtonTemplate")
+	b:SetSize(26, 26)
+	b:SetPoint("TOPLEFT", parent, "TOPLEFT", x, 0)
+	S:SetTemplate(b, "Default")
+	b:RegisterForClicks("AnyDown", "AnyUp", "LeftButtonUp", "RightButtonUp")
+	b.icon = b:CreateTexture(nil, "ARTWORK")
+	b.icon:SetAllPoints()
+	b.icon:SetTexCoord(0.06, 0.94, 0.06, 0.94)
+	b.cnt = S:FontString(b, 10, "OUTLINE", S.media.numberFont)
+	b.cnt:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -1, 0)
+	b.selIdx = 1
+	return b
+end
+
+local function BuildRow(parent, gi)
+	local r = CreateFrame("Frame", nil, parent)
+	r:SetSize(150, 28)
+	r.label = S:FontString(r, 9, "OUTLINE", S.media.numberFont)
+	r.label:SetPoint("LEFT", 2, 0)
+	r.label:SetTextColor(S.accent.r, S.accent.g, S.accent.b)
+	r.gift = BuildIcon(r, 20, "G" .. gi)
+	r.mark = BuildIcon(r, 50, "M" .. gi)
+	r.thorns = BuildIcon(r, 80, "T" .. gi)
+	r.timer = S:FontString(r, 9, "OUTLINE", S.media.numberFont)
+	r.timer:SetPoint("LEFT", r.thorns, "RIGHT", 5, 0)
+	return r
+end
+
+function WB:BuildFrame()
+	if frame or select(2, UnitClass("player")) ~= "DRUID" then return end
+	local f = CreateFrame("Frame", "SentinelUIWildBuffs", UIParent, S.BackdropTemplate)
+	f:SetSize(150, 46)
+	f:SetFrameStrata("LOW")
+	S:SetTemplate(f, "Default", "MEDIUM")
+	f.title = S:FontString(f, 9, "OUTLINE")
+	f.title:SetPoint("TOP", 0, -3)
+	f.title:SetText("|cffff7c0aWild|r")
+	-- drag strip with persisted position
+	f:SetMovable(true)
+	local grip = CreateFrame("Button", nil, f)
+	grip:SetPoint("TOPLEFT") grip:SetPoint("TOPRIGHT") grip:SetHeight(12)
+	grip:EnableMouse(true)
+	grip:RegisterForDrag("LeftButton")
+	grip:SetScript("OnDragStart", function() if not InCombatLockdown() then f:StartMoving() end end)
+	grip:SetScript("OnDragStop", function()
+		f:StopMovingOrSizing()
+		local p, _, rp, x, y = f:GetPoint(1)
+		S.db.profile.wildbuffs.pos = { p, "UIParent", rp, x, y }
+	end)
+	frame = f
+	local pos = S.db.profile.wildbuffs and S.db.profile.wildbuffs.pos
+	if pos then f:SetPoint(unpack(pos)) else f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 60, -420) end
+	f:Hide()
+end
+
+local function UpdateBtn(btn, iconTex, spellId, missing, unit, rotate)
 	btn.icon:SetTexture(iconTex)
 	local n = #missing
-	btn.fs:SetText(n == 0 and "|cff66ff66+|r" or ("|cffff5555" .. n .. "|r"))
-	btn.timer:SetText(n == 0 and FmtTime(minLeft) or (FmtTime(minLeft) .. ""))
-	btn.timer:SetTextColor(n == 0 and 0.6 or 1, n == 0 and 0.9 or 0.55, n == 0 and 0.6 or 0.55)
+	btn.cnt:SetText(n == 0 and "|cff66ff66+|r" or ("|cffff5555" .. n .. "|r"))
+	if rotate and n > 0 then
+		-- sequential targeting: keep cycling the missing list
+		if btn.selIdx > n then btn.selIdx = 1 end
+		SetSpell(btn, 1, spellId, missing[btn.selIdx])
+		SetSpell(btn, 2, spellId, missing[btn.selIdx])
+	else
+		SetSpell(btn, 1, spellId, unit)
+		SetSpell(btn, 2, spellId, unit)
+	end
 	btn:SetScript("OnEnter", function()
 		GameTooltip:SetOwner(btn, "ANCHOR_RIGHT")
-		GameTooltip:AddLine(label)
-		if n > 0 then
-			GameTooltip:AddLine(L["missing on:"] or "missing on:")
-			for _, u in ipairs(missing) do
-				GameTooltip:AddLine("  " .. (UnitName(u) or u), 1, 0.5, 0.5)
-			end
-		else
-			GameTooltip:AddLine("|cff66ff66" .. (L["all buffed"] or "all buffed") .. "|r")
+		GameTooltip:AddLine(SpellName(spellId) or "?")
+		for _, u in ipairs(missing) do
+			GameTooltip:AddLine("  " .. (UnitName(u) or u), 1, 0.5, 0.5)
 		end
+		if n == 0 then GameTooltip:AddLine("|cff66ff66OK|r") end
 		GameTooltip:Show()
 	end)
 	btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -178,25 +182,43 @@ function WB:Update()
 	frame:Show()
 	local markN, giftN, thornN = SpellName(MARK_ID), SpellName(GIFT_ID), SpellName(THORNS_ID)
 	if not markN then return end
-	local function Tex(id)
-		return (GetSpellTexture and GetSpellTexture(id)) or [[Interface\Icons\Spell_Nature_Regeneration]]
+	local function Tex(id) return (GetSpellTexture and GetSpellTexture(id)) or [[Interface\Icons\Spell_Nature_Regeneration]] end
+
+	local groups = Groups()
+	local sorted = {}
+	for g in pairs(groups) do sorted[#sorted + 1] = g end
+	table.sort(sorted)
+	local y = 0
+	for idx, g in ipairs(sorted) do
+		local r = rows[idx]
+		if not r then
+			r = BuildRow(frame, idx)
+			rows[idx] = r
+		end
+		r:ClearAllPoints()
+		r:SetPoint("TOPLEFT", frame, "TOPLEFT", 4, -14 - y)
+		y = y + 30
+		r.label:SetText(IsInRaid() and ("G" .. g) or "")
+		local units = groups[g]
+		local missM, leftM = ScanUnits(units, markN, giftN)
+		local missT, leftT = ScanUnits(units, thornN)
+		-- rotate target through the missing list on click (OOC only)
+		for _, b in ipairs({ r.mark, r.thorns }) do
+			if not b.suiRotate then
+				b.suiRotate = true
+				b:HookScript("OnClick", function(self) self.selIdx = (self.selIdx or 1) + 1 S:SafeCall("WildBuffs:Update", WB.Update, WB) end)
+			end
+		end
+		UpdateBtn(r.gift, Tex(GIFT_ID), GIFT_ID, missM, units[1])
+		UpdateBtn(r.mark, Tex(MARK_ID), MARK_ID, missM, nil, true)
+		UpdateBtn(r.thorns, Tex(THORNS_ID), THORNS_ID, missT, nil, true)
+		local worst = leftM or leftT
+		if leftM and leftT then worst = min(leftM, leftT) end
+		r.timer:SetText(FmtTime(worst))
+		r:Show()
 	end
-
-	-- gift row: group buff state (same aura family), left/right cast gift
-	local missG, leftG, total = ScanBuff(markN, giftN)
-	RefreshRow(frame.gift, Tex(GIFT_ID), "GotW", missG, leftG, total)
-	SetSpell(frame.gift, 1, GIFT_ID)
-	SetSpell(frame.gift, 2, GIFT_ID)
-
-	-- mark row: single-target rebuff of the first missing member
-	RefreshRow(frame.mark, Tex(MARK_ID), "MotW", missG, leftG, total)
-	SetSpell(frame.mark, 1, MARK_ID, missG[1])
-	SetSpell(frame.mark, 2, MARK_ID, missG[1])
-
-	local missT, leftT = ScanBuff(thornN)
-	RefreshRow(frame.thorns, Tex(THORNS_ID), "Thorns", missT, leftT, total)
-	SetSpell(frame.thorns, 1, THORNS_ID, missT[1])
-	SetSpell(frame.thorns, 2, THORNS_ID, missT[1])
+	for i = #sorted + 1, #rows do rows[i]:Hide() end
+	frame:SetHeight(18 + y)
 end
 
 function WB:Initialize()
@@ -208,7 +230,7 @@ function WB:Initialize()
 		self.t = self.t + dt
 		if self.t < 1.5 then return end
 		self.t = 0
-		if not InCombatLockdown() then S:SafeCall("WildBuffs:Update", WB.Update, WB) end
+		S:SafeCall("WildBuffs:Update", WB.Update, WB)
 	end)
 	self:Update()
 end
