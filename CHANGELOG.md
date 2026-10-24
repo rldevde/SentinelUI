@@ -7,6 +7,26 @@ Note on versions: `## Version` is SentinelUI's own release number. The embedded
 BetterItem module reports `## X-BetterItem-Version` and must always equal the
 standalone RLBetterItem release.
 
+## [1.4.4]
+
+### Added
+
+- **WildBuffs** — druid buff manager in Blessings style: per-raid-group rows (G1-G8) with Gift of the Wild / Mark of the Wild / Thorns icons, missing-count badges, shortest-timer per row, click-to-cast, right-click rotates through missing members, persisted position. Druid only.
+- **CharStats** — extended stats panel docked to the character frame (melee/ranged/spell/defense ratings)
+- **QuestAnnounce** — party messages on quest objective progress
+- **Nameplates StyleFilter** — quest-mob, elite/boss and target scaling + name coloring, per-rule toggles via `/suisf`, non-target dim rule
+- **UnitFrames** — target-of-target-of-target frame, PvP faction icon, power prediction while casting, priority debuff icon (dispellable-by-you or boss auras), party index markers
+
+### Changed
+
+- **FlightTimer** — accent-colored slim bar, ETA label, route survives /reload
+- **DataTexts** — panels re-anchor and relayout on window resize / UI scale change
+
+### Fixed
+
+- Castbars no longer stay visible as empty black bars when the cast-end event is lost
+- WildBuffs click reliability, group scanning, timers, per-buff icons
+
 ## [1.4.3]
 
 ### Added
