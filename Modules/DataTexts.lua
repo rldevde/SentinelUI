@@ -1072,6 +1072,7 @@ function DT:CreatePanel(name, anchorFunc, numSlots)
 	panel:SetFrameStrata("BACKGROUND")
 	panel:SetHeight(db.panelHeight)
 	S:SetTemplate(panel, db.panelTransparency and "Transparent" or "Default")
+	panel.suiAnchor = anchorFunc
 	anchorFunc(panel)
 	panel.slots = {}
 	for i = 1, numSlots do
@@ -1265,6 +1266,17 @@ function DT:Initialize()
 		end
 	end
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA", CheckBG)
+	local function Relayout()
+		for _, p in pairs(DT.panels) do
+			if p.suiAnchor and not p.suiCustom then
+				p:ClearAllPoints()
+				S:SafeCall("DataTexts:Anchor", p.suiAnchor, p)
+			end
+			DT:LayoutPanel(p)
+		end
+	end
+	self:RegisterEvent("DISPLAY_SIZE_CHANGED", Relayout)
+	self:RegisterEvent("UI_SCALE_CHANGED", Relayout)
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", function()
 		CheckBG()
 		if IsInGuild() then S.GuildRoster() end
