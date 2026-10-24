@@ -639,7 +639,7 @@ function QS:RefreshWorldMap()
 	for _, d in ipairs(self.avail or {}) do
 		if d.mapID == mapID then Place(d) hitA = hitA + 1 end
 	end
-	S:Log("questscope", format("mapID=%s pins=%d avail=%d", tostring(mapID), hit, hitA))
+	S:LogInfo("questscope", format("mapID=%s pins=%d avail=%d", tostring(mapID), hit, hitA))
 	if self.db.showDungeons then
 		for _, d in ipairs(self:DungPins()) do
 			if d.mapID == mapID then Place(d) end
