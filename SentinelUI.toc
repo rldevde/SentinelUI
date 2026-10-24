@@ -140,6 +140,7 @@ Modules\QuestAnnounce.lua
 Modules\CharStats.lua
 Modules\WildBuffs.lua
 Modules\Preview.lua
+Modules\WarLogs.lua
 Modules\SwingTimer.lua
 Modules\SummonHelper.lua
 Modules\ProfCooldowns.lua
