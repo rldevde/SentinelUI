@@ -97,6 +97,9 @@ function WM:ApplyZoneLevels()
 	if not WorldMapFrame or not WorldMapFrame.dataProviders then return end
 	for provider in next, WorldMapFrame.dataProviders do
 		if provider.setAreaLabelCallback and provider.Label then
+			-- mapLabels off: hide the whole area-label frame, Blizzard keeps
+			-- repainting zone names on the map face otherwise
+			if self.db.mapLabels == false then provider.Label:Hide() end
 			if not origLabelUpdate then
 				origLabelUpdate = provider.Label:GetScript("OnUpdate")
 			end
