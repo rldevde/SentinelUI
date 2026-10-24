@@ -141,8 +141,11 @@ end
 
 function LE:Setup()
 	if self.done then return end
-	local browse = _G.LFGBrowseFrame
-	local listing = _G.LFGListingFrame
+	-- frame names differ across clients: TBC group finder uses
+	-- LFGBrowseFrame/LFGListingFrame, Era's LFG tool uses LFGListFrame and
+	-- friends — hook whatever exists
+	local browse = _G.LFGBrowseFrame or _G.LFGListFrame
+	local listing = _G.LFGListingFrame or _G.LFGListFrame
 	if not browse and not listing then return end
 	if browse then HookRows(browse) end
 	if listing then HookRows(listing) end
@@ -158,13 +161,18 @@ end
 
 function LE:Initialize()
 	if not (self.db and self.db.enable) then return end
-	if IsAddOnLoaded and IsAddOnLoaded("Blizzard_GroupFinder_VanillaStyle") then
-		self:Setup()
-	else
-		self:RegisterEvent("ADDON_LOADED", function(_, _, addon)
-			if addon == "Blizzard_GroupFinder_VanillaStyle" then LE:Setup() end
-		end)
+	local FINDER_ADDONS = {
+		"Blizzard_GroupFinder_VanillaStyle", "Blizzard_LFGVanilla",
+		"Blizzard_GroupFinder", "Blizzard_LFGTool",
+	}
+	for _, addon in ipairs(FINDER_ADDONS) do
+		if IsAddOnLoaded and IsAddOnLoaded(addon) then self:Setup() break end
 	end
+	self:RegisterEvent("ADDON_LOADED", function(_, _, addon)
+		for _, name in ipairs(FINDER_ADDONS) do
+			if addon == name then LE:Setup() break end
+		end
+	end)
 	-- parent frame may open before the addon registers as loaded
 	if LFGParentFrame then
 		LFGParentFrame:HookScript("OnShow", function() LE:Setup() end)

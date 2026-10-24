@@ -22,6 +22,7 @@ standalone RLBetterItem release.
 - **Quest items dock to the QuestScope tracker** — the usable-quest-item bar anchors under the tracker window and moves with it instead of floating on its own
 
 ### Fixed
+- **LFG enhance dead on Era clients** — the module only hooked `Blizzard_GroupFinder_VanillaStyle`; it now watches Era's LFG package names (`Blizzard_LFGVanilla`, `Blizzard_GroupFinder`, `Blizzard_LFGTool`) and frame names so right-click whisper/invite works there too
 - **Announcer edit fields untypeable** — the boxes had no font set (invisible, non-editable) and `SetNumeric` does not exist on this client, aborting row build mid-way; fields now carry a font and the call is guarded
 - **BiS guide title overlapped the Phase label** — centered title collided with the dropdown label; now left-aligned
 - **Decurse frame hard to grab** — the drag handle was a 14px square at an awkward offset; moved to a clean top-left corner position
