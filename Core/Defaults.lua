@@ -560,7 +560,7 @@ S.defaults = {
 			mapLabels = false, zoneLevels = true, fishingLevels = true,
 			pinDungeons = true, pinFlights = true, pinFlightsOpp = false,
 			pinTravel = true, pinTravelOpp = false,
-			pinSpirits = true, pinCrossings = true, pinZoneLinks = true, pinScale = 1,
+			pinSpirits = true, pinCrossings = true, pinZoneLinks = false, pinScale = 1,
 			customMap = true, mapUnlock = true, mapScale = 1,
 			mapCoords = true, mapFade = true, fadeAlpha = 0.4, rememberZoom = true,
 			mapReveal = true, revealTint = { r = 0.4, g = 0.6, b = 1, a = 0.35 },
