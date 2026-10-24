@@ -16,6 +16,7 @@ standalone RLBetterItem release.
 - **Per-unit frame styles** — every unit frame group has a Style dropdown: "Sentinel (edge + power rail)", "Edge accent only" or "Classic (stacked bars)"; solo frames default to Sentinel, group frames to Classic — previous look unchanged
 
 ### Changed
+- **Navigation: corpse->quest flow only** — the arrow auto-sets a waypoint ONLY for your own corpse; after resurrecting it aims straight back at the remembered quest target with no intermediate waypoints
 - **Announcer window made self-explanatory** — the cryptic bare boxes now read like a sentence: `alle [ 5 ] Min.` around the interval field, aligned column headers, and grey hint text inside empty inputs ("Kanal", "Nachricht eingeben...")
 - **Navigation module rewritten** — rebuilt from scratch (arrow, world-map pins + route, minimap edge pin, quest nav, corpse waypoint, TomTom facade, /sway); the arrow never retargets to stale waypoints and disappears after arrival unless the same chain continues
 - **Navigation defers to a real TomTom install** — when TomTom is loaded it keeps its own arrow/pins; SentinelUI forwards every waypoint (with the crazy flag so the arrow actually reacts), a local mirror keeps quest-chain advancing working

@@ -1119,7 +1119,32 @@ function NAV:Initialize()
 			end
 		end)
 	end
-	self:RegisterEvent("PLAYER_DEAD", function() C_Timer.After(1, function() NAV:CorpseWaypoint() end) end)
+	self:RegisterEvent("PLAYER_DEAD", function()
+		-- remember the quest target so we can aim back at it after revive;
+		-- the corpse arrow is the ONLY auto-set waypoint
+		NAV.preDeath = NAV.active
+		C_Timer.After(1, function() NAV:CorpseWaypoint() end)
+	end)
+	self:RegisterEvent("PLAYER_ALIVE", function()
+		-- back to the remembered quest target after revive (no intermediate
+		-- waypoints, just straight there)
+		if NAV.active and NAV.active.wp and NAV.active.wp.corpse then
+			NAV:RemoveActiveWaypoint()
+		end
+		local back = NAV.preDeath
+		NAV.preDeath = nil
+		if back and back.wp then
+			local live = WP()[back.mapID]
+			for _, w in ipairs(live or {}) do
+				if w == back.wp then
+					NAV.active = back
+					if NAV.arrow then NAV.arrow.title:SetText(w.title or L["Waypoint"]) NAV.arrow:Show() end
+					ForwardArrow()
+					break
+				end
+			end
+		end
+	end)
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA", function() NAV:RefreshPins() end)
 	S:RegisterChatCommand("sway", function(msg) NAV:Slash(msg) end)
 	S:RegisterChatCommand("suiway", function(msg) NAV:Slash(msg) end)
