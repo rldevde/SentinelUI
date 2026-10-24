@@ -60,21 +60,13 @@ local function Fill(f, i, w, h)
 	f:Show()
 end
 
-local HEADERS = { "SentinelUI_PartyHeader", "SentinelUI_RaidHeader", "SentinelUI_MaintankHeader" }
-
-local function HeaderChildren(header)
-	-- real unit buttons inside the header, in order
-	local out = {}
-	local n = header:GetName()
-	for i = 1, 40 do
-		local c = header:GetAttribute("child" .. i) or _G[n .. "UnitButton" .. i]
-		if c then out[#out + 1] = c end
-	end
-	if #out == 0 then
-		for _, c in ipairs({ header:GetChildren() }) do out[#out + 1] = c end
-	end
-	return out
-end
+-- mover frames always exist with real positions, even when the header
+-- itself is hidden or its children were never laid out
+local GROUPS = {
+	{ mover = "party", n = 5, cols = 1, w = 190, h = 44 },
+	{ mover = "raid", n = 10, cols = 5, w = 90, h = 36 },
+	{ mover = "maintank", n = 2, cols = 1, w = 160, h = 44 },
+}
 
 function PV:Toggle()
 	shown = not shown
@@ -85,17 +77,20 @@ function PV:Toggle()
 	end
 	Holder()
 	local idx = 1
-	for _, h in ipairs(HEADERS) do
-		local anchor = _G[h]
+	for _, g in ipairs(GROUPS) do
+		local anchor = S.movers and S.movers[g.mover]
 		if anchor then
-			for i, child in ipairs(HeaderChildren(anchor)) do
+			local mw = anchor.GetWidth and anchor:GetWidth() or g.w
+			local mh = anchor.GetHeight and anchor:GetHeight() or g.h
+			local w = (mw and mw > 20) and mw or g.w
+			local h = (mh and mh > 10) and mh or g.h
+			for i = 1, g.n do
 				local d = Dummy(UIParent, idx)
+				local col, row = (i - 1) % g.cols, math.floor((i - 1) / g.cols)
 				d:ClearAllPoints()
-				d:SetAllPoints(child) -- exactly over the real unit slot
-				local w, hgt = child:GetSize()
-				Fill(d, idx, w > 0 and w or 120, hgt > 0 and hgt or 30)
+				d:SetPoint("TOPLEFT", anchor, "TOPLEFT", col * (w + 3), -(row * (h + 3)))
+				Fill(d, idx, w, h)
 				idx = idx + 1
-				if idx > 40 then break end
 			end
 		end
 	end
