@@ -957,6 +957,7 @@ end
 
 function WM:ApplyChrome()
 	if self._chromeDone then return end
+	S:Print("worldmap: chrome run")
 	local wmf = WorldMapFrame
 	if not wmf then
 		-- map addon may already be loaded (event fired before we registered)
@@ -1042,7 +1043,7 @@ function WM:ApplyChrome()
 			coords:SetText(format("%.1f, %.1f", cx * 100, cy * 100))
 		else coords:SetText("") end
 	end)
-	S:LogInfo("worldmap", "chrome applied")
+	S:Print("worldmap: chrome applied")
 	-- fade the whole window slightly when the cursor leaves it
 	WorldMapFrame:HookScript("OnEnter", function() WorldMapFrame:SetAlpha(1) end)
 	WorldMapFrame:HookScript("OnLeave", function()
