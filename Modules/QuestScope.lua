@@ -643,7 +643,7 @@ function QS:RefreshWorldMap()
 		local ok, wp = pcall(C_Map.GetWorldPosFromMapPos, d.mapID, mkv(d.x, d.y))
 		if not ok or not wp then return end
 		local ok2, mp = pcall(C_Map.GetMapPosFromWorldPos, mapID, wp)
-		if ok2 and mp then return mp.x, mp.y end
+		if ok2 and mp and mp.x >= 0 and mp.x <= 1 and mp.y >= 0 and mp.y <= 1 then return mp.x, mp.y end
 	end
 	local hit, hitA = 0, 0
 	for _, d in ipairs(self.obj or {}) do
