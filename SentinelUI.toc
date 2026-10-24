@@ -135,6 +135,7 @@ Modules\MarkedTargets.lua
 Modules\TankFrames.lua
 Modules\SlashHelp.lua
 Modules\RollUpgrade.lua
+Modules\ConfigShare.lua
 Modules\SwingTimer.lua
 Modules\SummonHelper.lua
 Modules\ProfCooldowns.lua

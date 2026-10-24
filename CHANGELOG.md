@@ -10,6 +10,14 @@ standalone RLBetterItem release.
 ## [1.4.2]
 
 ### Added
+- **ConfigShare** — `/suiexport` / `/suiimport`: copy your whole profile as a shareable string
+- **MarkedTargets** — right-side top-5 raid-marked enemies, marker + HP, click-to-target
+- **TankFrames** — main/off-tank rows with tank target HP; `/smt` `/sot` assignment
+- **RollUpgrade** — ilvl +/- badge on group loot roll frames
+- **`/suicmd`** — lists every SentinelUI slash command
+- **Announcer presets** — one-click message dropdown per row
+- **LFGEnhance** — `Unlist` button on the group finder (enabled only while listed)
+- **XP bar tooltip** — XP/hour, time-to-level estimate, rested-full prognosis
 - **XP bar: kill-rate level ETA** — combat XP gains are tracked over a rolling 10-minute window; the bar appends "~23m (142 Kills)" estimating time and kills left to level up
 - **Announcer: live countdown per running message** — while a message is On, its interval field switches to a green "nächste in M:SS" countdown that ticks down to the next post; editing resumes when stopped
 - **XP bar: pending quest XP** — completed quests in the log paint a green segment behind the rested fill; the bar text now reads "10.1% - 21.6k fehlt (+8.5k Quest-EP)" plus a gold LEVEL-UP! marker when turn-ins complete the level. Tooltip lists pending XP, quest count and post-turn-in result (via Questie's QuestXP database with client-API fallbacks)
