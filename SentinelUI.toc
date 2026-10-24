@@ -3,7 +3,7 @@
 ## Notes: Complete user interface replacement
 ## Notes-deDE: Kompletter Ersatz der Benutzeroberfläche
 ## Author: xRL-Dev.de
-## Version: 1.4.2
+## Version: 1.4.3
 ## IconTexture: Interface\AddOns\SentinelUI\Media\Textures\Logo
 ## X-Website: https://xrl-dev.de/
 ## X-BugTracker: https://xrl-dev.de/bugtracker

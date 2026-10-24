@@ -7,6 +7,31 @@ Note on versions: `## Version` is SentinelUI's own release number. The embedded
 BetterItem module reports `## X-BetterItem-Version` and must always equal the
 standalone RLBetterItem release.
 
+## [1.4.3]
+
+### Added
+
+- **MarkedTargets** — right-side list of the top 5 raid-marked enemies: marker icon, name, live HP bar; click a row to target it
+- **TankFrames** — left-side main/off-tank list with class-colored HP and each tank's current target HP; `/smt Name` / `/sot Name` assign roles via `SetPartyAssignment`
+- **ConfigShare** — `/suiexport` / `/suiimport`: copy your whole profile as a shareable string
+- **RollUpgrade** — ilvl +/- badge on group loot roll frames (green upgrade / red downgrade)
+- **`/suicmd`** — lists every SentinelUI slash command with a short description
+- **Announcer presets** — "..." dropdown per row with ready-made messages (LFM, BRB, pull-in etc.)
+- **LFGEnhance** — `Unlist` button on the group finder, enabled only while actually listed
+- **XP bar tooltip** — XP/hour, time-to-level estimate, rested-full prognosis; kill-based ETA text kept
+- **UnitFrames** — incoming-resurrect + incoming-summon icons (where the client exposes the APIs)
+- **Skins** — group loot roll frames now skinned
+
+### Changed
+
+- **Navigation** — corpse→quest flow: the arrow only auto-targets your own corpse while dead; after resurrecting it aims straight back at the remembered quest target with no intermediate waypoints; quest log right-click no longer double-fires or breaks header collapse
+- **FlightTimer** — complete rework: slim template bar, fill+spark, destination vs. timer text, right-click dismiss, mid-flight `/reload` restores the route from SavedVariables
+
+### Fixed
+
+- DataTexts panels re-anchor and relayout on window resize / UI scale change (windowed mode)
+- TankFrames/MarkedTargets nil-db init error + module defaults landed in the correct profile table
+
 ## [1.4.2]
 
 ### Added
