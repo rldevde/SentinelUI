@@ -2201,4 +2201,5 @@ L["No profile loaded"] = "Kein Profil geladen"
 L["Nothing to import"] = "Nichts zu importieren"
 L["Invalid config string"] = "Ungültiger Konfigurations-String"
 L["Config imported - reloading UI"] = "Konfiguration importiert - UI wird neu geladen"
+L["In flight"] = "Im Flug"
 

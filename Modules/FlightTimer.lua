@@ -32,6 +32,7 @@ local function EndFlight()
 	local total = GetTime() - flight.t0
 	-- ignore instant cancels/dismounts under half a minute
 	if total > 30 then Routes()[flight.key] = total end
+	S.db.global.activeFlight = nil
 	flight = nil
 	if bar then bar:Hide() end
 end
@@ -103,6 +104,8 @@ local function BeginFlight(destIndex)
 	local dest = TaxiNodeName and TaxiNodeName(destIndex)
 	if not dest then return end
 	flight = { key = (SourceName() or "?") .. ">" .. dest, dest = dest, t0 = GetTime() }
+	-- persist so the route survives a /reload mid-flight
+	S.db.global.activeFlight = { key = flight.key, dest = flight.dest, t0 = flight.t0 }
 	Ensure()
 	bar.route:SetText(dest)
 	bar.time:SetText("…")
@@ -122,6 +125,22 @@ function FT:Initialize()
 		if unit == "player" and flight and UnitOnTaxi and not UnitOnTaxi("player") then
 			EndFlight()
 		end
+	end)
+	-- reload mid-flight: restore the persisted route if still airborne
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", function()
+		if not (UnitOnTaxi and UnitOnTaxi("player")) then
+			S.db.global.activeFlight = nil
+			return
+		end
+		local saved = S.db.global.activeFlight
+		if saved and saved.t0 then
+			flight = { key = saved.key, dest = saved.dest, t0 = saved.t0, onTaxi = true }
+		else
+			flight = { key = "?>", dest = L["In flight"], t0 = GetTime(), onTaxi = true }
+		end
+		Ensure()
+		bar.route:SetText(flight.dest or "?")
+		bar:Show()
 	end)
 end
 
