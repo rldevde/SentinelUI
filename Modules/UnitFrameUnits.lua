@@ -270,7 +270,7 @@ end
 
 function UF:CreateUnits()
 	for _, info in ipairs(singles) do
-		if not (info.noClassic and S.isClassic) then self:CreateSingle(info) end
+		if not (info.noClassic and S.isClassic) then S:SafeCall("UnitFrames:Single", self.CreateSingle, self, info) end
 	end
 	if not S.isClassic then
 		self:CreateStack("boss", "boss", MAX_BOSS_FRAMES or 5, L["Boss"], { "RIGHT", "UIParent", "RIGHT", -100, 80 })
