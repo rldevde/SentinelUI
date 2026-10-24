@@ -2224,4 +2224,5 @@ L["Resilience"] = "Abhärtung"
 L["ETA"] = "Ankunft"
 L["Wild Buffs"] = "Wilde Buffs"
 L["missing on:"] = "fehlt auf:"
+L["all buffed"] = "alle gebufft"
 

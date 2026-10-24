@@ -59,19 +59,22 @@ local function ScanBuff(...)
 	return missing, minLeft, count
 end
 
-local function BuildRow(parent, y, label)
+local function BuildRow(parent, x, label)
+	-- small icon button: count badge on the icon, mini timer under it
 	local b = CreateFrame("Button", "SentinelUIWild" .. label, parent, "SecureActionButtonTemplate")
-	b:SetSize(196, 22)
-	b:SetPoint("TOPLEFT", parent, "TOPLEFT", 4, y)
+	b:SetSize(30, 30)
+	b:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -16)
 	S:SetTemplate(b, "Default")
-	b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+	-- AnyDown/AnyUp variants so the secure click fires on every client
+	b:RegisterForClicks("AnyDown", "AnyUp", "LeftButtonUp", "RightButtonUp")
 	local icon = b:CreateTexture(nil, "ARTWORK")
-	icon:SetSize(18, 18)
-	icon:SetPoint("LEFT", 2, 0)
+	icon:SetAllPoints()
 	icon:SetTexCoord(0.06, 0.94, 0.06, 0.94)
-	local fs = S:FontString(b, 10, "OUTLINE", S.media.unitFont)
-	fs:SetPoint("LEFT", icon, "RIGHT", 6, 0)
-	b.icon, b.fs = icon, fs
+	local cnt = S:FontString(b, 11, "OUTLINE", S.media.numberFont)
+	cnt:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", -2, 1)
+	local timer = S:FontString(b, 9, "OUTLINE", S.media.numberFont)
+	timer:SetPoint("TOP", b, "BOTTOM", 0, -1)
+	b.icon, b.fs, b.timer = icon, cnt, timer
 	return b
 end
 
@@ -83,7 +86,7 @@ end
 function WB:BuildFrame()
 	if frame or select(2, UnitClass("player")) ~= "DRUID" then return end
 	local f = CreateFrame("Frame", "SentinelUIWildBuffs", UIParent, S.BackdropTemplate)
-	f:SetSize(204, 66)
+	f:SetSize(78, 50)
 	f:SetFrameStrata("LOW")
 	S:SetTemplate(f, "Default", "MEDIUM")
 	f.title = S:FontString(f, 9, "OUTLINE")
@@ -94,7 +97,7 @@ function WB:BuildFrame()
 	local grip = CreateFrame("Button", nil, f)
 	grip:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
 	grip:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 0)
-	grip:SetHeight(14)
+	grip:SetHeight(12)
 	grip:EnableMouse(true)
 	grip:RegisterForDrag("LeftButton")
 	grip:SetScript("OnDragStart", function() if not InCombatLockdown() then f:StartMoving() end end)
@@ -108,8 +111,8 @@ function WB:BuildFrame()
 			if m.SavePosition then pcall(m.SavePosition, m) end
 		end
 	end)
-	f.mark = BuildRow(f, -18, "Mark")
-	f.thorns = BuildRow(f, -42, "Thorns")
+	f.mark = BuildRow(f, 8, "Mark")
+	f.thorns = BuildRow(f, 42, "Thorns")
 	S:CreateMover(f, "wildbuffs", L["Wild Buffs"], { "TOPLEFT", "UIParent", "TOPLEFT", 60, -420 }, "wildbuffs")
 	f:Hide()
 	frame = f
@@ -119,23 +122,28 @@ local function SetSpell(btn, mouse, id, unit)
 	if InCombatLockdown() then return end
 	local name = SpellName(id)
 	if not name then return end
-	btn:SetAttribute("type" .. mouse, "spell")
-	btn:SetAttribute("spell" .. mouse, name)
-	btn:SetAttribute("unit" .. mouse, unit or "player")
+	local sfx = mouse == 2 and "2" or ""
+	btn:SetAttribute("type" .. sfx, "spell")
+	btn:SetAttribute("spell" .. sfx, name)
+	btn:SetAttribute("unit" .. sfx, unit or "player")
 end
 
 local function RefreshRow(btn, iconTex, label, missing, minLeft, total)
 	btn.icon:SetTexture(iconTex)
 	local n = #missing
-	local txt = format("%s  |cffff5555%d/%d|r  %s", label, n, total, FmtTime(minLeft))
-	if n == 0 then txt = format("%s  |cff66ff66OK|r  %s", label, FmtTime(minLeft)) end
-	btn.fs:SetText(txt)
+	btn.fs:SetText(n == 0 and "|cff66ff66+|r" or ("|cffff5555" .. n .. "|r"))
+	btn.timer:SetText(n == 0 and FmtTime(minLeft) or (FmtTime(minLeft) .. ""))
+	btn.timer:SetTextColor(n == 0 and 0.6 or 1, n == 0 and 0.9 or 0.55, n == 0 and 0.6 or 0.55)
 	btn:SetScript("OnEnter", function()
-		if n == 0 then return end
 		GameTooltip:SetOwner(btn, "ANCHOR_RIGHT")
-		GameTooltip:AddLine(label .. " - " .. (L["missing on:"] or "missing on:"))
-		for _, u in ipairs(missing) do
-			GameTooltip:AddLine("  " .. (UnitName(u) or u), 1, 0.5, 0.5)
+		GameTooltip:AddLine(label)
+		if n > 0 then
+			GameTooltip:AddLine(L["missing on:"] or "missing on:")
+			for _, u in ipairs(missing) do
+				GameTooltip:AddLine("  " .. (UnitName(u) or u), 1, 0.5, 0.5)
+			end
+		else
+			GameTooltip:AddLine("|cff66ff66" .. (L["all buffed"] or "all buffed") .. "|r")
 		end
 		GameTooltip:Show()
 	end)
