@@ -502,8 +502,11 @@ function WL:Initialize()
 	self.minimapBtn = S:CreateMinimapButton({
 		name = "warlogs", glyph = "WL",
 		store = (self.private and self.private.minimap) or nil,
-		tooltip = L["War Logs"],
-		onClick = function() WL:Toggle() end,
+		onLeft = function() WL:Toggle() end,
+		tooltip = function()
+			GameTooltip:AddLine("SentinelUI WarLogs")
+			GameTooltip:AddLine("Left-click: open raid logs", 1, 1, 1)
+		end,
 	})
 	SLASH_SUILOG1, SLASH_SUILOG2 = "/suilog", "/suiwarlogs"
 	SlashCmdList.SUILOG = function() WL:Toggle() end
