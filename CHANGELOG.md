@@ -7,6 +7,27 @@ Note on versions: `## Version` is SentinelUI's own release number. The embedded
 BetterItem module reports `## X-BetterItem-Version` and must always equal the
 standalone RLBetterItem release.
 
+## [1.4.6]
+
+### Added
+
+- **WarLogs** — in-game Warcraft Logs: immutable raid sessions (all fights + loot + deaths + interrupts), tabs (Summary/Damage/Healing/Deaths/Interrupts/Loot/Fights), rank bars, minimap button, `/suilog`, `/suilogexport` JSON export, group profile broadcast, progression in tooltips + inspect, background sync between SentinelUI clients
+- **Preview** — `/suidummy party|raid|raid25|raid40|maintank` dummy unit frames at real mover positions
+- **WildBuffs** — druid buff manager (MotW/GotW/Thorns), raid-group rows, rotating targets, persisted position
+- **WorldMap chrome** — skinned window, accent title strip, +/- zoom buttons, cursor coords, fade-out
+
+### Changed
+
+- Zone names + level ranges live in the Karten dropdown; on-map labels and zone-link dots are off by default
+- **QuestScope** pins translate zone -> continent coords via C_Map; no more off-map markers
+
+### Fixed
+
+- QuestScope map pins on wrong map level, Vector2D ctor fallback, clamped transforms
+- WildBuffs secure-cast units, combat-lockdown refresh, group scan, timers, icons
+- Preview dummies: mover anchoring, per-group toggles, pooled-frame field
+- WarLogs: minimap button signature, export string, empty-state
+
 ## [1.4.5]
 
 ### Added
