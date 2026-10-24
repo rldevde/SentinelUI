@@ -956,7 +956,21 @@ local function Zoom(btn, dir)
 end
 
 function WM:ApplyChrome()
-	if not WorldMapFrame or self._chromeDone then return end
+	if self._chromeDone then return end
+	local wmf = WorldMapFrame
+	if not wmf then
+		-- map addon is load-on-demand: retry when it loads or first shows
+		if not self._chromeWait then
+			self._chromeWait = true
+			self:RegisterEvent("ADDON_LOADED", function(_, _, name)
+				if name == "Blizzard_WorldMap" then
+					S:SafeCall("WorldMap:Chrome", WM.ApplyChrome, WM)
+				end
+			end)
+		end
+		return
+	end
+	WorldMapFrame:HookScript("OnShow", function() S:SafeCall("WorldMap:Chrome", WM.ApplyChrome, WM) end)
 	self._chromeDone = true
 	-- backdrop around the whole map window in our dark template style
 	if WorldMapFrame.NineSlice then WorldMapFrame.NineSlice:Hide() end
