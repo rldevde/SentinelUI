@@ -631,13 +631,25 @@ function QS:RefreshWorldMap()
 		pin:Show()
 		c.pin = pin
 	end
-	-- debug: real canvas mapID vs pin table ids (mapID mismatch = invisible pins)
+	-- coords are stored per-zone; when the open map differs, translate via
+	-- C_Map (zone -> world -> target map). No C_Map: only draw on the exact
+	-- zone map - wrong-level pins looked "verdreht" (Silberwald im Wasser).
+	local function Tx(d)
+		if d.mapID == mapID then return d.x, d.y end
+		if not (C_Map and C_Map.GetWorldPosFromMapPos and C_Map.GetMapPosFromWorldPos) then return end
+		local wp = C_Map.GetWorldPosFromMapPos(d.mapID, Vector2D_CreateVector2D(d.x, d.y))
+		if not wp then return end
+		local mp = C_Map.GetMapPosFromWorldPos(mapID, wp)
+		if mp then return mp.x, mp.y end
+	end
 	local hit, hitA = 0, 0
 	for _, d in ipairs(self.obj or {}) do
-		if d.mapID == mapID then Place(d) hit = hit + 1 end
+		local x, y = Tx(d)
+		if x then Place({ mapID = mapID, x = x, y = y, qid = d.qid, title = d.title, level = d.level, objIdx = d.objIdx, kind = d.kind }) hit = hit + 1 end
 	end
 	for _, d in ipairs(self.avail or {}) do
-		if d.mapID == mapID then Place(d) hitA = hitA + 1 end
+		local x, y = Tx(d)
+		if x then Place({ mapID = mapID, x = x, y = y, qid = d.qid, title = d.title, level = d.level, kind = d.kind }) hitA = hitA + 1 end
 	end
 	S:LogInfo("questscope", format("mapID=%s pins=%d avail=%d", tostring(mapID), hit, hitA))
 	if self.db.showDungeons then
