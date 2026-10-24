@@ -137,6 +137,7 @@ Modules\SlashHelp.lua
 Modules\RollUpgrade.lua
 Modules\ConfigShare.lua
 Modules\QuestAnnounce.lua
+Modules\CharStats.lua
 Modules\SwingTimer.lua
 Modules\SummonHelper.lua
 Modules\ProfCooldowns.lua

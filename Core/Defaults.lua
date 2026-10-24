@@ -53,6 +53,7 @@ S.defaults = {
 		configshare = { enable = true },
 		rollupgrade = { enable = true },
 		tankframes = { enable = true },
+		charstats = { enable = true },
 		questannounce = { enable = true },
 		markedtargets = { enable = true },
 		general = {
