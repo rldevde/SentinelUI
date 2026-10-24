@@ -830,6 +830,7 @@ S.privateDefaults = {
 		magebar = { enable = true },
 		pulltimer = { enable = true },
 		screenshots = { enable = true },
+		markedtargets = { enable = true },
 		manatick = { enable = true },
 		swingtimer = { enable = true },
 		summonhelper = { enable = true },
