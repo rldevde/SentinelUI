@@ -2221,4 +2221,5 @@ L["Spell Power"] = "Zaubermacht"
 L["MP5 (combat)"] = "MP5 (Kampf)"
 L["Defense Rating"] = "Verteidigungswertung"
 L["Resilience"] = "Abhärtung"
+L["ETA"] = "Ankunft"
 

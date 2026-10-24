@@ -40,7 +40,7 @@ end
 local function Ensure()
 	if bar then return end
 	local f = CreateFrame("Button", "SentinelUIFlightTimer", UIParent)
-	f:SetSize(240, 18)
+	f:SetSize(250, 16)
 	f:SetFrameStrata("MEDIUM")
 	S:SetTemplate(f, "Default")
 	f:RegisterForClicks("RightButtonUp")
@@ -54,13 +54,14 @@ local function Ensure()
 	-- spark at the fill edge
 	local spark = f:CreateTexture(nil, "OVERLAY")
 	spark:SetTexture("Interface\\CastingBar\\UI-CastingBar-Spark")
-	spark:SetSize(8, 24)
+	spark:SetSize(6, 22)
 	spark:SetBlendMode("ADD")
 	spark:Hide()
 	f.spark = spark
 	-- texts: route label left, timer right
 	local route = S:FontString(f, 10, "OUTLINE", S.media.unitFont)
 	route:SetPoint("LEFT", 6, 0)
+	route:SetTextColor(S.accent.r, S.accent.g, S.accent.b)
 	local time = S:FontString(f, 10, "OUTLINE", S.media.numberFont)
 	time:SetPoint("RIGHT", -6, 0)
 	f.route, f.time = route, time
@@ -87,7 +88,7 @@ local function Ensure()
 			self.spark:ClearAllPoints()
 			self.spark:SetPoint("CENTER", self.fill, "RIGHT", 0, 0)
 			self.spark:Show()
-			self.time:SetFormattedText("-%s", Fmt(math.max(0, total - el)))
+			self.time:SetFormattedText("%s %s", L["ETA"] or "ETA", Fmt(math.max(0, total - el)))
 		else
 			-- no ETA on a new route: thin progress strip + elapsed time
 			self.fill:SetWidth(math.max(1, w * math.min(1, el / 120)))
