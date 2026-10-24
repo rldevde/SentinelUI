@@ -104,5 +104,8 @@ end
 
 function PV:Initialize()
 	SLASH_SUIDUMMY1 = "/suidummy"
-	SlashCmdList.SUIDUMMY = function(msg) S:SafeCall("Preview:Toggle", PV.Toggle, PV, (msg or ""):gsub("^%s*(.-)%s*$", "%1") ~= "" and msg or "all") end
+	SlashCmdList.SUIDUMMY = function(msg)
+		local m = (msg or ""):lower():gsub("^%s*(.-)%s*$", "%1")
+		S:SafeCall("Preview:Toggle", PV.Toggle, PV, m ~= "" and m or "all")
+	end
 end
