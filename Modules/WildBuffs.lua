@@ -182,7 +182,12 @@ function WB:Update()
 	frame:Show()
 	local markN, giftN, thornN = SpellName(MARK_ID), SpellName(GIFT_ID), SpellName(THORNS_ID)
 	if not markN then return end
-	local function Tex(id) return (GetSpellTexture and GetSpellTexture(id)) or [[Interface\Icons\Spell_Nature_Regeneration]] end
+	local FALLBACK = {
+		[GIFT_ID] = [[Interface\Icons\Spell_Nature_GiftoftheWild]],
+		[MARK_ID] = [[Interface\Icons\Spell_Nature_Regeneration]],
+		[THORNS_ID] = [[Interface\Icons\Spell_Nature_Thorns]],
+	}
+	local function Tex(id) return (GetSpellTexture and GetSpellTexture(id)) or FALLBACK[id] end
 
 	local groups = Groups()
 	local sorted = {}
