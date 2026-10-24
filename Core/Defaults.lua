@@ -53,6 +53,7 @@ S.defaults = {
 		configshare = { enable = true },
 		rollupgrade = { enable = true },
 		tankframes = { enable = true },
+		questannounce = { enable = true },
 		markedtargets = { enable = true },
 		general = {
 			autoScale = true, uiScale = 0.71,
