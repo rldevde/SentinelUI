@@ -176,6 +176,9 @@ local function UpdateBtn(btn, iconTex, spellId, missing, unit, rotate)
 end
 
 function WB:Update()
+	-- frame holds secure buttons: Show/Hide/SetPoint/SetHeight are all
+	-- forbidden in combat - skip the whole refresh, nothing time-critical
+	if InCombatLockdown() then return end
 	self.db = self.db or S.db.profile.wildbuffs
 	if not frame then return end
 	if self.db.enable == false or select(2, UnitClass("player")) ~= "DRUID" then frame:Hide() return end
