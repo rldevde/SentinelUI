@@ -557,7 +557,7 @@ S.defaults = {
 			minimapIcon = true,
 		},
 		worldmap = {
-			zoneLevels = true, fishingLevels = true,
+			mapLabels = false, zoneLevels = true, fishingLevels = true,
 			pinDungeons = true, pinFlights = true, pinFlightsOpp = false,
 			pinTravel = true, pinTravelOpp = false,
 			pinSpirits = true, pinCrossings = true, pinZoneLinks = true, pinScale = 1,
