@@ -637,10 +637,13 @@ function QS:RefreshWorldMap()
 	local function Tx(d)
 		if d.mapID == mapID then return d.x, d.y end
 		if not (C_Map and C_Map.GetWorldPosFromMapPos and C_Map.GetMapPosFromWorldPos) then return end
-		local wp = C_Map.GetWorldPosFromMapPos(d.mapID, Vector2D_CreateVector2D(d.x, d.y))
-		if not wp then return end
-		local mp = C_Map.GetMapPosFromWorldPos(mapID, wp)
-		if mp then return mp.x, mp.y end
+		local mkv = (type(Vector2D_CreateVector2D) == "function" and Vector2D_CreateVector2D)
+			or (type(CreateVector2D) == "function" and CreateVector2D)
+			or function(x, y) return { x = x, y = y } end
+		local ok, wp = pcall(C_Map.GetWorldPosFromMapPos, d.mapID, mkv(d.x, d.y))
+		if not ok or not wp then return end
+		local ok2, mp = pcall(C_Map.GetMapPosFromWorldPos, mapID, wp)
+		if ok2 and mp then return mp.x, mp.y end
 	end
 	local hit, hitA = 0, 0
 	for _, d in ipairs(self.obj or {}) do
