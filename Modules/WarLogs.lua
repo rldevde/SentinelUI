@@ -479,8 +479,7 @@ function WL:Export()
 			esc(s.inst), esc(s.ts), floor(s.dur or 0), tbl(s.dmg), tbl(s.heal), tbl(s.deaths), #(s.loot or {}), #(s.fights or {}))
 	end
 	out[#out + 1] = "]"
-	exportBox.eb:SetText(table.concat(out, "
-"):gsub(",%]", "]"))
+	exportBox.eb:SetText(table.concat(out, "\n"):gsub(",%]", "]"))
 	exportBox.eb:HighlightText()
 	exportBox:Show()
 end
