@@ -85,6 +85,9 @@ function PV:Toggle(which)
 			groupShown[g.mover] = not groupShown[g.mover]
 			local anchor = _G["SentinelUIMover_" .. g.mover] or (S.movers and S.movers[g.mover])
 			if groupShown[g.mover] then
+				S:Print(g.mover .. ": " .. (anchor and ("@" .. (anchor:GetName() or "?")) or "NO MOVER"))
+			end
+			if groupShown[g.mover] then
 				for i = 1, g.n do
 					local d = Dummy(UIParent, START[g.mover] + i - 1)
 					local col, row = (i - 1) % g.cols, math.floor((i - 1) / g.cols)
