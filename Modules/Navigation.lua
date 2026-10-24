@@ -695,13 +695,13 @@ local function QuestIDForButton(btn)
 	return QuestIDForLogIndex(btn.questLogIndex or (btn.GetID and btn:GetID()))
 end
 
-function NAV:NavigateToQuest(questID)
+function NAV:NavigateToQuest(questID, silent)
 	local title = C_QuestLog and C_QuestLog.GetTitleForQuestID and C_QuestLog.GetTitleForQuestID(questID)
 		or (GetQuestLogTitle and select(1, GetQuestLogTitle(questID))) or L["Quest"]
 	local mapID, x, y = self:QuestPosition(questID)
 	if mapID and x and y then
 		self:AddWaypoint(mapID, x, y, title)
-	else
+	elseif not silent then
 		S:Print(format(L["No map position for quest '%s'."], title or "?"))
 	end
 end
@@ -740,13 +740,10 @@ function NAV:HookQuestLog()
 	for _, btn in ipairs(rows) do
 		if not btn.suiNavHooked then
 			btn.suiNavHooked = true
-			pcall(btn.RegisterForClicks, btn, "LeftButtonUp", "RightButtonUp", "LeftButtonDown", "RightButtonDown")
-			btn:HookScript("OnClick", function(self, button)
-				if button == "RightButton" then
-					local qid = QuestIDForButton(self)
-					if qid then NAV:NavigateToQuest(qid) end
-				end
-			end)
+			-- NOTE: do NOT touch RegisterForClicks / OnClick here — replacing
+			-- Blizzard's click registration broke header expand/collapse and
+			-- right-click is already handled by the QuestLogTitleButton_OnClick
+			-- hook below (per-button hooks fired the nav twice).
 			btn:HookScript("OnEnter", function(self)
 				local qid = QuestIDForButton(self)
 				if qid and GameTooltip then
@@ -822,9 +819,9 @@ function NAV:HookQuestLog()
 	if _G.QuestLogTitleButton_OnClick and not self.qlClickHooked then
 		self.qlClickHooked = true
 		hooksecurefunc("QuestLogTitleButton_OnClick", function(btn, button)
-			if button == "RightButton" and btn then
+			if button == "RightButton" and btn and not btn.isHeader then
 				local qid = QuestIDForButton(btn)
-				if qid then NAV:NavigateToQuest(qid) end
+				if qid then NAV:NavigateToQuest(qid, true) end
 			end
 		end)
 	end
