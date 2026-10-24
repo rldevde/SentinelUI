@@ -65,7 +65,7 @@ end
 local GROUPS = {
 	{ mover = "party", n = 5, cols = 1, w = 190, h = 44 },
 	{ mover = "raid", n = 10, cols = 5, w = 90, h = 36 },
-	{ mover = "raid25", n = 25, cols = 5, w = 80, h = 32 },
+	{ mover = "raid", n = 25, cols = 5, w = 80, h = 32 },
 	{ mover = "raid40", n = 40, cols = 8, w = 70, h = 28 },
 	{ mover = "maintank", n = 2, cols = 1, w = 160, h = 44 },
 }
