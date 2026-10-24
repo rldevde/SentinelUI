@@ -64,8 +64,8 @@ end
 -- itself is hidden or its children were never laid out
 local GROUPS = {
 	{ mover = "party", header = "SentinelUI_PartyHeader", n = 5, cols = 1, w = 190, h = 44 },
-	{ mover = "raid", header = "SentinelUI_RaidHeader", n = 10, cols = 5, w = 90, h = 36 },
-	{ mover = "raid", header = "SentinelUI_RaidHeader", n = 25, cols = 5, w = 80, h = 32 },
+	{ mover = "raid", key = "raid", header = "SentinelUI_RaidHeader", n = 10, cols = 5, w = 90, h = 36 },
+	{ mover = "raid", key = "raid25", header = "SentinelUI_RaidHeader", n = 25, cols = 5, w = 80, h = 32 },
 	{ mover = "raid40", header = "SentinelUI_Raid40Header", n = 40, cols = 8, w = 70, h = 28 },
 	{ mover = "maintank", header = "SentinelUI_MaintankHeader", n = 2, cols = 1, w = 160, h = 44 },
 }
@@ -74,22 +74,23 @@ local START = { party = 1, raid = 6, raid25 = 16, raid40 = 41, maintank = 81 }
 
 function PV:Toggle(which)
 	Holder()
-	for _, g in ipairs(GROUPS) do
-		if which ~= "all" and g.mover ~= which then
-			if groupShown[g.mover] then
-				for i = START[g.mover], START[g.mover] + g.n - 1 do
+	for gi, g in ipairs(GROUPS) do
+		local key = g.key or g.mover
+		if which ~= "all" and key ~= which and g.mover ~= which then
+			if groupShown[key] then
+				for i = START[key], START[key] + g.n - 1 do
 					if pool[i] then pool[i]:Show() end
 				end
 			end
 		else
-			groupShown[g.mover] = not groupShown[g.mover]
+			groupShown[key] = not groupShown[key]
 			local anchor = _G["SentinelUIMover_" .. g.mover] or (S.movers and S.movers[g.mover]) or _G[g.header]
-			if groupShown[g.mover] then
-				S:Print(g.mover .. ": " .. (anchor and ("@" .. (anchor:GetName() or "?")) or "NO MOVER"))
+			if groupShown[key] then
+				S:Print(key .. ": " .. (anchor and ("@" .. (anchor:GetName() or "?")) or "NO MOVER"))
 			end
-			if groupShown[g.mover] then
+			if groupShown[key] then
 				for i = 1, g.n do
-					local d = Dummy(UIParent, START[g.mover] + i - 1)
+					local d = Dummy(UIParent, START[key] + i - 1)
 					local col, row = (i - 1) % g.cols, math.floor((i - 1) / g.cols)
 					d:ClearAllPoints()
 					if anchor then
@@ -99,10 +100,10 @@ function PV:Toggle(which)
 						-- dummies are never silently offscreen
 						d:SetPoint("CENTER", UIParent, "CENTER", (col - g.cols / 2) * (g.w + 3), 200 - row * (g.h + 3))
 					end
-					Fill(d, START[g.mover] + i - 1, g.w, g.h)
+					Fill(d, START[key] + i - 1, g.w, g.h)
 				end
 			else
-				for i = START[g.mover], START[g.mover] + g.n - 1 do
+				for i = START[key], START[key] + g.n - 1 do
 					if pool[i] then pool[i]:Hide() end
 				end
 			end
