@@ -123,11 +123,38 @@ function WL:CombatEnd()
 	cur = nil
 end
 
+local function Fingerprint(s)
+	return (s.inst or "?") .. "|" .. (s.ts or "?")
+end
+local function HasSession(fp)
+	for _, s in ipairs(WL.db.sessions) do
+		if Fingerprint(s) == fp then return true end
+	end
+end
+
+function WL:SyncSession(s)
+	-- broadcast the finished run to the raid so every SentinelUI client keeps
+	-- the same immutable copy
+	if not (C_ChatInfo and C_ChatInfo.SendAddonMessage and S.AceSerializer) then return end
+	local top, topH = {}, {}
+	for i, e in ipairs(SortDesc(s.dmg)) do if i > 10 then break end top[e.n] = e.v end
+	for i, e in ipairs(SortDesc(s.heal)) do if i > 10 then break end topH[e.n] = e.v end
+	local ok, ser = pcall(S.AceSerializer.Serialize, S.AceSerializer, {
+		inst = s.inst, ts = s.ts, dur = floor(s.dur or 0),
+		dmg = top, heal = topH, deaths = s.deaths or {},
+		kills = s.kills or {}, loot = s.loot or {}, fights = #s.fights, from = S.myName,
+	})
+	if ok and ser and #ser < 240 then
+		pcall(C_ChatInfo.SendAddonMessage, PREFIX, "S!" .. ser, S.GroupChannel())
+	end
+end
+
 function WL:ZoneChange()
 	-- leaving the raid instance ends the session
 	if sess and not InRaidInstance() then
 		sess.dur = GetTime() - sess.t0
 		tinsert(self.db.sessions, sess)
+		self:SyncSession(sess)
 		while #self.db.sessions > MAX_SESSIONS do tremove(self.db.sessions, 1) end
 		S:Print(format("%s %s - %d Kämpfe, %d Loot", L["Raid log saved:"] or "Raid log saved:",
 			sess.inst, #sess.fights, #sess.loot))
@@ -246,7 +273,7 @@ local function BuildUI()
 		b:SetScript("OnClick", fn)
 	end
 	Btn(L["Share in group"] or "Share in group", 8, function() WL:Share() end)
-	Btn(L["Clear history"] or "Clear history", 116, function() wipe(WL.db.sessions) WL:RefreshList() end)
+	Btn(L["Export Log"] or "Export Log", 116, function() WL:Export() end)
 	frame = f
 end
 
@@ -366,15 +393,16 @@ function WL:OnAddonMsg(prefix, msg, _, sender)
 		if name and name ~= S.myName then self.db.profiles[name] = msg:sub(3) end
 		return
 	end
-	local ok, rep = S.AceSerializer:Deserialize(msg)
+	if msg:sub(1, 2) ~= "S!" then return end
+	local ok, rep = S.AceSerializer:Deserialize(msg:sub(3))
 	if not ok or type(rep) ~= "table" or not rep.inst then return end
-	rep.shared, rep.ts, rep.names = true, date("%H:%M"), rep.names or {}
-	rep.fights, rep.loot, rep.heal, rep.taken, rep.deaths, rep.inter =
-		rep.fights or {}, rep.loot or {}, rep.heal or {}, rep.taken or {}, rep.deaths or {}, rep.inter or {}
+	-- immutable history: never overwrite, never edit - append new raids only
+	if HasSession(Fingerprint(rep)) then return end
+	rep.shared, rep.names = true, rep.names or {}
+	rep.fights = rep.fights or {}
 	tinsert(self.db.sessions, rep)
-	while #self.db.sessions > MAX_SESSIONS do tremove(self.db.sessions, 1) end
 	self:RefreshList()
-	S:Print(format("%s %s", sender or "?", L["shared a raid log."] or "shared a raid log."))
+	S:Print(format("%s: %s - %s", sender or "?", rep.inst, L["raid log synced"] or "raid log synced"))
 end
 
 function WL:Toggle()
