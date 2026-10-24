@@ -80,10 +80,9 @@ function PV:Toggle()
 	for _, g in ipairs(GROUPS) do
 		local anchor = S.movers and S.movers[g.mover]
 		if anchor then
-			local mw = anchor.GetWidth and anchor:GetWidth() or g.w
-			local mh = anchor.GetHeight and anchor:GetHeight() or g.h
-			local w = (mw and mw > 20) and mw or g.w
-			local h = (mh and mh > 10) and mh or g.h
+			-- movers are sized like the whole group block, not a single
+			-- frame - fixed per-group dims, only position comes from mover
+			local w, h = g.w, g.h
 			for i = 1, g.n do
 				local d = Dummy(UIParent, idx)
 				local col, row = (i - 1) % g.cols, math.floor((i - 1) / g.cols)
