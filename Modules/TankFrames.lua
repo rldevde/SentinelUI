@@ -69,6 +69,7 @@ function TF:BuildFrame()
 end
 
 function TF:Refresh()
+	self.db = self.db or S.db.profile.tankframes
 	if not self.db.enable or not IsInGroup() then
 		if self.frame then self.frame:Hide() end
 		return
@@ -155,6 +156,7 @@ SLASH_SUIOFFTANK1 = "/sot"
 SlashCmdList.SUIOFFTANK = function(msg) SetTank("MAINASSIST", msg) end
 
 function TF:Initialize()
+	self.db = S.db.profile.tankframes
 	self:BuildFrame()
 	self.t = 0
 	self.frame:SetScript("OnUpdate", function(_, dt)

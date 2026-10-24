@@ -77,6 +77,7 @@ end
 
 local found = {}
 function MK:Refresh()
+	self.db = self.db or S.db.profile.markedtargets
 	if not self.db.enable then
 		if self.frame then self.frame:Hide() end
 		return
@@ -123,6 +124,7 @@ function MK:Refresh()
 end
 
 function MK:Initialize()
+	self.db = S.db.profile.markedtargets
 	self:BuildFrame()
 	self.t = 0
 	self.frame:SetScript("OnUpdate", function(_, dt)
