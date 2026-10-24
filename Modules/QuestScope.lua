@@ -631,12 +631,15 @@ function QS:RefreshWorldMap()
 		pin:Show()
 		c.pin = pin
 	end
+	-- debug: real canvas mapID vs pin table ids (mapID mismatch = invisible pins)
+	local hit, hitA = 0, 0
 	for _, d in ipairs(self.obj or {}) do
-		if d.mapID == mapID then Place(d) end
+		if d.mapID == mapID then Place(d) hit = hit + 1 end
 	end
 	for _, d in ipairs(self.avail or {}) do
-		if d.mapID == mapID then Place(d) end
+		if d.mapID == mapID then Place(d) hitA = hitA + 1 end
 	end
+	S:Log("questscope", format("mapID=%s pins=%d avail=%d", tostring(mapID), hit, hitA))
 	if self.db.showDungeons then
 		for _, d in ipairs(self:DungPins()) do
 			if d.mapID == mapID then Place(d) end
