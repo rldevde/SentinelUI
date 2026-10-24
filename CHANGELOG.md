@@ -7,6 +7,18 @@ Note on versions: `## Version` is SentinelUI's own release number. The embedded
 BetterItem module reports `## X-BetterItem-Version` and must always equal the
 standalone RLBetterItem release.
 
+## [1.4.5]
+
+### Added
+
+- **Preview / dummy mode** — `/suidummy` shows example unit frames: `/suidummy party|raid|raid25|raid40|maintank` toggles each group at the real mover position; real-UF look (class-colored HP, name, level, %), hover tooltip and click feedback
+
+### Fixed
+
+- **UnitFrames**: missing `targettargettarget` defaults aborted frame creation and removed all group/party/raid frames after moving the UI
+- **CharStats**: stats panel now docks to the left of the character frame (was offscreen)
+- **WildBuffs**: combat-lockdown refresh skip (secure children), per-buff icons, group scan, timers, persisted position
+
 ## [1.4.4]
 
 ### Added
