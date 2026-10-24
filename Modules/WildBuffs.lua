@@ -24,13 +24,17 @@ end
 local frame
 
 local function GroupUnits()
-	local units = {}
-	local n = IsInRaid() and GetNumGroupMembers() or (IsInGroup() and GetNumSubgroupMembers() or 0)
-	for i = 1, n do
-		local u = IsInRaid() and ("raid" .. i) or ("party" .. i)
-		if UnitExists(u) and UnitIsConnected(u) then units[#units + 1] = u end
+	-- scan by unit existence instead of group APIs: party1-4 or raid1-40,
+	-- whichever exist, plus the player. Works grouped or solo.
+	local units = { "player" }
+	for i = 1, 40 do
+		local u = "raid" .. i
+		if UnitExists(u) then units[#units + 1] = u end
 	end
-	units[#units + 1] = "player"
+	for i = 1, 4 do
+		local u = "party" .. i
+		if UnitExists(u) then units[#units + 1] = u end
+	end
 	return units
 end
 
