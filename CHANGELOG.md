@@ -23,6 +23,10 @@ standalone RLBetterItem release.
 - **DataTexts** — panels re-anchor and relayout on window resize / UI scale change
 
 ### Fixed
+- **WildBuffs**: no refresh in combat (secure children forbid Show/SetPoint), `ADDON_ACTION_BLOCKED` gone; per-raid-group rows, persisted drag position, rotating single-buff targets, per-buff icons
+- **Navigation**: quest log right-click no longer spams and headers collapse again
+- **Castbar**: also hidden when a stale duration-object path left the bar drawn
+
 
 - Castbars no longer stay visible as empty black bars when the cast-end event is lost
 - WildBuffs click reliability, group scanning, timers, per-buff icons
