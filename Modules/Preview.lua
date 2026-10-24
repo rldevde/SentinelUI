@@ -11,7 +11,7 @@ local CLASSES = { "WARRIOR", "PRIEST", "MAGE", "ROGUE", "DRUID", "HUNTER", "PALA
 local NAMES = { "Thorin", "Mira", "Kael", "Sylva", "Grom", "Nia", "Durn", "Ela", "Vex", "Rulf",
 	"Anja", "Bor", "Ciri", "Dain", "Effi", "Falrik", "Gwen", "Hald", "Iris", "Jorin" }
 
-local pool, shown = {}, false
+local pool, groupShown = {}, {}
 local holder
 local function Holder()
 	if not holder then
@@ -68,48 +68,39 @@ local GROUPS = {
 	{ mover = "maintank", n = 2, cols = 1, w = 160, h = 44 },
 }
 
-function PV:Toggle()
-	shown = not shown
-	if not shown then
-		for _, d in ipairs(pool) do d:Hide() end
-		S:Print(L["Dummy preview off"] or "Dummy preview off")
-		return
-	end
+local START = { party = 1, raid = 6, maintank = 16 }
+
+function PV:Toggle(which)
 	Holder()
-	local idx = 1
 	for _, g in ipairs(GROUPS) do
-		local anchor = S.movers and S.movers[g.mover]
-		if anchor then
-			-- movers are sized like the whole group block, not a single
-			-- frame - fixed per-group dims, only position comes from mover
-			local w, h = g.w, g.h
-			for i = 1, g.n do
-				local d = Dummy(UIParent, idx)
-				local col, row = (i - 1) % g.cols, math.floor((i - 1) / g.cols)
-				d:ClearAllPoints()
-				d:SetPoint("TOPLEFT", anchor, "TOPLEFT", col * (w + 3), -(row * (h + 3)))
-				Fill(d, idx, w, h)
-				idx = idx + 1
+		if which ~= "all" and g.mover ~= which then
+			if groupShown[g.mover] then
+				for i = START[g.mover], START[g.mover] + g.n - 1 do
+					if pool[i] then pool[i]:Show() end
+				end
+			end
+		else
+			groupShown[g.mover] = not groupShown[g.mover]
+			local anchor = S.movers and S.movers[g.mover]
+			if groupShown[g.mover] and anchor then
+				for i = 1, g.n do
+					local d = Dummy(UIParent, START[g.mover] + i - 1)
+					local col, row = (i - 1) % g.cols, math.floor((i - 1) / g.cols)
+					d:ClearAllPoints()
+					d:SetPoint("TOPLEFT", anchor, "TOPLEFT", col * (g.w + 3), -(row * (g.h + 3)))
+					Fill(d, START[g.mover] + i - 1, g.w, g.h)
+				end
+			else
+				for i = START[g.mover], START[g.mover] + g.n - 1 do
+					if pool[i] then pool[i]:Hide() end
+				end
 			end
 		end
 	end
-	-- solo or empty headers: nothing anchored - always render a visible
-	-- fallback column so the mode is never "silent"
-	if idx == 1 then
-		for i = 1, 5 do
-			local d = Dummy(UIParent, i)
-			d:ClearAllPoints()
-			d:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 70, -280 - (i - 1) * 46)
-			Fill(d, i, 180, 42)
-		end
-		idx = 6
-	end
-	for i = idx, #pool do pool[i]:Hide() end
-	S:Print("preview: " .. (idx - 1) .. " dummies")
-	S:Print(L["Dummy preview on - /suidummy to hide"] or "Dummy preview on - /suidummy to hide")
+	S:Print(L["preview: /suidummy party|raid|maintank|all"] or "preview: /suidummy party|raid|maintank|all")
 end
 
 function PV:Initialize()
 	SLASH_SUIDUMMY1 = "/suidummy"
-	SlashCmdList.SUIDUMMY = function() S:SafeCall("Preview:Toggle", PV.Toggle, PV) end
+	SlashCmdList.SUIDUMMY = function(msg) S:SafeCall("Preview:Toggle", PV.Toggle, PV, (msg or ""):gsub("^%s*(.-)%s*$", "%1") ~= "" and msg or "all") end
 end
