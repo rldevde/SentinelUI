@@ -155,6 +155,33 @@ local function Delist()
 	end
 end
 
+-- is the player currently listed in the finder? different clients expose
+-- different APIs, try them all
+local function IsListed()
+	if C_LFGList then
+		if C_LFGList.HasActiveEntryInfo then
+			local ok, r = pcall(C_LFGList.HasActiveEntryInfo)
+			if ok then return not not r end
+		end
+		if C_LFGList.GetActiveEntryInfo then
+			local ok, r = pcall(C_LFGList.GetActiveEntryInfo)
+			if ok then return r ~= nil and r ~= false end
+		end
+	end
+	if LFGHasListing then
+		local ok, r = pcall(LFGHasListing)
+		if ok then return not not r end
+	end
+	if GetLFGMode then
+		local ok, r = pcall(GetLFGMode)
+		if ok and r and r ~= "none" and r ~= "idle" then return true end
+	end
+	-- fallback: blizzard shows "Your listings" entries on the browse frame
+	local f = _G.LFGBrowseFrame or _G.LFGListFrame
+	if f and f.numEntries and f.numEntries > 0 then return true end
+	return false
+end
+
 local function AddDelistButton(parent)
 	if not parent or parent.suiDelist then return end
 	local btn = CreateFrame("Button", "SentinelUILFGDelist", parent)
@@ -177,6 +204,15 @@ local function AddDelistButton(parent)
 		GameTooltip:Show()
 	end)
 	btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	-- only usable while actually listed — poll cheaply on a throttle
+	btn.t = 0
+	btn:SetScript("OnUpdate", function(self, dt)
+		self.t = self.t + dt
+		if self.t < 0.5 then return end
+		self.t = 0
+		self:SetEnabled(IsListed())
+		fs:SetAlpha(IsListed() and 1 or 0.4)
+	end)
 	parent.suiDelist = btn
 end
 
