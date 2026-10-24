@@ -796,7 +796,7 @@ function S:BuildOptions()
 	itemsync = L["Item Sync"], bugfolder = L["BugFolder"], worldmap = L["World Map"], instancetracker = L["Instance Tracker"],
 	worldbuffs = L["World Buffs"], guildchronicle = L["Guild Chronicle"],
 		interruptalert = L["Interrupt Alert"], healerprot = L["Healer Protection"], blessings = L["Blessings"], raidcheck = L["Raid Check"], raidgrid = L["Heal Grid"],
-		totemforge = L["Totem Forge"], bosswatch = L["Boss Watch"], questscope = L["Quest Scope"], bisguide = L["BiS Guide"],
+		totemforge = L["Totem Forge"], bosswatch = L["Boss Watch"], questscope = L["Quest Scope"] .. "  |cffff5555[ALPHA - im Bau]|r", bisguide = L["BiS Guide"],
 		lootbrowser = L["Loot Browser"], pulltimer = L["Pull Timer"], screenshots = L["Screenshots"],
 		manatick = L["Mana Tick"], swingtimer = L["Swing Timer"], summonhelper = L["Summon Helper"],
 		profcds = L["Profession Cooldowns"], zeptimer = L["Ship Timer"], raidmarker = L["Raid Marker"],
