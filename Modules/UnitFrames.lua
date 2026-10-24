@@ -530,6 +530,29 @@ function UF:UpdateIndicators(f)
 	end
 	if f.RestingIcon then f.RestingIcon:SetShown(f.db.restingIcon and IsResting() or false) end
 	if f.CombatIcon then f.CombatIcon:SetShown(f.db.combatIcon and UnitAffectingCombat("player") or false) end
+	-- incoming resurrection icon (center) where the client exposes the API
+	if UnitHasIncomingResurrection then
+		if not f.ResIcon and f.Health then
+			f.ResIcon = f:CreateTexture(nil, "OVERLAY")
+			f.ResIcon:SetSize(20, 20)
+			f.ResIcon:SetPoint("CENTER", f.Health, "CENTER", 0, 0)
+			f.ResIcon:SetTexture([[Interface\RaidFrame\Raid-Icon-Rez]])
+		end
+		if f.ResIcon then f.ResIcon:SetShown(UnitHasIncomingResurrection(unit) or false) end
+	end
+	-- incoming summon icon where the client exposes the API
+	if C_IncomingSummon and C_IncomingSummon.IncomingSummonStatus then
+		if not f.SummonIcon and f.Health then
+			f.SummonIcon = f:CreateTexture(nil, "OVERLAY")
+			f.SummonIcon:SetSize(16, 16)
+			f.SummonIcon:SetPoint("CENTER", f.Health, "TOP", 0, -2)
+			f.SummonIcon:SetTexture([[Interface\RaidFrame\Raid-Icon-SummonPending]])
+		end
+		if f.SummonIcon then
+			local st = C_IncomingSummon.IncomingSummonStatus(unit)
+			f.SummonIcon:SetShown(st and st ~= 0 or false)
+		end
+	end
 end
 
 function UF:UpdateThreat(f)

@@ -24,6 +24,7 @@ local skins = {
 	{ key = "merchant", frames = { "MerchantFrame" }, sub = { "MerchantFrameInset", "MerchantMoneyInset", "MerchantMoneyBg", "MerchantBuyBackItem", "MerchantExtraCurrencyInset", "MerchantExtraCurrencyBg" } },
 	{ key = "mail", frames = { "MailFrame", "OpenMailFrame" }, sub = { "InboxFrame", "SendMailFrame", "MailFrameInset", "OpenMailFrameInset", "SendMailScrollFrame", "OpenMailScrollFrame", "SendMailMoneyInset", "SendMailMoneyBg" }, custom = "Mail" },
 	{ key = "bank", frames = { "BankFrame" }, custom = "Bank" },
+	{ key = "lootroll", frames = { "GroupLootFrame1", "GroupLootFrame2", "GroupLootFrame3", "GroupLootFrame4", "GroupLootFrame5", "GroupLootFrame6", "GroupLootFrame7", "GroupLootFrame8", "BonusRollFrame", "LootRollAlertFrame" }, noChildren = true },
 	{ key = "bank", frames = { "GuildBankFrame" }, addon = "Blizzard_GuildBankUI", custom = "GuildBank" },
 	{ key = "trade", frames = { "TradeFrame" }, sub = { "TradePlayerItemsInset", "TradeRecipientItemsInset", "TradePlayerEnchantInset", "TradeRecipientEnchantInset", "TradePlayerInputMoneyInset", "TradeRecipientMoneyInset", "TradeRecipientMoneyBg" } },
 	{ key = "guild", frames = { "GuildFrame", "GuildRegistrarFrame", "PetitionFrame", "TabardFrame", "GuildInfoFrame", "GuildMemberDetailFrame", "GuildControlPopupFrame" }, sub = { "GuildListScrollFrame", "GuildStatusFrame" } },

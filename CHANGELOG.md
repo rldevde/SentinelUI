@@ -10,6 +10,8 @@ standalone RLBetterItem release.
 ## [1.4.2]
 
 ### Added
+- **UnitFrames**: incoming-resurrect + incoming-summon icons (where the client exposes the APIs)
+- **Skins**: group loot roll frames now skinned
 - **ConfigShare** — `/suiexport` / `/suiimport`: copy your whole profile as a shareable string
 - **MarkedTargets** — right-side top-5 raid-marked enemies, marker + HP, click-to-target
 - **TankFrames** — main/off-tank rows with tank target HP; `/smt` `/sot` assignment
