@@ -50,6 +50,10 @@ end
 S.defaults = {
 	global = { },
 	profile = {
+		configshare = { enable = true },
+		rollupgrade = { enable = true },
+		tankframes = { enable = true },
+		markedtargets = { enable = true },
 		general = {
 			autoScale = true, uiScale = 0.71,
 			font = "Sentinel Sans", fontSize = 12, fontOutline = "NONE",
@@ -830,10 +834,6 @@ S.privateDefaults = {
 		magebar = { enable = true },
 		pulltimer = { enable = true },
 		screenshots = { enable = true },
-		configshare = { enable = true },
-		rollupgrade = { enable = true },
-		tankframes = { enable = true },
-		markedtargets = { enable = true },
 		manatick = { enable = true },
 		swingtimer = { enable = true },
 		summonhelper = { enable = true },
