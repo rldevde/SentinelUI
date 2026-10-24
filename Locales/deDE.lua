@@ -2225,4 +2225,6 @@ L["ETA"] = "Ankunft"
 L["Wild Buffs"] = "Wilde Buffs"
 L["missing on:"] = "fehlt auf:"
 L["all buffed"] = "alle gebufft"
+L["Dummy preview on - /suidummy to hide"] = "Dummy-Vorschau an - /suidummy zum Ausblenden"
+L["Dummy preview off"] = "Dummy-Vorschau aus"
 
