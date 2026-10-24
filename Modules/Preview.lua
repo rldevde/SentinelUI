@@ -24,6 +24,10 @@ end
 
 local function Dummy(parent, i)
 	local f = pool[i]
+	if f and not f.lvl then
+		f.lvl = S:FontString(f, 9, "OUTLINE", S.media.numberFont)
+		f.lvl:SetPoint("LEFT", f.power, "LEFT", 3, 0)
+	end
 	if not f then
 		f = CreateFrame("Frame", "SentinelUIPreview" .. i, parent or UIParent)
 		S:SetTemplate(f, "Default")
@@ -40,6 +44,8 @@ local function Dummy(parent, i)
 		f.name:SetPoint("CENTER", f.health, "CENTER")
 		f.pct = S:FontString(f, 10, "OUTLINE", S.media.numberFont)
 		f.pct:SetPoint("RIGHT", f.health, "RIGHT", -3, 0)
+		f.lvl = S:FontString(f, 9, "OUTLINE", S.media.numberFont)
+		f.lvl:SetPoint("LEFT", f.power, "LEFT", 3, 0)
 		pool[i] = f
 	end
 	return f
