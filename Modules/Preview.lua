@@ -12,6 +12,15 @@ local NAMES = { "Thorin", "Mira", "Kael", "Sylva", "Grom", "Nia", "Durn", "Ela",
 	"Anja", "Bor", "Ciri", "Dain", "Effi", "Falrik", "Gwen", "Hald", "Iris", "Jorin" }
 
 local pool, shown = {}, false
+local holder
+local function Holder()
+	if not holder then
+		holder = CreateFrame("Frame", "SentinelUIPreviewHolder", UIParent)
+		holder:SetAllPoints(UIParent)
+		holder:SetFrameStrata("DIALOG")
+	end
+	return holder
+end
 
 local function Dummy(parent, i)
 	local f = pool[i]
@@ -69,6 +78,12 @@ end
 
 function PV:Toggle()
 	shown = not shown
+	if not shown then
+		for _, d in ipairs(pool) do d:Hide() end
+		S:Print(L["Dummy preview off"] or "Dummy preview off")
+		return
+	end
+	Holder()
 	local idx = 1
 	for _, h in ipairs(HEADERS) do
 		local anchor = _G[h]
@@ -95,11 +110,10 @@ function PV:Toggle()
 		end
 		idx = 6
 	end
-	S:Print(shown and (L["Dummy preview on - /suidummy to hide"] or "Dummy preview on")
-		or (L["Dummy preview off"] or "Dummy preview off"))
+	S:Print(L["Dummy preview on - /suidummy to hide"] or "Dummy preview on - /suidummy to hide")
 end
 
 function PV:Initialize()
 	SLASH_SUIDUMMY1 = "/suidummy"
-	SlashCmdList.SUIDUMMY = function() PV:Toggle() end
+	SlashCmdList.SUIDUMMY = function() S:SafeCall("Preview:Toggle", PV.Toggle, PV) end
 end
