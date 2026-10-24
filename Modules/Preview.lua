@@ -99,9 +99,9 @@ function PV:Toggle()
 			end
 		end
 	end
-	for i = idx, #pool do pool[i]:Hide() end
-	if shown and idx == 1 then
-		-- solo/no group: headers may hold zero children - show a fallback row
+	-- solo or empty headers: nothing anchored - always render a visible
+	-- fallback column so the mode is never "silent"
+	if idx == 1 then
 		for i = 1, 5 do
 			local d = Dummy(UIParent, i)
 			d:ClearAllPoints()
@@ -110,6 +110,8 @@ function PV:Toggle()
 		end
 		idx = 6
 	end
+	for i = idx, #pool do pool[i]:Hide() end
+	S:Print("preview: " .. (idx - 1) .. " dummies")
 	S:Print(L["Dummy preview on - /suidummy to hide"] or "Dummy preview on - /suidummy to hide")
 end
 
