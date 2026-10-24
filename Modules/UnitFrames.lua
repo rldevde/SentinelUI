@@ -1110,7 +1110,19 @@ local function CastInfo(unit, channel)
 end
 
 local function CastbarOnUpdate(cb, elapsed)
-	if cb.timerObject then return end
+	-- an empty bar must never stay on screen: when neither a cast nor a
+	-- fade is running, hide regardless of which path left it visible
+	if not (cb.casting or cb.channeling or cb.fade or cb.timerObject) then
+		cb:Hide()
+		return
+	end
+	if cb.timerObject then
+		if not (UnitCastingInfo(cb.unit) or UnitChannelInfo(cb.unit)) then
+			cb.timerObject = nil
+			cb.fade = 0.3
+		end
+		return
+	end
 	if cb.casting or cb.channeling then
 		-- stale cast: the end event was lost (e.g. nameplate swapped units)
 		-- and the bar would otherwise stay dark+empty on screen forever
