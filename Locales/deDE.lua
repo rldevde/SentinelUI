@@ -2222,4 +2222,6 @@ L["MP5 (combat)"] = "MP5 (Kampf)"
 L["Defense Rating"] = "Verteidigungswertung"
 L["Resilience"] = "Abhärtung"
 L["ETA"] = "Ankunft"
+L["Wild Buffs"] = "Wilde Buffs"
+L["missing on:"] = "fehlt auf:"
 
