@@ -106,7 +106,7 @@ end
 function WB:BuildFrame()
 	if frame or select(2, UnitClass("player")) ~= "DRUID" then return end
 	local f = CreateFrame("Frame", "SentinelUIWildBuffs", UIParent, S.BackdropTemplate)
-	f:SetSize(78, 50)
+	f:SetSize(112, 50)
 	f:SetFrameStrata("LOW")
 	S:SetTemplate(f, "Default", "MEDIUM")
 	f.title = S:FontString(f, 9, "OUTLINE")
@@ -131,8 +131,9 @@ function WB:BuildFrame()
 			if m.SavePosition then pcall(m.SavePosition, m) end
 		end
 	end)
-	f.mark = BuildRow(f, 8, "Mark")
-	f.thorns = BuildRow(f, 42, "Thorns")
+	f.gift = BuildRow(f, 8, "Gift")
+	f.mark = BuildRow(f, 42, "Mark")
+	f.thorns = BuildRow(f, 76, "Thorns")
 	S:CreateMover(f, "wildbuffs", L["Wild Buffs"], { "TOPLEFT", "UIParent", "TOPLEFT", 60, -420 }, "wildbuffs")
 	f:Hide()
 	frame = f
@@ -181,11 +182,16 @@ function WB:Update()
 		return (GetSpellTexture and GetSpellTexture(id)) or [[Interface\Icons\Spell_Nature_Regeneration]]
 	end
 
-	-- mark/gift row: missing either-name counts as missing the buff
-	local missM, leftM, total = ScanBuff(markN, giftN)
-	RefreshRow(frame.mark, Tex(GIFT_ID), "MotW", missM, leftM, total)
-	SetSpell(frame.mark, 1, GIFT_ID)
-	SetSpell(frame.mark, 2, MARK_ID, missM[1])
+	-- gift row: group buff state (same aura family), left/right cast gift
+	local missG, leftG, total = ScanBuff(markN, giftN)
+	RefreshRow(frame.gift, Tex(GIFT_ID), "GotW", missG, leftG, total)
+	SetSpell(frame.gift, 1, GIFT_ID)
+	SetSpell(frame.gift, 2, GIFT_ID)
+
+	-- mark row: single-target rebuff of the first missing member
+	RefreshRow(frame.mark, Tex(MARK_ID), "MotW", missG, leftG, total)
+	SetSpell(frame.mark, 1, MARK_ID, missG[1])
+	SetSpell(frame.mark, 2, MARK_ID, missG[1])
 
 	local missT, leftT = ScanBuff(thornN)
 	RefreshRow(frame.thorns, Tex(THORNS_ID), "Thorns", missT, leftT, total)
