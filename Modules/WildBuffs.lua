@@ -41,10 +41,26 @@ end
 local function HasAuraName(unit, ...)
 	if not S.GetAura then return end
 	for i = 1, 40 do
-		local a = { S.GetAura(unit, i) }
-		if not a[1] then break end
+		local r = S.GetAura(unit, i)
+		-- compat layer may return a table or a value list; handle both
+		local name, exp, dur
+		if type(r) == "table" then
+			name = r.name or r[1]
+			exp = r.expirationTime
+			dur = r.duration
+		else
+			local a = { S.GetAura(unit, i) }
+			name = a[1]
+			exp = a[6]
+			dur = a[5]
+		end
+		if not name then break end
 		for _, want in ipairs({ ... }) do
-			if a[1] == want then return true, a[6] and (a[6] - GetTime()) end -- a[6]=expiration
+			if name == want then
+				local left = exp and (exp - GetTime())
+				if (not left or left <= 0) and dur then left = dur end
+				return true, left
+			end
 		end
 	end
 end
