@@ -480,28 +480,67 @@ end
 -- style filter: compact rule engine - first matching rules stack their
 -- effects (scale bump, name color). Quest mobs, elites/rares/bosses and the
 -- current target get visual priority without any user config yet.
+-- per-rule switches live in db.styleFilter (toggle via /suisf <rule>)
+local SF_RULES = { "quest", "elite", "boss", "target", "dim" }
 function NP:StyleFilter(f)
 	local unit = f.unit
 	if not unit or not f.Name then return end
-	local scale, nameColor
-	if f.Quest and f.Quest:IsShown() then
+	local sf = self.db.styleFilter or {}
+	local scale, nameColor, alpha
+	if sf.quest ~= false and f.Quest and f.Quest:IsShown() then
 		scale = 1.15
 		nameColor = { 1, 0.72, 0.25 }
 	end
 	local c = UnitClassification(unit)
-	if c == "worldboss" then
+	if sf.boss ~= false and c == "worldboss" then
 		scale, nameColor = math.max(scale or 1, 1.2), { 1, 0.4, 0.4 }
-	elseif c == "elite" or c == "rareelite" or c == "rare" then
+	elseif sf.elite ~= false and (c == "elite" or c == "rareelite" or c == "rare") then
 		scale = math.max(scale or 1, 1.08)
 		if not nameColor then nameColor = { 1, 0.85, 0.35 } end
 	end
-	if UnitIsUnit(unit, "target") then scale = math.max(scale or 1, 1.1) end
+	if sf.target ~= false and UnitIsUnit(unit, "target") then scale = math.max(scale or 1, 1.1) end
+	if sf.dim then
+		local t = UnitExists("target") and not UnitIsUnit(unit, "target")
+		alpha = t and 0.85 or 1
+	end
 	scale = scale or 1
 	if f.suiScale ~= scale then
 		f.suiScale = scale
 		f:SetScale(scale)
 	end
+	if alpha then
+		if f.suiAlpha ~= alpha then f.suiAlpha = alpha f:SetAlpha(alpha) end
+	elseif f.suiAlpha then
+		f.suiAlpha = nil
+		f:SetAlpha(1)
+	end
 	if nameColor then f.Name:SetTextColor(nameColor[1], nameColor[2], nameColor[3]) end
+end
+
+SLASH_SUISF1 = "/suisf"
+SlashCmdList.SUISF = function(msg)
+	msg = msg and msg:gsub("^%s*(.-)%s*$", "%1") or ""
+	local db = NP.db
+	if not db then return end
+	db.styleFilter = db.styleFilter or {}
+	if msg == "" then
+		S:Print(L["Style filter rules:"] or "Style filter rules:")
+		for _, r in ipairs(SF_RULES) do
+			local v = db.styleFilter[r]
+			DEFAULT_CHAT_FRAME:AddMessage("  " .. r .. " = " .. (v == false and "|cffff5555off|r" or "|cff66ff66on|r"))
+		end
+		DEFAULT_CHAT_FRAME:AddMessage("  " .. (L["toggle: /suisf <rule>"] or "toggle: /suisf <rule>"))
+		return
+	end
+	for _, r in ipairs(SF_RULES) do
+		if r == msg then
+			db.styleFilter[r] = not (db.styleFilter[r] ~= false)
+			S:Print("stylefilter." .. r .. " = " .. tostring(db.styleFilter[r]))
+			for _, p in pairs(NP.plates) do NP:StyleFilter(p) end
+			return
+		end
+	end
+	S:Print(L["Unknown rule: "] .. msg)
 end
 
 function NP:FullUpdate(f)

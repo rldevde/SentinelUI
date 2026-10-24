@@ -2203,4 +2203,7 @@ L["Invalid config string"] = "Ungültiger Konfigurations-String"
 L["Config imported - reloading UI"] = "Konfiguration importiert - UI wird neu geladen"
 L["In flight"] = "Im Flug"
 L["Target of Target of Target"] = "Ziel vom Ziel vom Ziel"
+L["Style filter rules:"] = "Style-Filter Regeln:"
+L["toggle: /suisf <rule>"] = "umschalten: /suisf <Regel>"
+L["Unknown rule: "] = "Unbekannte Regel: "
 
