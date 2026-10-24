@@ -76,7 +76,7 @@ function PV:Toggle(which)
 	Holder()
 	for gi, g in ipairs(GROUPS) do
 		local key = g.key or g.mover
-		if which ~= "all" and key ~= which and g.mover ~= which then
+		if which ~= "all" and key ~= which then
 			if groupShown[key] then
 				for i = START[key], START[key] + g.n - 1 do
 					if pool[i] then pool[i]:Show() end
