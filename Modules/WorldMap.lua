@@ -939,7 +939,94 @@ function WM:ApplyReveal()
 end
 
 -- ---------------------------------------------------------------------------
+
+
+-- ---------------------------------------------------------------------------
+-- SentinelUI chrome: skinned window, zoom controls, coord readout, fade
+-- ---------------------------------------------------------------------------
+local function Zoom(btn, dir)
+	-- Blizzard exposes ZoomIn/ZoomOut on the ScrollContainer (newer clients)
+	-- or the map frame itself; fall through both paths
+	local sc = WorldMapFrame.ScrollContainer or WorldMapFrame
+	if dir > 0 then
+		if sc.ZoomIn then pcall(function() sc:ZoomIn() end) end
+	else
+		if sc.ZoomOut then pcall(function() sc:ZoomOut() end) end
+	end
+end
+
+function WM:ApplyChrome()
+	if not WorldMapFrame or self._chromeDone then return end
+	self._chromeDone = true
+	-- backdrop around the whole map window in our dark template style
+	if WorldMapFrame.NineSlice then WorldMapFrame.NineSlice:Hide() end
+	if WorldMapFrame.BorderFrame then WorldMapFrame.BorderFrame:Hide() end
+	S:SetTemplate(WorldMapFrame, "Default", "MEDIUM")
+	-- accent title strip
+	local strip = CreateFrame("Frame", "SentinelUIWorldMapStrip", WorldMapFrame)
+	strip:SetPoint("TOPLEFT", WorldMapFrame, "TOPLEFT", 1, -1)
+	strip:SetPoint("TOPRIGHT", WorldMapFrame, "TOPRIGHT", -1, -1)
+	strip:SetHeight(24)
+	S:SetTemplate(strip, "Default")
+	local t = S:FontString(strip, 11, "OUTLINE")
+	t:SetPoint("LEFT", 8, 0)
+	t:SetText("|cff" .. S.accentHex .. "Weltkarte|r")
+	strip.title = t
+	self._strip = strip
+	-- coordinates readout right side
+	local coords = S:FontString(strip, 10, "OUTLINE")
+	coords:SetPoint("RIGHT", -8, 0)
+	strip.coords = coords
+	-- zoom buttons +/-/reset bottom right of the window
+	local function ZBtn(label, xOff, fn)
+		local b = CreateFrame("Button", nil, WorldMapFrame)
+		b:SetSize(22, 22)
+		b:SetPoint("BOTTOMRIGHT", WorldMapFrame, "BOTTOMRIGHT", xOff, 6)
+		S:SetTemplate(b, "Default")
+		local s = S:FontString(b, 12, "OUTLINE")
+		s:SetAllPoints() s:SetText(label)
+		b:SetScript("OnClick", fn)
+		return b
+	end
+	ZBtn("-", -8, function() Zoom(nil, -1) end)
+	ZBtn("+", -32, function() Zoom(nil, 1) end)
+	local rst = CreateFrame("Button", nil, WorldMapFrame)
+	rst:SetSize(44, 22)
+	rst:SetPoint("BOTTOMRIGHT", WorldMapFrame, "BOTTOMRIGHT", -56, 6)
+	S:SetTemplate(rst, "Default")
+	local rs = S:FontString(rst, 9, "OUTLINE")
+	rs:SetAllPoints() rs:SetText("RESET")
+	rst:SetScript("OnClick", function()
+		local sc = WorldMapFrame.ScrollContainer
+		if sc and sc.ResetZoom then pcall(function() sc:ResetZoom() end)
+		elseif sc and sc.ZoomOut then for _ = 1, 10 do pcall(function() sc:ZoomOut() end) end end
+	end)
+	-- live cursor coords ticker
+	strip:SetScript("OnUpdate", function(self2, dt)
+		self2._t = (self2._t or 0) + dt
+		if self2._t < 0.1 then return end
+		self2._t = 0
+		local sc = WorldMapFrame.ScrollContainer or WorldMapFrame
+		if not sc then return end
+		local mx, my = GetCursorPosition()
+		local scale = sc.GetEffectiveScale and sc:GetEffectiveScale() or 1
+		local l, b2 = sc:GetLeft() or 0, sc:GetBottom() or 0
+		local w, h = sc:GetWidth() or 1, sc:GetHeight() or 1
+		local cx = (mx / scale - l) / w
+		local cy = 1 - (my / scale - b2) / h
+		if cx >= 0 and cx <= 1 and cy >= 0 and cy <= 1 then
+			coords:SetText(format("%.1f, %.1f", cx * 100, cy * 100))
+		else coords:SetText("") end
+	end)
+	-- fade the whole window slightly when the cursor leaves it
+	WorldMapFrame:HookScript("OnEnter", function() WorldMapFrame:SetAlpha(1) end)
+	WorldMapFrame:HookScript("OnLeave", function()
+		if self.db and self.db.fadeOut ~= false then WorldMapFrame:SetAlpha(0.92) end
+	end)
+end
+
 function WM:Initialize()
+	S:SafeCall("WorldMap:Chrome", WM.ApplyChrome, WM)
 	-- world map is a load-on-demand panel on some clients
 	local function Setup()
 		SetupProvider()
