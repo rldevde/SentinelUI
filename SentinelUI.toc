@@ -133,6 +133,7 @@ Modules\Screenshots.lua
 Modules\ManaTick.lua
 Modules\MarkedTargets.lua
 Modules\TankFrames.lua
+Modules\SlashHelp.lua
 Modules\SwingTimer.lua
 Modules\SummonHelper.lua
 Modules\ProfCooldowns.lua

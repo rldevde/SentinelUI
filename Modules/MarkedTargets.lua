@@ -49,7 +49,7 @@ function MK:BuildFrame()
 	S:SetTemplate(f, "Transparent")
 	f.rows = {}
 	for i = 1, MAX_ROWS do
-		local r = CreateFrame("Frame", nil, f)
+		local r = CreateFrame("Button", nil, f, "SecureActionButtonTemplate")
 		r:SetSize(166, ROW_H)
 		r:SetPoint("TOPLEFT", f, "TOPLEFT", 2, -((i - 1) * (ROW_H + PAD)) - 2)
 		local icon = r:CreateTexture(nil, "OVERLAY")
@@ -64,6 +64,8 @@ function MK:BuildFrame()
 		name:SetPoint("LEFT", 4, 0)
 		local hp = S:FontString(bar.suiTextOverlay, 10, "OUTLINE", S.media.numberFont)
 		hp:SetPoint("RIGHT", -4, 0)
+		r:SetAttribute("type1", "target")
+		r:RegisterForClicks("AnyUp", "AnyDown")
 		r.icon, r.bar, r.name, r.hp = icon, bar, name, hp
 		r:Hide()
 		f.rows[i] = r
@@ -100,6 +102,7 @@ function MK:Refresh()
 		local r = self.frame.rows[i]
 		local u = list[i]
 		if u then
+			if not InCombatLockdown() then r:SetAttribute("unit", u) end
 			local idx = GetRaidTargetIndex(u)
 			SetRaidTargetIconTexture(r.icon, idx)
 			local hp, max = UnitHealth(u), UnitHealthMax(u)
