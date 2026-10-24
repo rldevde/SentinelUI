@@ -51,42 +51,50 @@ local function Fill(f, i, w, h)
 	f:Show()
 end
 
-local function AnchorTo(f, anchor, i, cols, w, h, gap)
-	-- lay dummies in a grid starting at the anchor frame's top-left
-	local col = (i - 1) % cols
-	local row = math.floor((i - 1) / cols)
-	f:ClearAllPoints()
-	if anchor then
-		f:SetPoint("TOPLEFT", anchor, "TOPLEFT", col * (w + gap), -(row * (h + gap)))
-	else
-		f:SetPoint("CENTER", UIParent, "CENTER", col * (w + gap), 100 - row * (h + gap))
+local HEADERS = { "SentinelUI_PartyHeader", "SentinelUI_RaidHeader", "SentinelUI_MaintankHeader" }
+
+local function HeaderChildren(header)
+	-- real unit buttons inside the header, in order
+	local out = {}
+	local n = header:GetName()
+	for i = 1, 40 do
+		local c = header:GetAttribute("child" .. i) or _G[n .. "UnitButton" .. i]
+		if c then out[#out + 1] = c end
 	end
+	if #out == 0 then
+		for _, c in ipairs({ header:GetChildren() }) do out[#out + 1] = c end
+	end
+	return out
 end
 
-local GROUPS = {
-	{ header = "SentinelUI_PartyHeader", n = 5, cols = 1, w = 190, h = 44 },
-	{ header = "SentinelUI_RaidHeader", n = 10, cols = 5, w = 90, h = 36 },
-	{ header = "SentinelUI_Raid40Header", n = 0, cols = 8, w = 70, h = 30 },
-	{ header = "SentinelUI_MaintankHeader", n = 2, cols = 1, w = 160, h = 44 },
-	{ header = "SentinelUI_BossHolder", n = 0, cols = 1, w = 150, h = 40 },
-}
-
 function PV:Toggle()
-	self.db = self.db or S.db.profile.preview
 	shown = not shown
 	local idx = 1
-	for _, g in ipairs(GROUPS) do
-		local anchor = _G[g.header]
-		if anchor and g.n > 0 then
-			for i = 1, g.n do
+	for _, h in ipairs(HEADERS) do
+		local anchor = _G[h]
+		if anchor then
+			for i, child in ipairs(HeaderChildren(anchor)) do
 				local d = Dummy(UIParent, idx)
-				AnchorTo(d, anchor, i, g.cols, g.w, g.h, 3)
-				Fill(d, idx, g.w, g.h)
+				d:ClearAllPoints()
+				d:SetAllPoints(child) -- exactly over the real unit slot
+				local w, hgt = child:GetSize()
+				Fill(d, idx, w > 0 and w or 120, hgt > 0 and hgt or 30)
 				idx = idx + 1
+				if idx > 40 then break end
 			end
 		end
 	end
 	for i = idx, #pool do pool[i]:Hide() end
+	if shown and idx == 1 then
+		-- solo/no group: headers may hold zero children - show a fallback row
+		for i = 1, 5 do
+			local d = Dummy(UIParent, i)
+			d:ClearAllPoints()
+			d:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 70, -280 - (i - 1) * 46)
+			Fill(d, i, 180, 42)
+		end
+		idx = 6
+	end
 	S:Print(shown and (L["Dummy preview on - /suidummy to hide"] or "Dummy preview on")
 		or (L["Dummy preview off"] or "Dummy preview off"))
 end
