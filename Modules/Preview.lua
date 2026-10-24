@@ -84,12 +84,18 @@ function PV:Toggle(which)
 		else
 			groupShown[g.mover] = not groupShown[g.mover]
 			local anchor = _G["SentinelUIMover_" .. g.mover] or (S.movers and S.movers[g.mover])
-			if groupShown[g.mover] and anchor then
+			if groupShown[g.mover] then
 				for i = 1, g.n do
 					local d = Dummy(UIParent, START[g.mover] + i - 1)
 					local col, row = (i - 1) % g.cols, math.floor((i - 1) / g.cols)
 					d:ClearAllPoints()
-					d:SetPoint("TOPLEFT", anchor, "TOPLEFT", col * (g.w + 3), -(row * (g.h + 3)))
+					if anchor then
+						d:SetPoint("TOPLEFT", anchor, "TOPLEFT", col * (g.w + 3), -(row * (g.h + 3)))
+					else
+						-- no mover found: fixed visible spot near center so the
+						-- dummies are never silently offscreen
+						d:SetPoint("CENTER", UIParent, "CENTER", (col - g.cols / 2) * (g.w + 3), 200 - row * (g.h + 3))
+					end
 					Fill(d, START[g.mover] + i - 1, g.w, g.h)
 				end
 			else
