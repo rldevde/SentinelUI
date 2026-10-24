@@ -129,7 +129,7 @@ function WB:BuildFrame()
 	f:SetSize(150, 46)
 	f:SetFrameStrata("LOW")
 	S:SetTemplate(f, "Default", "MEDIUM")
-	f.title = S:FontString(f, 9, "OUTLINE")
+	f.title = S:FontString(f, 8, "OUTLINE")
 	f.title:SetPoint("TOP", 0, -3)
 	f.title:SetText("|cffff7c0aWild|r")
 	-- drag strip with persisted position

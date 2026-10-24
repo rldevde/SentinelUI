@@ -69,7 +69,8 @@ function CS:Build()
 	local f = CreateFrame("Frame", "SentinelUICharStats", CharacterFrame or UIParent)
 	f:SetSize(190, 340)
 	if CharacterFrame then
-		f:SetPoint("TOPLEFT", CharacterFrame, "TOPRIGHT", -30, -30)
+		-- dock left of the window: right-anchored went offscreen
+		f:SetPoint("TOPRIGHT", CharacterFrame, "TOPLEFT", 4, -30)
 	else
 		f:SetPoint("CENTER")
 	end
@@ -96,6 +97,7 @@ function CS:Build()
 		local t = S:FontString(btn, 10, "OUTLINE")
 		t:SetAllPoints()
 		t:SetText(L["Stats"])
+		t:SetTextColor(S.accent.r, S.accent.g, S.accent.b)
 		btn:SetScript("OnClick", function() CS:Toggle() end)
 	end
 end
