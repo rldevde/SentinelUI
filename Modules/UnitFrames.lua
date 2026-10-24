@@ -1112,6 +1112,13 @@ end
 local function CastbarOnUpdate(cb, elapsed)
 	if cb.timerObject then return end
 	if cb.casting or cb.channeling then
+		-- stale cast: the end event was lost (e.g. nameplate swapped units)
+		-- and the bar would otherwise stay dark+empty on screen forever
+		if not ((cb.casting and UnitCastingInfo(cb.unit)) or (cb.channeling and UnitChannelInfo(cb.unit))) then
+			cb.casting, cb.channeling = nil, nil
+			cb.fade = 0.3
+			return
+		end
 		local now = GetTime()
 		if cb.pushMarkFade then
 			cb.pushMarkFade = cb.pushMarkFade - elapsed
