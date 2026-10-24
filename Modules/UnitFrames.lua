@@ -417,6 +417,40 @@ function UF:UpdatePower(f)
 	if f.db.power.hideWhenEmpty and not IsSecret(mx) then
 		power:SetAlpha(mx == 0 and 0 or 1)
 	end
+	-- power prediction: overlay the cost of the spell currently being cast
+	if unit == "player" then
+		if not power.pred then
+			local t = power:CreateTexture(nil, "ARTWORK", nil, 2)
+			t:SetTexture(S.media.statusbar or "Interface/Buttons/WHITE8x8")
+			t:SetVertexColor(0.9, 0.7, 0.2, 0.45)
+			power.pred = t
+		end
+		local cost
+		local name, _, _, _, _, _, _, spellId = UnitCastingInfo(unit)
+		if not name then name, _, _, _, _, _, _, spellId = UnitChannelInfo(unit) end
+		if name then
+			local cts
+			if C_Spell and C_Spell.GetSpellPowerCost then cts = C_Spell.GetSpellPowerCost(spellId or name) end
+			if not cts and GetSpellPowerCost then cts = GetSpellPowerCost(spellId or name) end
+			if type(cts) == "table" then
+				for _, c in ipairs(cts) do
+					if c.cost and c.cost > 0 then cost = c.cost break end
+				end
+			elseif type(cts) == "number" and cts > 0 then
+				cost = cts
+			end
+		end
+		if cost and mx and mx > 0 then
+			local w = power:GetWidth() * math.min(1, cost / mx)
+			power.pred:ClearAllPoints()
+			power.pred:SetPoint("TOP", power:GetStatusBarTexture(), "TOPRIGHT", 0, 0)
+			power.pred:SetPoint("BOTTOM", power:GetStatusBarTexture(), "BOTTOMRIGHT", 0, 0)
+			power.pred:SetWidth(math.max(1, w))
+			power.pred:Show()
+		else
+			power.pred:Hide()
+		end
+	end
 	self:UpdateCustomTexts(f)
 end
 
@@ -538,6 +572,17 @@ function UF:UpdateIndicators(f)
 			if fac == "Horde" then f.PVPIcon:SetTexture([[Interface/TargetingFrame/UI-PVP-Horde]]) end
 		end
 		if f.PVPIcon then f.PVPIcon:SetShown(UnitIsPVP(unit) or false) end
+	end
+	if unit and unit:match("^party%d$") then
+		if not f.PartyIdx then
+			f.PartyIdx = S:FontString(f.Health or f, 10, "OUTLINE", S.media.numberFont)
+			f.PartyIdx:SetPoint("BOTTOMLEFT", f.Health or f, "BOTTOMLEFT", 2, 1)
+			f.PartyIdx:SetTextColor(0.9, 0.8, 0.4)
+		end
+		f.PartyIdx:SetText(unit:match("%d"))
+		f.PartyIdx:Show()
+	elseif f.PartyIdx then
+		f.PartyIdx:Hide()
 	end
 	if f.RestingIcon then f.RestingIcon:SetShown(f.db.restingIcon and IsResting() or false) end
 	if f.CombatIcon then f.CombatIcon:SetShown(f.db.combatIcon and UnitAffectingCombat("player") or false) end
@@ -1005,6 +1050,39 @@ function UF:UpdateAuraBars(f)
 	end
 	for i = shown + 1, #holder do holder[i]:Hide() end
 	holder:SetScript("OnUpdate", shown > 0 and AuraBarsOnUpdate or nil)
+end
+
+-- priority debuff icon: center icon on the frame for debuffs the player can
+-- dispel (by class) or boss-flagged auras - the "this matters NOW" marker
+local DISPEL = {
+	DRUID = { Curse = true, Poison = true },
+	PRIEST = { Magic = true, Disease = true },
+	PALADIN = { Magic = true, Disease = true, Poison = true },
+	SHAMAN = { Disease = true, Poison = true },
+	MAGE = { Curse = true },
+	WARLOCK = { Magic = true },
+}
+function UF:UpdatePrioDebuff(f)
+	if not f.Health then return end
+	if not f.PrioDebuff then
+		local t = f:CreateTexture(nil, "OVERLAY")
+		t:SetSize(20, 20)
+		t:SetPoint("CENTER", f.Health, "CENTER", 0, 0)
+		t:SetTexCoord(0.06, 0.94, 0.06, 0.94)
+		f.PrioDebuff = t
+	end
+	local unit = f.unit
+	if not unit or not S.UnitAura then f.PrioDebuff:Hide() return end
+	local _, myClass = UnitClass("player")
+	local can = DISPEL[myClass] or {}
+	local icon
+	for i = 1, 8 do
+		local a = { S.UnitAura(unit, i, "HARMFUL") }
+		if not a[1] then break end
+		local dType, isBoss = a[4], a[12]
+		if isBoss or (dType and can[dType]) then icon = a[2] break end
+	end
+	if icon then f.PrioDebuff:SetTexture(icon) f.PrioDebuff:Show() else f.PrioDebuff:Hide() end
 end
 
 function UF:UpdateAllAuras(f)
@@ -1778,12 +1856,13 @@ local function HandleUnitEvent(f, event, unit, ...)
 	if kind == "Health" then UF:UpdateHealth(f)
 	elseif kind == "Power" then UF:UpdatePower(f) if f.ClassPower then UF:UpdateClassPower(f) end if f.DruidMana then UF:UpdateDruidMana(f) end
 	elseif kind == "Name" then UF:UpdateName(f) UF:UpdateIndicators(f)
-	elseif kind == "Auras" then UF:UpdateAllAuras(f)
+	elseif kind == "Auras" then UF:UpdateAllAuras(f) UF:UpdatePrioDebuff(f)
 	elseif kind == "Threat" then UF:UpdateThreat(f)
 	elseif kind == "Heal" then UF:UpdateHealPrediction(f)
 	elseif kind == "Portrait" then UF:UpdatePortrait(f)
 	elseif kind == "Full" then UF:UpdateFrame(f)
 	elseif f.Castbar and f.db.castbar.enable then
+		if f.unit == "player" then UF:UpdatePower(f) end
 		if kind == "Cast" then UF:CastStart(f, false)
 		elseif kind == "Channel" then UF:CastStart(f, true)
 		elseif kind == "Stop" then UF:CastStop(f, event)
