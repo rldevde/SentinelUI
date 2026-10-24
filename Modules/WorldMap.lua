@@ -1055,6 +1055,8 @@ function WM:ApplyChrome()
 end
 
 function WM:Initialize()
+	-- zone-link dots: migrate the saved flag off once, users asked them gone
+	if self.db.pinZoneLinks then self.db.pinZoneLinks = false end
 	S:SafeCall("WorldMap:Chrome", WM.ApplyChrome, WM)
 	-- world map is a load-on-demand panel on some clients
 	local function Setup()
