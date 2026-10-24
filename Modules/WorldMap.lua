@@ -959,11 +959,18 @@ function WM:ApplyChrome()
 	if self._chromeDone then return end
 	local wmf = WorldMapFrame
 	if not wmf then
-		-- map addon is load-on-demand: retry when it loads or first shows
+		-- map addon may already be loaded (event fired before we registered)
+		-- or load on demand later: poll until it exists, plus hook the toggle
 		if not self._chromeWait then
 			self._chromeWait = true
-			self:RegisterEvent("ADDON_LOADED", function(_, _, name)
-				if name == "Blizzard_WorldMap" then
+			if type(ToggleWorldMap) == "function" then
+				hooksecurefunc("ToggleWorldMap", function()
+					C_Timer.After(0, function() S:SafeCall("WorldMap:Chrome", WM.ApplyChrome, WM) end)
+				end)
+			end
+			C_Timer.NewTicker(2, function(t)
+				if WorldMapFrame or (t and t.cancelled) then
+					t:Cancel()
 					S:SafeCall("WorldMap:Chrome", WM.ApplyChrome, WM)
 				end
 			end)
