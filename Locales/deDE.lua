@@ -2190,4 +2190,8 @@ L["Please assist main tank"] = "Bitte auf Maintank assistieren"
 L["Repair break - 2 min"] = "Reparaturpause - 2 Min"
 L["Raid invite whisper me"] = "Raid-Einladung: whisper"
 L["Guild recruiting - whisper me"] = "Gilde rekrutiert - whisper"
+L["XP per hour"] = "EP pro Stunde"
+L["Time to level (XP/h)"] = "Zeit bis Level (EP/h)"
+L["Rested full in"] = "Erholung voll in"
+L["days offline"] = "Tage offline"
 

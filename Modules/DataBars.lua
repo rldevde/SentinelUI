@@ -141,6 +141,19 @@ local function KillETA(remaining)
 	return killsLeft, dur
 end
 
+local function XpPerHour()
+	local now = GetTime()
+	local xp, firstT = 0
+	for i = #xpLog, 1, -1 do
+		local e = xpLog[i]
+		if e.t < now - WINDOW then break end
+		xp, firstT = xp + e.a, e.t
+	end
+	if xp <= 0 or not firstT then return end
+	local span = max(60, now - firstT)
+	return floor(xp / span * 3600 + 0.5)
+end
+
 -- Experience
 function DB:UpdateExperience()
 	local bar = self.bars.experience
@@ -205,6 +218,19 @@ function DB:Tooltip_experience(bar)
 	GameTooltip:AddDoubleLine(L["XP"], format("%s / %s (%.1f%%)", BreakUpLargeNumbers(cur), BreakUpLargeNumbers(mx), cur / mx * 100), 1, 1, 1, 1, 1, 1)
 	GameTooltip:AddDoubleLine(L["Remaining"], format("%s (%.1f%%)", BreakUpLargeNumbers(mx - cur), (mx - cur) / mx * 100), 1, 1, 1, 1, 1, 1)
 	if rested > 0 then GameTooltip:AddDoubleLine(L["Rested"], format("%s (%.1f%%)", BreakUpLargeNumbers(rested), rested / mx * 100), 1, 1, 1, 0.7, 0.5, 1) end
+	local xph = XpPerHour()
+	if xph then
+		GameTooltip:AddDoubleLine(L["XP per hour"], BreakUpLargeNumbers(xph) .. "/h", 0.6, 0.85, 1, 1, 1, 1)
+		local hrs = (mx - cur) / xph
+		local t = hrs >= 1 and format("%.1fh", hrs) or format("%dm", floor(hrs * 60 + 0.5))
+		GameTooltip:AddDoubleLine(L["Time to level (XP/h)"], t, 0.6, 0.85, 1, 1, 1, 1)
+	end
+	if rested > 0 then
+		local days = (mx - rested) / mx * 10 -- rested fills ~1 level per 10 logged-out days
+		if days > 0 then
+			GameTooltip:AddDoubleLine(L["Rested full in"], format("%.1f %s", days, L["days offline"]), 0.7, 0.5, 1, 1, 1, 1)
+		end
+	end
 	local qxp, qcount = PendingQuestXP()
 	if qxp > 0 then
 		GameTooltip:AddDoubleLine(L["Pending quest XP"], format("%s (%d %s)", BreakUpLargeNumbers(qxp), qcount, L["quests"]), 0.4, 0.9, 0.4, 1, 1, 1)
