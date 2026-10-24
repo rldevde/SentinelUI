@@ -36,7 +36,7 @@ end
 local function NewSession()
 	local name, _, _, _, _, _, _, instID = GetInstanceInfo and GetInstanceInfo() or {}
 	return { t0 = GetTime(), ts = date("%Y-%m-%d %H:%M"), inst = name or "?",
-		fights = {}, loot = {},
+		fights = {}, kills = {}, loot = {},
 		dmg = {}, heal = {}, taken = {}, deaths = {}, inter = {}, names = {} }
 end
 
@@ -89,8 +89,9 @@ function WL:OnLoot(_, _, msg)
 end
 
 local function InRaidInstance()
+	if not IsInRaid or not IsInRaid() then return false end
 	local inInst, kind = IsInInstance and IsInInstance() or false
-	return inInst and (kind == "raid" or IsInRaid()) or false
+	return (not inInst) or kind == "raid" or true -- raid group anywhere = log
 end
 
 function WL:CombatStart()
@@ -108,6 +109,16 @@ function WL:CombatEnd()
 	cur.name = cur.boss or (UnitExists("target") and UnitName("target")) or "Trash"
 	if cur.dur >= 5 and next(cur.dmg) then
 		tinsert(sess.fights, cur)
+		-- boss kill = fight target died this pull; no kill + player deaths = wipe
+		local playerDeaths = 0 for _ in pairs(cur.deaths or {}) do playerDeaths = playerDeaths + 1 end
+		if cur.boss then
+			tinsert(sess.kills, { boss = cur.boss, t = date("%H:%M"), dur = floor(cur.dur), wipe = false })
+			self.db.kills[#self.db.kills + 1] = { boss = cur.boss, inst = sess.inst, ts = date("%Y-%m-%d"), clear = true }
+		elseif playerDeaths >= 3 then
+			tinsert(sess.kills, { boss = cur.name, t = date("%H:%M"), dur = floor(cur.dur), wipe = true })
+			self.db.kills[#self.db.kills + 1] = { boss = cur.name, inst = sess.inst, ts = date("%Y-%m-%d"), clear = false }
+		end
+		if #self.db.kills > 200 then tremove(self.db.kills, 1) end
 	end
 	cur = nil
 end
@@ -341,6 +352,11 @@ end
 
 function WL:OnAddonMsg(prefix, msg, _, sender)
 	if prefix ~= PREFIX or not S.AceSerializer then return end
+	if msg:sub(1, 2) == "P!" then
+		local name = sender and strsplit("-", sender)
+		if name and name ~= S.myName then self.db.profiles[name] = msg:sub(3) end
+		return
+	end
 	local ok, rep = S.AceSerializer:Deserialize(msg)
 	if not ok or type(rep) ~= "table" or not rep.inst then return end
 	rep.shared, rep.ts, rep.names = true, date("%H:%M"), rep.names or {}
@@ -360,9 +376,120 @@ function WL:Toggle()
 	if sess then self:ShowSession("live") elseif #self.db.sessions > 0 then self:ShowSession(#self.db.sessions) end
 end
 
+-- -------------------------------------------------------------------------
+-- player profiles: compact progression string shared in groups
+-- "WL:ZG:10/10|MC:8/8" style summary built from the kill history
+local function BuildProfile()
+	local by = {}
+	for _, k in ipairs(WL.db.kills or {}) do
+		local e = by[k.inst or "?"] or { n = 0, w = 0 }
+		if k.clear then e.n = e.n + 1 else e.w = e.w + 1 end
+		by[k.inst or "?"] = e
+	end
+	local parts = {}
+	for inst, e in pairs(by) do parts[#parts + 1] = inst .. ":" .. e.n .. "/" .. (e.n + e.w) end
+	return table.concat(parts, "|"):sub(1, 200)
+end
+
+function WL:BroadcastProfile()
+	if not (C_ChatInfo and C_ChatInfo.SendAddonMessage) then return end
+	local p = BuildProfile()
+	if p == "" then return end
+	pcall(C_ChatInfo.SendAddonMessage, PREFIX, "P!" .. p, S.GroupChannel())
+end
+
+function WL:OnRoster()
+	-- auto-send on join; also (re)start session logging when a raid forms
+	if IsInRaid() and not sess then
+		self._joinT = (self._joinT or 0)
+		if GetTime() - self._joinT > 5 then
+			self._joinT = GetTime()
+			sess = sess or NewSession()
+		end
+	end
+	self:BroadcastProfile()
+end
+
+-- tooltip: show the player's raid progression under their name
+function WL:OnTooltip(tt)
+	local _, unit = tt:GetUnit()
+	if not unit or not UnitIsPlayer(unit) then return end
+	local name = UnitName(unit)
+	if not name then return end
+	name = strsplit("-", name)
+	local prof = name == S.myName and BuildProfile() or (self.db.profiles[name])
+	if prof and prof ~= "" then
+		tt:AddLine("|cffeaad33WarLogs:|r " .. prof)
+		tt:Show()
+	end
+end
+
+-- inspect window: append progression when inspecting someone
+function WL:InspectHook()
+	if not InspectFrame then return end
+	if not self._inspHooked then
+		self._inspHooked = true
+		InspectFrame:HookScript("OnShow", function()
+			if InspectFrame.unit then
+				local name = UnitName(InspectFrame.unit)
+				if name then
+					local p = WL.db.profiles[strsplit("-", name)]
+					if p and InspectFrame.TitleText then
+						InspectFrame.TitleText:SetText(name .. " |cffeaad33" .. p .. "|r")
+					end
+				end
+			end
+		end)
+	end
+end
+
+-- export: copy/paste window with JSON of all sessions for external tooling
+local exportBox
+function WL:Export()
+	if not exportBox then
+		local f = CreateFrame("Frame", "SentinelUIWarLogsExport", UIParent, S.BackdropTemplate)
+		f:SetSize(560, 400) f:SetPoint("CENTER") f:SetFrameStrata("DIALOG")
+		f:EnableMouse(true) f:SetMovable(true) f:RegisterForDrag("LeftButton")
+		f:SetScript("OnDragStart", f.StartMoving) f:SetScript("OnDragStop", f.StopMovingOrSizing)
+		S:SetTemplate(f, "Default", "MEDIUM")
+		local t = S:FontString(f, 11, "OUTLINE")
+		t:SetPoint("TOP", 0, -10) t:SetText(L["Export log"] or "Export log")
+		local sc = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate")
+		sc:SetPoint("TOPLEFT", 12, -36) sc:SetPoint("BOTTOMRIGHT", -32, 40)
+		local eb = CreateFrame("EditBox", nil, sc)
+		eb:SetMultiLine(true) eb:SetWidth(520) eb:SetAutoFocus(false)
+		eb:SetFontObject(GameFontHighlightSmall)
+		sc:SetScrollChild(eb)
+		f.eb = eb
+		local cl = CreateFrame("Button", nil, f, "UIPanelCloseButton")
+		cl:SetPoint("TOPRIGHT", -4, -4)
+		exportBox = f
+	end
+	-- serialize all sessions as simple JSON
+	local function esc(s) return tostring(s):gsub('"', '\\"') end
+	local function tbl(t)
+		local o = {}
+		for n, v in pairs(t or {}) do o[#o + 1] = format('{"n":%q,"v":%d}', esc(n), floor(v)) end
+		return "[" .. table.concat(o, ",") .. "]"
+	end
+	local out = { '["sentinelui_warlogs_version":1,' }
+	for i, s in ipairs(self.db.sessions) do
+		out[#out + 1] = format(
+			'{"inst":%q,"ts":%q,"dur":%d,"dmg":%s,"heal":%s,"deaths":%s,"loot":%d,"fights":%d},',
+			esc(s.inst), esc(s.ts), floor(s.dur or 0), tbl(s.dmg), tbl(s.heal), tbl(s.deaths), #(s.loot or {}), #(s.fights or {}))
+	end
+	out[#out + 1] = "]"
+	exportBox.eb:SetText(table.concat(out, "
+"):gsub(",%]", "]"))
+	exportBox.eb:HighlightText()
+	exportBox:Show()
+end
+
 function WL:Initialize()
 	self.db = S.db.profile.warlogs
 	self.db.sessions = self.db.sessions or {}
+	self.db.kills = self.db.kills or {}
+	self.db.profiles = self.db.profiles or {}
 	if C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix then
 		pcall(C_ChatInfo.RegisterAddonMessagePrefix, PREFIX)
 	end
@@ -381,4 +508,11 @@ function WL:Initialize()
 	})
 	SLASH_SUILOG1, SLASH_SUILOG2 = "/suilog", "/suiwarlogs"
 	SlashCmdList.SUILOG = function() WL:Toggle() end
+	SLASH_SUILOGEXP1 = "/suilogexport"
+	SlashCmdList.SUILOGEXP = function() WL:Export() end
+	self:RegisterEvent("GROUP_ROSTER_UPDATE", "OnRoster")
+	if GameTooltip then
+		GameTooltip:HookScript("OnTooltipSetUnit", function(tt) S:SafeCall("WarLogs:Tip", WL.OnTooltip, WL, tt) end)
+	end
+	S:SafeCall("WarLogs:Inspect", WL.InspectHook, WL)
 end
