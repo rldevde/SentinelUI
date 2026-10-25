@@ -203,13 +203,16 @@ local function UpdateBtn(btn, iconTex, spellId, missing, unit, rotate, far)
 end
 
 function WB:Update()
-	-- frame holds secure buttons: Show/Hide/SetPoint/SetHeight are all
-	-- forbidden in combat - skip the whole refresh, nothing time-critical
-	if InCombatLockdown() then return end
 	self.db = self.db or S.db.profile.wildbuffs
 	if not frame then return end
-	if self.db.enable == false or select(2, UnitClass("player")) ~= "DRUID" then frame:Hide() return end
-	frame:Show()
+	-- in combat the frame/buttons are protected: layout + unit attributes
+	-- must not change, but the scan itself is read-only and SHOULD run so
+	-- buffs cast mid-fight show up right away
+	local combat = InCombatLockdown()
+	if not combat then
+		if self.db.enable == false or select(2, UnitClass("player")) ~= "DRUID" then frame:Hide() return end
+		frame:Show()
+	elseif self.db.enable == false then return end
 	local markN, giftN, thornN = SpellName(MARK_ID), SpellName(GIFT_ID), SpellName(THORNS_ID)
 	if not markN then return end
 	local FALLBACK = {
@@ -230,8 +233,10 @@ function WB:Update()
 			r = BuildRow(frame, idx)
 			rows[idx] = r
 		end
-		r:ClearAllPoints()
-		r:SetPoint("TOPLEFT", frame, "TOPLEFT", 4, -14 - y)
+		if not combat then
+			r:ClearAllPoints()
+			r:SetPoint("TOPLEFT", frame, "TOPLEFT", 4, -14 - y)
+		end
 		y = y + 30
 		r.label:SetText(IsInRaid() and ("G" .. g) or "")
 		local units = groups[g]
@@ -250,10 +255,12 @@ function WB:Update()
 		local worst = leftM or leftT
 		if leftM and leftT then worst = min(leftM, leftT) end
 		r.timer:SetText(FmtTime(worst))
-		r:Show()
+		if not combat then r:Show() end
 	end
-	for i = #sorted + 1, #rows do rows[i]:Hide() end
-	frame:SetHeight(18 + y)
+	if not combat then
+		for i = #sorted + 1, #rows do rows[i]:Hide() end
+		frame:SetHeight(18 + y)
+	end
 end
 
 function WB:Initialize()
