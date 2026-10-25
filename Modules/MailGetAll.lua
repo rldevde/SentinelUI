@@ -28,6 +28,15 @@ function MG:Step()
 		local _, _, _, _, money, cod, days, items = GetInboxHeaderInfo(i)
 		cod, money, items = cod or 0, money or 0, items or 0
 		if cod <= 0 and (money > 0 or items > 0) then
+			-- full bags make AutoLootMailItem fail silently: stop instead of retrying forever
+			local sig = n .. ":" .. i .. ":" .. money .. ":" .. items
+			if sig == self.lastSig then self.stuck = (self.stuck or 0) + 1 else self.lastSig, self.stuck = sig, 0 end
+			if self.stuck >= 3 then
+				S:Print(L["Mail collection stopped: nothing could be taken (bags full?)"])
+				self.lastSig, self.stuck = nil, 0
+				self:Done()
+				return
+			end
 			AutoLootMailItem(i)
 			self.gold = (self.gold or 0) + money
 			-- let the server process before the next mail

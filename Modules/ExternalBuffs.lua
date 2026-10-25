@@ -22,7 +22,7 @@ local WATCH = {
 	[974] = true, [32593] = true, [32594] = true,        -- earth shield
 	[49283] = true, [49284] = true,
 	[6940] = true, [20729] = true,                       -- hand of sacrifice
-	[27148] = true, [27149] = true, [27150] = true,
+	[27147] = true, [27148] = true,
 	[1044] = true,                                       -- hand of freedom
 	[1022] = true, [5599] = true, [10278] = true,        -- hand of protection
 	[1038] = true,                                       -- hand of salvation

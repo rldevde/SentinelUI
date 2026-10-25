@@ -91,7 +91,7 @@ function FR:Initialize()
 	for _, ev in ipairs({ "UNIT_POWER_UPDATE", "UNIT_AURA", "BAG_UPDATE",
 		"PLAYER_REGEN_ENABLED", "PLAYER_REGEN_DISABLED", "PLAYER_ENTERING_WORLD" }) do
 		self:RegisterEvent(ev, function(_, _, unit)
-			if not unit or unit == "player" then FR:Refresh() end
+			if type(unit) ~= "string" or unit == "player" then FR:Refresh() end
 		end)
 	end
 	self:Refresh()

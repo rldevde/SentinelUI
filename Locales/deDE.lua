@@ -1331,6 +1331,7 @@ local T = {
 	["removed"] = "entfernt",
 	["has left"] = "ausgetreten",
 	["%s is not a guild member."] = "%s ist kein Gildenmitglied.",
+	["Mail collection stopped: nothing could be taken (bags full?)"] = "Post einsammeln abgebrochen: nichts konnte entnommen werden (Taschen voll?)",
 	["Raid logs (WarLogs)"] = "Raid-Logs (WarLogs)",
 	["Export raid logs as JSON"] = "Raid-Logs als JSON exportieren",
 	["Preview dummy unit frames"] = "Dummy-Einheitenfenster als Vorschau",

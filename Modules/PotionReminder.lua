@@ -106,7 +106,7 @@ end
 function PR:Initialize()
 	self.db = S.db.profile.potionreminder
 	for _, ev in ipairs({ "UNIT_HEALTH", "UNIT_HEALTH_FREQUENT", "BAG_UPDATE", "BAG_UPDATE_COOLDOWN", "PLAYER_REGEN_ENABLED" }) do
-		self:RegisterEvent(ev, function(_, _, unit) if not unit or unit == "player" then PR:Refresh() end end)
+		self:RegisterEvent(ev, function(_, _, unit) if type(unit) ~= "string" or unit == "player" then PR:Refresh() end end)
 	end
 	self:Refresh()
 end

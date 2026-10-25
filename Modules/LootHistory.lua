@@ -99,7 +99,7 @@ function LH:Initialize()
 	SLASH_SUILOOTHISTORY2 = "/lh"
 	SlashCmdList.SUILOOTHISTORY = function() LH:Toggle() end
 	if not self.db.enable then return end
-	self:RegisterEvent("CHAT_MSG_LOOT", function(_, msg, sender)
+	self:RegisterEvent("CHAT_MSG_LOOT", function(_, _, msg)
 		-- only loot messages carrying an item link are worth storing
 		if type(msg) ~= "string" or not msg:find("Hitem") then return end
 		if S.IsSecret and S.IsSecret(msg) then return end
