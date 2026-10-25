@@ -635,6 +635,62 @@ local function MenuItem(parent, i)
 	return b
 end
 
+local mainPicker
+function GC:MainPicker(alt)
+	local d = self:Data()
+	if not d then return end
+	if not mainPicker then
+		mainPicker = CreateFrame("Frame", "SentinelUIGuildMainPicker", UIParent)
+		mainPicker:SetFrameStrata("FULLSCREEN_DIALOG")
+		mainPicker:SetWidth(220)
+		S:SetTemplate(mainPicker, "Transparent")
+		mainPicker.items = {}
+		mainPicker:EnableMouse(true)
+		tinsert(UISpecialFrames, "SentinelUIGuildMainPicker")
+	end
+	-- candidates: every roster member except the alt itself, sorted by name
+	local names = {}
+	for n in pairs(d.members) do if n ~= alt then names[#names + 1] = n end end
+	sort(names, function(a, b) return strlower(a) < strlower(b) end)
+	local maxShown = 20
+	for i = 1, min(#names, maxShown) do
+		local n = names[i]
+		local b = MenuItem(mainPicker, i)
+		b:ClearAllPoints()
+		b:SetPoint("TOPLEFT", 4, -(4 + (i - 1) * 19))
+		b:SetPoint("RIGHT", -4, 0)
+		b.fs:SetText(self:ColoredName(n, d.members[n].class))
+		b.fs:SetTextColor(1, 1, 1)
+		b:EnableMouse(true)
+		b:SetScript("OnClick", function()
+			mainPicker:Hide()
+			S:SafeCall("GuildChronicle:MainPicker", GC.SetMain, GC, alt, n)
+		end)
+		b:Show()
+	end
+	local extra = #names > maxShown and 1 or 0
+	if extra > 0 then
+		local i = maxShown + 1
+		local b = MenuItem(mainPicker, i)
+		b:ClearAllPoints()
+		b:SetPoint("TOPLEFT", 4, -(4 + (i - 1) * 19))
+		b:SetPoint("RIGHT", -4, 0)
+		b.fs:SetText(L["Type name..."])
+		b.fs:SetTextColor(1, 1, 1)
+		b:EnableMouse(true)
+		b:SetScript("OnClick", function() mainPicker:Hide() GC:PromptMain(alt) end)
+		b:Show()
+	end
+	local shown = min(#names, maxShown) + extra
+	for i = shown + 1, #mainPicker.items do mainPicker.items[i]:Hide() end
+	mainPicker:SetHeight(8 + shown * 19)
+	mainPicker:ClearAllPoints()
+	local x, y = GetCursorPosition()
+	local s = UIParent:GetEffectiveScale()
+	mainPicker:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x / s + 4, y / s + 4)
+	mainPicker:Show()
+end
+
 function GC:MemberMenu(anchor, name)
 	local d = self:Data()
 	if not d or not d.members[name] then return end
@@ -656,7 +712,7 @@ function GC:MemberMenu(anchor, name)
 	}
 	-- main/alt linking is a guild-master tool; plain members get read-only view
 	if self.CanManageAlts and self:CanManageAlts() then
-		items[#items + 1] = { text = L["Set main..."], func = function() self:PromptMain(name) end }
+		items[#items + 1] = { text = L["Set main..."], func = function() self:MainPicker(name) end }
 		if m.main then items[#items + 1] = { text = format(L["Remove alt link (%s)"], m.main), func = function() self:SetMain(name, nil) end } end
 	end
 	items[#items + 1] = { text = L["Chronicle note..."], func = function() self:PromptNote(name) end }
