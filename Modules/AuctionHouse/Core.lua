@@ -20,6 +20,32 @@ AH.panelOrder = { "buy", "sell", "cancel" }
 AH.panelNames = { buy = "Shopping", sell = "Selling", cancel = "Cancelling" }
 
 -- ------------------------------------------------------------ shared helpers --
+-- external feed: a companion data addon (SentinelAHData, written by an
+-- outside tool like TSM's app helper) exposes SENTINEL_AH_DATA. Entries for
+-- the current realm+faction are merged in and flagged src="ext" so scans
+-- can tell them apart. Newer external timestamps win over older local data.
+function AH:MergeExternalDB()
+	local ext = _G.SENTINEL_AH_DATA
+	if type(ext) ~= "table" or type(ext.realms) ~= "table" then return 0 end
+	local realm = GetRealmName and GetRealmName() or "?"
+	local fac = UnitFactionGroup and UnitFactionGroup("player") or "?"
+	local list = ext.realms[realm .. "-" .. fac] or ext.realms[realm]
+	if type(list) ~= "table" then return 0 end
+	local db, n, ts = self:PriceDB(), 0, ext.updated or time()
+	for id, price in pairs(list) do
+		id, price = tonumber(id), tonumber(price)
+		if id and price and price > 0 then
+			local e = db[id]
+			if not e or (e.t or 0) <= ts then
+				db[id] = { p = price, t = ts, src = "ext" }
+				n = n + 1
+			end
+		end
+	end
+	self.externalInfo = { updated = ts, count = n, source = ext.source }
+	return n
+end
+
 function AH:PriceDB()
 	local realm = GetRealmName and GetRealmName() or "?"
 	local fac = UnitFactionGroup and UnitFactionGroup("player") or "?"
@@ -237,7 +263,14 @@ function AH:Initialize()
 	self.db = S.db.profile.auctionhouse
 	S.db.global.ahShopping = S.db.global.ahShopping
 		or { lists = { { name = L["Default List"], items = {} } }, current = 1 }
+	-- pull the external feed (SentinelAHData) once at init and again when
+	-- the AH opens, so a tool that rewrites it between sessions always lands
+	S:SafeCall("AH:MergeExternal", self.MergeExternalDB, self)
 	self:RegisterEvent("AUCTION_HOUSE_SHOW", function()
+		local n = S:SafeCall("AH:MergeExternal", self.MergeExternalDB, self)
+		if n and n > 0 then
+			AH:Status(format(L["External price feed: %d item(s)"], n))
+		end
 		S:SafeCall("AH:BuildUI", AH.BuildUI, AH)
 		-- background re-scan: keeps the price DB fresh without a manual button
 		-- (the getAll cooldown still applies, CanSendAuctionQuery gates it)

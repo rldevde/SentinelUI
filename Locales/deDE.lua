@@ -1335,6 +1335,7 @@ local T = {
 	["A character cannot be its own main."] = "Ein Charakter kann nicht sein eigener Main sein.",
 	["Type name..."] = "Namen eingeben...",
 	["%s not found. Did you mean: %s?"] = "%s nicht gefunden. Meintest du: %s?",
+	["External price feed: %d item(s)"] = "Externe Preisdaten: %d Einträge",
 	["Mark as main"] = "Als Main markieren",
 	["Remove main mark"] = "Main-Markierung entfernen",
 	["marked as main"] = "als Main markiert",
