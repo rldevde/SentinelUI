@@ -149,13 +149,15 @@ function GC:ScanRoster(reason)
 	if not d or not IsInGuild() then return end
 	local num = GetNumGuildMembers()
 	if IsSecret(num) or not num or num == 0 then return end
-	-- only trust a full roster (offline members included); a filtered view
-	-- would look like everyone offline just left the guild
-	if GetGuildRosterShowOffline and not GetGuildRosterShowOffline() then return end
+	-- a filtered roster (online only) must not run the leaver sweep or it
+	-- would mark everyone offline as "left"; still scan who's visible and
+	-- retry for the full view so the list never stays empty
+	local fullRoster = not GetGuildRosterShowOffline or GetGuildRosterShowOffline()
 
 	local now = GetServerTime and GetServerTime() or time()
 	local seen = {}
-	local first = next(d.members) == nil
+	local first = true
+	for _, mm in pairs(d.members) do if not mm.stub then first = false break end end
 	local ranks = {}
 	for i = 1, (GuildControlGetNumRanks and GuildControlGetNumRanks() or 10) do
 		local ok, rn = pcall(GuildControlGetRankName, i)
@@ -183,6 +185,12 @@ function GC:ScanRoster(reason)
 			if IsSecret(onote) then onote = nil end
 			if IsSecret(rankName) then rankName = ranks[rankIndex] end
 			local m = d.members[name]
+			if m and m.stub then
+				-- placeholder created by an early profession broadcast: keep
+				-- the profs, fill the rest like a fresh member
+				m.stub, m.joined, m.firstSeen = nil, now, now
+				if first then m.joinedApprox = true end
+			end
 			if not m then
 				local f = d.former[name]
 				m = { joined = now, firstSeen = now, rank = rankIndex, rankName = rankName, level = level, class = classFile,
@@ -245,9 +253,16 @@ function GC:ScanRoster(reason)
 		end
 	end
 
-	-- leavers
+	-- leavers (only trustworthy on a full roster)
+	if not fullRoster and not self.filteredRetry then
+		-- one more shot at the complete list; bounded so we don't loop
+		-- when the client simply lacks the offline roster API
+		self.filteredRetry = true
+		self:Delay(3, function() GC.filteredRetry = nil GC:RequestScan() end)
+	end
+	if fullRoster then
 	for name, m in pairs(d.members) do
-		if not seen[name] then
+		if not seen[name] and not m.stub then
 			m.left = now
 			m.online = nil
 			d.former[name] = m
@@ -259,6 +274,7 @@ function GC:ScanRoster(reason)
 			-- detach alts
 			for _, o in pairs(d.members) do if o.main == name then o.main = nil end end
 		end
+	end
 	end
 	local n = 0
 	for _ in pairs(d.former) do n = n + 1 end
@@ -320,10 +336,16 @@ end
 -- ---------------------------------------------------------------------------
 -- alt management
 -- ---------------------------------------------------------------------------
+function GC:CanManageAlts()
+	return (IsGuildLeader and IsGuildLeader()) and true or false
+end
+
 function GC:SetMain(alt, main)
 	local d = self:Data()
 	if not d or not d.members[alt] then return end
+	if not self:CanManageAlts() then self:Print(L["Only the guild master can link main characters."]) return end
 	if main and main ~= alt and not d.members[main] then self:Print(format(L["%s is not a guild member."], main)) return end
+	if main == alt then self:Print(L["A character cannot be its own main."]) return end
 	local m = d.members[alt]
 	if main then
 		-- flatten: main of a main is the main
@@ -428,7 +450,7 @@ function GC:SetProf(member, prof, skill, max, link, src)
 		-- self or a known guildie may broadcast before the first roster scan
 		-- filled d.members; create a stub so the profs tab isn't empty
 		if member ~= ShortName(UnitName("player")) then return end
-		m = { name = member, profs = {} }
+		m = { name = member, profs = {}, stub = true }
 		d.members[member] = m
 	end
 	m.profs = m.profs or {}
@@ -643,10 +665,10 @@ function GC:RequestScan()
 	-- afterwards. Skip the toggle while the Blizzard guild frame is open -
 	-- flipping the filter while the user looks at the list blanks it out
 	-- until the next roster update arrives
-	if GetGuildRosterShowOffline and not GetGuildRosterShowOffline()
+	if GetGuildRosterShowOffline and SetGuildRosterShowOffline and not GetGuildRosterShowOffline()
 		and not (GuildFrame and GuildFrame:IsShown()) then
 		self.restoreOffline = true
-		SetGuildRosterShowOffline(true)
+		pcall(SetGuildRosterShowOffline, true)
 	end
 	S.GuildRoster(true) -- forced: the view/flag may have just changed
 end
@@ -658,8 +680,8 @@ function GC:GUILD_ROSTER_UPDATE()
 		self.restoreOffline = nil
 		-- give Blizzard's own frame a moment, then put the toggle back
 		self:Delay(2, function()
-			if GetGuildRosterShowOffline and GetGuildRosterShowOffline() and not (GuildFrame and GuildFrame:IsShown()) then
-				SetGuildRosterShowOffline(false)
+			if GetGuildRosterShowOffline and SetGuildRosterShowOffline and GetGuildRosterShowOffline() and not (GuildFrame and GuildFrame:IsShown()) then
+				pcall(SetGuildRosterShowOffline, false)
 			end
 		end)
 	end

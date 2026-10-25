@@ -653,9 +653,12 @@ function GC:MemberMenu(anchor, name)
 		{ text = self:ColoredName(name, m.class), header = true },
 		{ text = L["Whisper"], func = function() ChatFrame_OpenChat("/w " .. name .. " ", DEFAULT_CHAT_FRAME) end },
 		{ text = L["Invite to group"], func = function() if C_PartyInfo and C_PartyInfo.InviteUnit then C_PartyInfo.InviteUnit(name) elseif InviteUnit then InviteUnit(name) end end },
-		{ text = L["Set main..."], func = function() self:PromptMain(name) end },
 	}
-	if m.main then items[#items + 1] = { text = format(L["Remove alt link (%s)"], m.main), func = function() self:SetMain(name, nil) end } end
+	-- main/alt linking is a guild-master tool; plain members get read-only view
+	if self.CanManageAlts and self:CanManageAlts() then
+		items[#items + 1] = { text = L["Set main..."], func = function() self:PromptMain(name) end }
+		if m.main then items[#items + 1] = { text = format(L["Remove alt link (%s)"], m.main), func = function() self:SetMain(name, nil) end } end
+	end
 	items[#items + 1] = { text = L["Chronicle note..."], func = function() self:PromptNote(name) end }
 	if CanEditPublicNote and CanEditPublicNote() then
 		items[#items + 1] = { text = L["Edit public note..."], func = function() self:PromptGuildNote(name, false) end }

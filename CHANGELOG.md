@@ -7,6 +7,14 @@ Note on versions: `## Version` is SentinelUI's own release number. The embedded
 BetterItem module reports `## X-BetterItem-Version` and must always equal the
 standalone RLBetterItem release.
 
+## [1.4.7] unreleased
+
+### Fixed
+
+- **GuildChronicle**: roster list stayed empty when the client reported a filtered (online-only) view — members now scan immediately and the offline sweep only runs on a full roster; retry once for the complete view
+- **GuildChronicle**: main/alt linking restricted to the guild master (menu + SetMain); a character can no longer be its own main
+- **GuildChronicle**: early profession broadcasts created stub members that broke the first-scan detection and could be swept as "left"
+
 ## [1.4.6]
 
 ### Added
