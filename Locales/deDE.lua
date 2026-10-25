@@ -1345,6 +1345,7 @@ local T = {
 	["Scan failed - the AH never answered page queries"] = "Scan fehlgeschlagen - das AH antwortet nicht auf Seitenabfragen",
 	["Scan returned no items (empty AH or query blocked)"] = "Scan ohne Ergebnis (AH leer oder Abfrage blockiert)",
 	["Scanning auction house: category %d / %d"] = "Auktionshaus-Scan: Kategorie %d / %d",
+	["Scanning auction house: category %d / %d (page %d)"] = "Auktionshaus-Scan: Kategorie %d / %d (Seite %d)",
 	["Staged scan started: %d categories..."] = "Etappen-Scan gestartet: %d Kategorien...",
 	["Mark as main"] = "Als Main markieren",
 	["Remove main mark"] = "Main-Markierung entfernen",

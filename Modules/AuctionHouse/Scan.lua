@@ -1,49 +1,45 @@
--- Staged AH scan. A blank-text non-getAll query is silently dropped by the
--- server (the client only accepts unfiltered searches via getAll or with a
--- class filter), so the scan walks the item CLASSES instead of getAll:
--- each QueryAuctionItems("", ..., classIndex=i) returns one moderate batch
--- (hundreds to a few thousand rows, not the whole house) which is digested
--- in small chunks -> no freeze. Feeds AH:PriceDB + ahPrices store.
+-- Staged AH scan: walks the item classes one by one and pages through each
+-- (50 rows per page, short pause between queries, one page digested per
+-- step). Nothing is ever dumped in one batch -> no client freeze. Uses the
+-- client's 9-argument QueryAuctionItems via AH:Query with a class filter
+-- (filterData = { { classID = n } }). Feeds AH:PriceDB + ahPrices store.
 local _, ns = ...
 local S = ns.S
 local L = S.L
 local AH = ns.AH
 
 local floor = math.floor
-local STAGE_DELAY = 0.30 -- seconds between class queries
-local STAGE_TIMEOUT = 4.0 -- give up on a class batch if the server stalls
-local DIGEST_CHUNK = 1500 -- rows digested per frame tick
+local PAGE_SIZE = 50
+local STAGE_DELAY = 0.30 -- seconds between queries
+local STAGE_TIMEOUT = 4.0 -- skip a page the server never answers
+local MAX_PAGES = 400 -- per class, guards broken clients
 local COMMIT_CHUNK = 4000 -- DB writes per tick at the end
+local MAX_DROPS = 12
 
 local scan = { running = false }
 AH.scan = scan
 
--- --------------------------------------------------------------------------
--- class list: GetAuctionItemClasses indexes are what the query wants
--- --------------------------------------------------------------------------
-local function ClassCount()
-	if GetAuctionItemClasses then
-		local n = select("#", GetAuctionItemClasses())
-		if n and n > 0 then return n end
+-- Enum.ItemClass ids that can appear on the AH (Consumable .. Miscellaneous)
+local function ClassList()
+	local E = Enum and Enum.ItemClass
+	if E then
+		local l = { E.Consumable, E.Container, E.Weapon, E.Gem, E.Armor, E.Reagent, E.Projectile,
+			E.Tradegoods, E.Recipe, E.Quiver, E.Questitem or E.Quest, E.Key, E.Miscellaneous }
+		local out = {}
+		for _, v in pairs(l) do out[#out + 1] = v end
+		table.sort(out)
+		if #out > 0 then return out end
 	end
-	return 10 -- sane fallback for the classic category count
+	return { 0, 1, 2, 3, 4, 5, 6, 7, 9, 11, 12, 13, 15 }
 end
 
--- --------------------------------------------------------------------------
--- batch digest, chunked across ticks so a big class can't hitch a frame
--- --------------------------------------------------------------------------
-local digestI = 1
-local function DigestTick(total)
-	local last = math.min(digestI + DIGEST_CHUNK - 1, total)
-	for j = digestI, last do
+-- digest the rows of the page that just arrived (<= 50, trivial cost)
+local function DigestPage(total)
+	for j = 1, total do
 		local name, _, count, _, _, _, _, _, _, buyout = GetAuctionItemInfo("list", j)
 		if name and buyout and buyout > 0 and count and count > 0 then
-			-- itemID sits at index 17 on legacy clients; the link parse is
-			-- the slow path and only runs as fallback
 			local id = select(17, GetAuctionItemInfo("list", j))
-			if not id and GetAuctionItemLink then
-				id = AH:ItemID(GetAuctionItemLink("list", j))
-			end
+			if not id and GetAuctionItemLink then id = AH:ItemID(GetAuctionItemLink("list", j)) end
 			local per = floor(buyout / count)
 			if id and per > 0 then
 				local e = scan.seen[id]
@@ -51,13 +47,9 @@ local function DigestTick(total)
 			end
 		end
 	end
-	digestI = last + 1
-	return last >= total
 end
 
--- --------------------------------------------------------------------------
--- final commit, chunked as well
--- --------------------------------------------------------------------------
+-- final commit, chunked so a big seen-table can't hitch a frame
 local commitKey
 local function CommitTick()
 	local db = AH:PriceDB()
@@ -84,7 +76,7 @@ end
 local function Done()
 	local n = 0
 	for _ in pairs(scan.seen or {}) do n = n + 1 end
-	scan.running, scan.digesting, scan.committing = false, false, false
+	scan.running, scan.committing = false, false
 	scan.lastDone = time()
 	if AH.scanBtn then AH.scanBtn:Enable() end
 	if n == 0 then
@@ -94,24 +86,18 @@ local function Done()
 	end
 end
 
--- --------------------------------------------------------------------------
--- query driver: one class query -> wait for the batch -> digest -> next
--- --------------------------------------------------------------------------
-local waitT, pending = 0, false
-
-local function QueryClass()
-	local can = true
-	if CanSendAuctionQuery then can = CanSendAuctionQuery() end
-	if not can then return false end
-	-- QueryAuctionItems(text, minLvl, maxLvl, invType, class, subClass, page,
-	--   usable, quality, getAll, exactMatch) - class filter makes the blank
-	--   text acceptable, page 0 grabs the whole class batch
-	QueryAuctionItems("", 0, 0, 0, scan.classIndex, 0, 0, 0, 0, false, false)
-	pending = true
-	waitT = 0
-	return true
+local function Abort(msg)
+	scan.running, scan.committing, scan.pending = false, false, false
+	if AH.scanBtn then AH.scanBtn:Enable() end
+	AH:Status(msg)
 end
 
+-- advance to the next class (page counter reset)
+local function NextClass()
+	scan.ci, scan.page, scan.retries = scan.ci + 1, 0, 0
+end
+
+local waitT = 0
 local frame = CreateFrame("Frame")
 frame:SetScript("OnUpdate", function(_, elapsed)
 	if not scan.running then return end
@@ -119,73 +105,66 @@ frame:SetScript("OnUpdate", function(_, elapsed)
 		if CommitTick() then Done() end
 		return
 	end
-	if scan.digesting then
-		local total = scan.batchTotal or 0
-		if DigestTick(total) then
-			scan.digesting = false
-			scan.classIndex = scan.classIndex + 1
-			waitT = 0
-			AH:Status(format(L["Scanning auction house: category %d / %d"], scan.classIndex, scan.classCount or 0))
-		end
-		return
-	end
 	waitT = waitT + elapsed
-	if pending then
+	if scan.pending then
 		if waitT > STAGE_TIMEOUT then
-			-- class query dropped: skip this class rather than stalling
-			scan.classIndex = scan.classIndex + 1
-			pending = false
+			scan.drops = scan.drops + 1
+			if scan.drops > MAX_DROPS then
+				Abort(L["Scan failed - the AH never answered page queries"])
+				return
+			end
+			scan.retries = scan.retries + 1
+			if scan.retries > 2 then NextClass() end -- give this class up
+			scan.pending = false
 			waitT = 0
 		end
 		return
 	end
 	if waitT < STAGE_DELAY then return end
-	if scan.classIndex > (scan.classCount or 0) then
-		commitKey = nil -- manual next() iteration survives across ticks
+	if scan.ci > #scan.classes then
+		commitKey = nil
 		scan.committing = true
 		return
 	end
-	QueryClass()
+	if CanSendAuctionQuery and not CanSendAuctionQuery() then return end
+	if AH:Query("", nil, nil, scan.page, false, false, { { classID = scan.classes[scan.ci] } }) then
+		scan.pending = true
+		waitT = 0
+	end
 end)
 
 frame:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
 frame:SetScript("OnEvent", function()
-	if not scan.running or not pending then return end
-	pending = false
-	waitT = 0
+	if not scan.running or not scan.pending then return end
+	scan.pending, waitT = false, 0
 	local total = GetNumAuctionItems("list") or 0
-	S:SafeCall("AH:ScanBatch", function()
-		if total == 0 then
-			scan.classIndex = scan.classIndex + 1
-			return
+	S:SafeCall("AH:ScanPage", function()
+		scan.drops = 0
+		if total > 0 then DigestPage(total) end
+		AH:Status(format(L["Scanning auction house: category %d / %d (page %d)"], scan.ci, #scan.classes, scan.page + 1))
+		if total < PAGE_SIZE or scan.page + 1 >= MAX_PAGES then
+			NextClass() -- partial/empty page = last page of this class
+		else
+			scan.page = scan.page + 1
 		end
-		scan.batchTotal = total
-		digestI = 1
-		scan.digesting = true -- chunked digest starts next tick
 	end)
 end)
 
 function scan:Start()
 	if self.running then AH:Status(L["Scan already running"]) return end
 	if not QueryAuctionItems then AH:Status(L["AH API unavailable"]) return end
-	local can = true
-	if CanSendAuctionQuery then can = CanSendAuctionQuery() end
-	if not can then AH:Status(L["AH not ready - wait a moment"]) return end
-	self.running = true
-	self.digesting, self.committing = false, false
-	self.seen = {}
-	self.classIndex, self.classCount = 1, ClassCount()
-	pending, waitT = false, STAGE_DELAY
-	AH:Status(format(L["Staged scan started: %d categories..."], self.classCount))
+	if CanSendAuctionQuery and not CanSendAuctionQuery() then AH:Status(L["AH not ready - wait a moment"]) return end
+	self.running, self.committing, self.pending = true, false, false
+	self.seen, self.classes = {}, ClassList()
+	self.ci, self.page, self.retries, self.drops = 1, 0, 0, 0
+	waitT = STAGE_DELAY
+	AH:Status(format(L["Staged scan started: %d categories..."], #self.classes))
 	if AH.scanBtn then AH.scanBtn:Disable() end
 end
 
 function scan:Stop()
 	if not self.running then return end
-	pending = false
-	self.running, self.digesting, self.committing = false, false, false
-	if AH.scanBtn then AH.scanBtn:Enable() end
-	AH:Status(L["Scan stopped"])
+	Abort(L["Scan stopped"])
 end
 
 -- kept for API compatibility; the flow is driven by the OnUpdate frame

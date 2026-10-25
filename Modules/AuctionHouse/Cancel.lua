@@ -29,7 +29,7 @@ local function SendNextUC()
 	if CanSendAuctionQuery and not CanSendAuctionQuery() then return end
 	tremove(cancel.ucQueue, 1)
 	cancel.ucTerm = term
-	QueryAuctionItems(term, 0, 0, 0, 0, 0, 0, 0, 0, false, 1)
+	AH:Query(term, nil, nil, 0, false, true)
 end
 
 local ucTicker = CreateFrame("Frame")

@@ -32,8 +32,7 @@ local function SendNext()
 	tremove(buy.queue, 1)
 	buy.lastTerm = term
 	AH:Status(format(L["Searching: %s"], term))
-	QueryAuctionItems(term, buy.minLvl or 0, buy.maxLvl or 0, 0, 0, 0, 0,
-		buy.usable and 1 or 0, 0, false, buy.exact and 1 or 0)
+	AH:Query(term, buy.minLvl, buy.maxLvl, 0, buy.usable, buy.exact)
 end
 
 local tickerFrame = CreateFrame("Frame")

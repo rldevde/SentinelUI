@@ -14,7 +14,7 @@ local IsInRaid = IsInRaid
 local GetRaidRosterInfo = GetRaidRosterInfo
 local format, floor, min = format, math.floor, math.min
 
-local MARK_ID, GIFT_ID, THORNS_ID = 9885, 26990, 26992
+local MARK_ID, GIFT_ID, THORNS_ID = 9885, 26991, 26992
 local function SpellName(id)
 	if S.GetSpellInfo then return S.GetSpellInfo(id) end
 	if GetSpellInfo then return (GetSpellInfo(id)) end
@@ -260,6 +260,8 @@ function WB:Update()
 				b:HookScript("OnClick", function(self) self.selIdx = (self.selIdx or 1) + 1 S:SafeCall("WildBuffs:Update", WB.Update, WB) end)
 			end
 		end
+		-- Gift is only learned at 50: dim it until it is in the spellbook
+		r.gift.icon:SetDesaturated(not (giftN and GetSpellInfo and GetSpellInfo(giftN)))
 		UpdateBtn(r.gift, Tex(GIFT_ID), GIFT_ID, missM, units[1], nil, farM)
 		UpdateBtn(r.mark, Tex(MARK_ID), MARK_ID, missM, nil, true, farM)
 		UpdateBtn(r.thorns, Tex(THORNS_ID), THORNS_ID, missT, nil, true, farT)

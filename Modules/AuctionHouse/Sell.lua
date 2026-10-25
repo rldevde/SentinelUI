@@ -74,7 +74,7 @@ function sell:Select(r)
 	self:FillComp()
 	if QueryAuctionItems and (not CanSendAuctionQuery or CanSendAuctionQuery()) then
 		self.querying = true
-		QueryAuctionItems(it.name, 0, 0, 0, 0, 0, 0, 0, 0, false, 1)
+		AH:Query(it.name, nil, nil, 0, false, true)
 		self.statusL:SetText(L["Searching competitors..."])
 	end
 	self:Suggest()

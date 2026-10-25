@@ -55,6 +55,20 @@ function AH:PriceDB()
 	return S.db.global.auctionDB[key]
 end
 
+-- The anniversary client uses the 9-argument query signature
+-- (text, minLvl, maxLvl, page, usable, quality, getAll, exact, filterData).
+-- The old 11-argument legacy form shifted every argument (a "0" ended up as
+-- quality filter = grey items only, so searches returned nothing).
+-- quality stays nil = all qualities; filterData = { { classID = n }, ... }.
+function AH:Query(text, minLvl, maxLvl, page, usable, exact, filterData, getAll)
+	if not QueryAuctionItems then return false end
+	QueryAuctionItems(text or "",
+		(minLvl and minLvl > 0) and minLvl or nil, (maxLvl and maxLvl > 0) and maxLvl or nil,
+		page or 0, usable and true or nil, nil,
+		getAll and true or false, exact and true or false, filterData)
+	return true
+end
+
 function AH:ItemID(link)
 	if not link or type(link) ~= "string" then return end
 	if GetItemInfoInstant then

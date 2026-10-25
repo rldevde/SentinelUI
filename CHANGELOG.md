@@ -9,8 +9,17 @@ standalone RLBetterItem release.
 
 ## [1.4.7] unreleased
 
+### Added
+
+- **AuctionHouse**: staged category/page scan (no freeze), external realm price feed (`SentinelAHData`, merged on login and AH open)
+- **WildBuffs**: out-of-range / dead / offline targets are skipped and re-buffed once back in range; live scan in combat; pulsing `!` when the own party's buff has <10s left (party only, never raid)
+- **GuildChronicle**: clickable member picker and "Mark as main" for the guild master; profession re-request on roster changes
+
 ### Fixed
 
+- **AuctionHouse**: every `QueryAuctionItems` call used the old 11-argument form; this client takes 9 arguments, so a `0` landed on the quality filter (grey items only) -> searches, sell-competition and undercut checks found nothing and the scan was silently dropped. One shared `AH:Query` helper now builds the correct call
+- **WildBuffs**: Gift of the Wild used spell id 26990 (= Mark of the Wild rank 8) instead of 26991 -> both buttons were identical; Gift is dimmed until learned
+- **Logger/Skins/QuestScope/PotionReminder/Announcer**: bug-export fixes (half-built log viewer, parchment text-hook recursion, vector construction outside pcall, combat-locked cover frame)
 - **GuildChronicle**: roster list stayed empty when the client reported a filtered (online-only) view — members now scan immediately and the offline sweep only runs on a full roster; retry once for the complete view
 - **GuildChronicle**: main/alt linking restricted to the guild master (menu + SetMain); a character can no longer be its own main
 - **GuildChronicle**: early profession broadcasts created stub members that broke the first-scan detection and could be swept as "left"
