@@ -50,11 +50,8 @@ function AA:Initialize()
 			end)
 		end
 	end)
-	-- auto-confirm the summon/invite popups when open
-	self:RegisterEvent("GROUP_INVITE_CONFIRMATION", function()
-		if InCombatLockdown() or AA.db.invites == false then return end
-		if AcceptGroup then AcceptGroup() end
-	end)
+	-- party invites are handled (friends only) in Misc; accepting every
+	-- GROUP_INVITE_CONFIRMATION here would also take strangers
 end
 
 function AA:Update()

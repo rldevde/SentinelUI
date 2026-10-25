@@ -7,12 +7,11 @@ local L = S.L
 local RA = S:NewModule("RezAnnouncer", "rezannouncer")
 
 local RES_SPELLS = {
-	[2006] = true, [2010] = true, [10880] = true, [10881] = true, [20770] = true, -- Resurrection (priest)
+	[2006] = true, [2010] = true, [10880] = true, [10881] = true, [20770] = true, [25435] = true, -- Resurrection (priest)
 	[7328] = true, [10322] = true, [10324] = true, [20772] = true, [20773] = true, -- Redemption (paladin)
-	[2008] = true, [20609] = true, [20610] = true, [20776] = true, [20777] = true, -- Ancestral Spirit (shaman)
-	[20484] = true, [20739] = true, [20740] = true, [20742] = true, [20747] = true, [20748] = true, -- Rebirth (druid)
-	[50769] = true, [95750] = true, -- Revive (druid, later)
-	[8342] = true, -- Defibrillate-ish engineering? harmless if unused
+	[2008] = true, [20609] = true, [20610] = true, [20776] = true, [20777] = true, [25590] = true, -- Ancestral Spirit (shaman)
+	[20484] = true, [20739] = true, [20742] = true, [20747] = true, [20748] = true, [26994] = true, -- Rebirth (druid)
+	[50769] = true, -- Revive (druid, later)
 }
 
 local function GroupChannel()

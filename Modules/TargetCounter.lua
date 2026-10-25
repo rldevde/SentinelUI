@@ -16,12 +16,20 @@ for i = 1, 40 do tokens[#tokens + 1] = "nameplate" .. i end
 for i = 1, 5 do tokens[#tokens + 1] = "boss" .. i tokens[#tokens + 1] = "arena" .. i end
 for i = 1, 5 do tokens[#tokens + 1] = "party" .. i .. "target" end -- party members' hostile targets
 
+local seenGuid = {}
 local function Count()
 	local n = 0
+	wipe(seenGuid)
 	for _, u in ipairs(tokens) do
 		if UnitExists(u) and UnitCanAttack("player", u) then
 			local t = u .. "target"
-			if UnitExists(t) and UnitIsUnit(t, "player") then n = n + 1 end
+			if UnitExists(t) and UnitIsUnit(t, "player") then
+				-- one enemy can be reachable via nameplate and a party target at once
+				local g = UnitGUID(u)
+				if g and S.IsSecret and S.IsSecret(g) then g = nil end
+				if not g then n = n + 1
+				elseif not seenGuid[g] then seenGuid[g] = true n = n + 1 end
+			end
 		end
 	end
 	return n

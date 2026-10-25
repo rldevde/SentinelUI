@@ -5,39 +5,27 @@ local S = ns.S
 local L = S.L
 local MI = S:NewModule("MapInfo", "mapinfo")
 
--- uiMapID -> { levelLo, levelHi, minFishingSkill }
-local ZONES = {
-	[1] = { 1, 10, 1 }, [7] = { 1, 10, 1 }, [10] = { 10, 20, 55 }, [14] = { 30, 40, 205 },
-	[15] = { 35, 45, 215 }, [17] = { 45, 55, 300 }, [18] = { 1, 10, 1 }, [21] = { 10, 20, 55 },
-	[22] = { 51, 58, 330 }, [23] = { 53, 60, 355 }, [25] = { 20, 30, 130 }, [26] = { 40, 50, 280 },
-	[27] = { 1, 10, 1 }, [32] = { 43, 50, 300 }, [36] = { 50, 58, 330 }, [37] = { 1, 10, 1 },
-	[42] = { 55, 60, 355 }, [47] = { 18, 30, 130 }, [48] = { 10, 20, 55 }, [49] = { 15, 25, 110 },
-	[50] = { 30, 45, 225 }, [51] = { 35, 45, 240 }, [52] = { 10, 20, 55 }, [56] = { 20, 30, 150 },
-	[57] = { 1, 10, 1 }, [62] = { 10, 20, 55 }, [63] = { 18, 30, 130 }, [64] = { 25, 35, 205 },
-	[65] = { 15, 27, 110 }, [66] = { 30, 40, 205 }, [69] = { 40, 50, 280 }, [70] = { 35, 45, 240 },
-	[71] = { 40, 50, 280 }, [76] = { 45, 55, 300 }, [77] = { 48, 55, 330 }, [78] = { 48, 55, 330 },
-	[80] = { 1, 60, 300 }, [81] = { 55, 60, 355 }, [83] = { 55, 60, 355 },
-	[199] = { 30, 40, 205 }, [210] = { 30, 40, 225 },
-	-- TBC zones
-	[94] = { 1, 10, 1 }, [95] = { 10, 20, 55 }, [97] = { 1, 10, 1 }, [106] = { 10, 20, 55 },
-	[100] = { 58, 63, 280 }, [102] = { 60, 64, 340 }, [104] = { 67, 70, 380 }, [105] = { 65, 68, 355 },
-	[107] = { 64, 67, 355 }, [108] = { 62, 65, 355 }, [109] = { 67, 70, 400 },
-}
+-- zone levels / fishing skill come from the shared WorldMap data (real uiMapIDs)
+local function ZoneInfo(mapID)
+	local z = mapID and ns.MapZoneLevels and ns.MapZoneLevels[mapID]
+	if z and z.minLevel and z.maxLevel then return z.minLevel, z.maxLevel, tonumber(z.minFish) end
+end
 
 function MI:RefreshText()
 	if not self.text then return end
 	local mapID = WorldMapFrame and WorldMapFrame.GetMapID and WorldMapFrame:GetMapID()
-	local z = mapID and ZONES[mapID]
-	if z then
-		self.text:SetFormattedText("%s %d-%d   |   %s %d", L["Zone Level"], z[1], z[2], L["Fishing"], z[3])
-	else
+	local lo, hi, fish = ZoneInfo(mapID)
+	if not lo then
 		self.text:SetText("")
+	elseif fish then
+		self.text:SetFormattedText("%s %d-%d   |   %s %d", L["Zone Level"], lo, hi, L["Fishing"], fish)
+	else
+		self.text:SetFormattedText("%s %d-%d", L["Zone Level"], lo, hi)
 	end
 end
 
-function MI:Initialize()
-	self.db = S.db.profile.mapinfo
-	if not WorldMapFrame then return end
+function MI:Build()
+	if self.text or not WorldMapFrame then return end
 	local fs = S:FontString(WorldMapFrame, 11, "OUTLINE", S.media.unitFont)
 	fs:SetPoint("TOP", WorldMapFrame, "TOP", 0, -36)
 	self.text = fs
@@ -50,6 +38,16 @@ function MI:Initialize()
 	end)
 	WorldMapFrame:HookScript("OnShow", function() ticker:Show() MI:RefreshText() end)
 	WorldMapFrame:HookScript("OnHide", function() ticker:Hide() end)
+	fs:SetShown(self.db.enable ~= false)
+end
+
+function MI:Initialize()
+	self.db = S.db.profile.mapinfo
+	if WorldMapFrame then self:Build() return end
+	-- the map frame is load-on-demand: poll until Blizzard_WorldMap is up
+	C_Timer.NewTicker(2, function(t)
+		if WorldMapFrame then MI:Build() t:Cancel() end
+	end, 90)
 end
 
 function MI:Update()

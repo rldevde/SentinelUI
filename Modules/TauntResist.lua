@@ -9,7 +9,7 @@ local TR = S:NewModule("TauntResist", "tauntresist")
 local format = format
 local TAUNTS = {
 	[355] = true,    -- taunt (warrior)
-	[694] = true,    -- mocking blow
+	[694] = true, [7400] = true, [7402] = true, [20559] = true, [20560] = true, [25266] = true, -- mocking blow ranks
 	[1161] = true,   -- challenging shout
 	[6795] = true,   -- growl (druid)
 	[5209] = true,   -- challenging roar

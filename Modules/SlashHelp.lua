@@ -30,8 +30,16 @@ local CMDS = {
 	{ "/smt Name", L["Assign main tank"] },
 	{ "/sot Name", L["Assign off/assist tank"] },
 	{ "/suicmd", L["This command list"] },
-	{ "/suim", L["Toggle frame movers"] },
+	{ "/sui move", L["Toggle frame movers"] },
 	{ "/sui log", L["Error/diagnostic log"] },
+	{ "/suilog", L["Raid logs (WarLogs)"] },
+	{ "/suilogexport", L["Export raid logs as JSON"] },
+	{ "/suidummy [party|raid|raid25|raid40|maintank]", L["Preview dummy unit frames"] },
+	{ "/gc", L["Guild chronicle"] },
+	{ "/meter", L["Damage meter"] },
+	{ "/seelast", L["Last seen players"] },
+	{ "/itrack", L["Instance tracker"] },
+	{ "/suiexport, /suiimport", L["Export / import settings"] },
 }
 
 SLASH_SENTINELCMDS1 = "/suicmd"

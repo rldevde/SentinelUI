@@ -26,6 +26,14 @@ local CC = {
 }
 
 local lastHit = {} -- destGUID -> { name=breaker, t=time }
+local nHit = 0
+local function PruneHits()
+	local now = GetTime()
+	nHit = 0
+	for g, h in pairs(lastHit) do
+		if now - h.t > WINDOW then lastHit[g] = nil else nHit = nHit + 1 end
+	end
+end
 
 function CB:Announce(breaker, ccName, destName)
 	if self.db.chat == "party" and IsInGroup() then
@@ -42,7 +50,11 @@ function CB:Initialize()
 		local _, sub, _, _, sName, _, _, dGuid, dName, _, _, spellId, spellName = CombatLogGetCurrentEventInfo()
 		if sub == "SPELL_DAMAGE" or sub == "SWING_DAMAGE" or sub == "RANGE_DAMAGE"
 			or sub == "SPELL_PERIODIC_DAMAGE" or sub == "DAMAGE_SHIELD" or sub == "DAMAGE_SPLIT" then
-			if dGuid and sName then lastHit[dGuid] = { name = sName, t = GetTime() } end
+			if dGuid and sName then
+				if not lastHit[dGuid] then nHit = nHit + 1 end
+				lastHit[dGuid] = { name = sName, t = GetTime() }
+				if nHit > 300 then PruneHits() end -- every killed mob left an entry behind
+			end
 		elseif sub == "SPELL_AURA_REMOVED" or sub == "SPELL_AURA_BROKEN" or sub == "SPELL_AURA_BROKEN_SPELL" then
 			if not (spellId and CC[spellId]) then return end
 			local hit = dGuid and lastHit[dGuid]

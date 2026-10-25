@@ -25,14 +25,18 @@ function SH:Announce(msg)
 	end
 end
 
-function SH:CastStart(spellId)
+function SH:CastStart(spellId, castGUID)
 	local name = Target() or L["target"]
 	self.targetName = name
 	self.casting = true
+	self.castGUID = castGUID
 	local clicks = math.max(0, (self.db.clicksNeeded or 2))
-	self:Announce(format(L["Summoning %s - %d clicks needed!"], name, clicks))
-	if self.db.announceWarn ~= false and IsInRaid() then
-		SendChatMessage(format(L["Summoning %s - %d clicks needed!"], name, clicks), "RAID_WARNING")
+	local msg = format(L["Summoning %s - %d clicks needed!"], name, clicks)
+	local canWarn = IsInRaid() and ((IsRaidLeader and IsRaidLeader()) or (IsRaidOfficer and IsRaidOfficer()))
+	if self.db.announceWarn ~= false and canWarn then
+		SendChatMessage(msg, "RAID_WARNING") -- instead of (not in addition to) the raid line
+	else
+		self:Announce(msg)
 	end
 end
 
@@ -52,14 +56,17 @@ function SH:Initialize()
 	self.db = S.db.profile.summonhelper
 	if S.myClass ~= "WARLOCK" then return end
 	self:RegisterEvent("UNIT_SPELLCAST_START", function(_, _, unit, castGUID, spellId)
-		if unit == "player" and SUMMON_SPELLS[spellId] then SH:CastStart(spellId) end
+		if unit == "player" and SUMMON_SPELLS[spellId] then SH:CastStart(spellId, castGUID) end
 	end)
 	self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED", function(_, _, unit, castGUID, spellId)
 		if unit == "player" and SUMMON_SPELLS[spellId] then SH:CastDone(spellId) end
 	end)
 	for _, ev in ipairs({ "UNIT_SPELLCAST_INTERRUPTED", "UNIT_SPELLCAST_FAILED", "UNIT_SPELLCAST_FAILED_QUIET" }) do
 		self:RegisterEvent(ev, function(_, _, unit, castGUID, spellId)
-			if unit == "player" and SUMMON_SPELLS[spellId] then SH:CastStopped(spellId) end
+			-- a failed re-click while the real cast runs carries a different castGUID
+			if unit == "player" and SUMMON_SPELLS[spellId] and not (SH.castGUID and castGUID and castGUID ~= SH.castGUID) then
+				SH:CastStopped(spellId)
+			end
 		end)
 	end
 end
