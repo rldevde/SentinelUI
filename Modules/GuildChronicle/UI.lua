@@ -732,13 +732,30 @@ function GC:PromptMain(alt)
 	InputPopup("SENTINELUI_GC_MAIN", format(L["Main character of %s:"], alt), function(txt)
 		txt = (txt or ""):match("^%s*(.-)%s*$")
 		if txt == "" then return end
-		local main = txt:sub(1, 1):upper() .. txt:sub(2):lower()
-		if not d.members[main] then
-			-- case-insensitive lookup
-			for n in pairs(d.members) do if strlower(n) == strlower(txt) then main = n break end end
+		local lower = strlower(txt)
+		local main, partial
+		for n in pairs(d.members) do
+			local ln = strlower(n)
+			if ln == lower then main = n break end
+			if not partial and ln:sub(1, #lower) == lower then partial = n end
+		end
+		main = main or partial
+		if not main then
+			-- help the user: list up to five similar member names
+			local hints = {}
+			for n in pairs(d.members) do
+				if strfind(strlower(n), lower, 1, true) then hints[#hints + 1] = n end
+				if #hints == 5 then break end
+			end
+			if #hints > 0 then
+				self:Print(format(L["%s not found. Did you mean: %s?"], txt, table.concat(hints, ", ")))
+			else
+				self:Print(format(L["%s is not a guild member."], txt))
+			end
+			return
 		end
 		self:SetMain(alt, main)
-	end, 12, d.members[alt] and d.members[alt].main or "")
+	end, 16, d.members[alt] and d.members[alt].main or "")
 end
 
 function GC:PromptNote(name)
