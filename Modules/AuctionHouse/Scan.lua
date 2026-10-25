@@ -73,7 +73,11 @@ local function Done(n)
 	scan.running, scan.committing = false, false
 	scan.lastDone = time()
 	if AH.scanBtn then AH.scanBtn:Enable() end
-	AH:Status(format(L["Scan complete: %d items"], n or 0))
+	if (n or 0) == 0 then
+		AH:Status(L["Scan returned no items (empty AH or query blocked)"])
+	else
+		AH:Status(format(L["Scan complete: %d items"], n))
+	end
 end
 
 -- --------------------------------------------------------------------------
@@ -81,17 +85,30 @@ end
 -- --------------------------------------------------------------------------
 local waitT, pending = 0, false
 
+local blockedT = 0
 local function QueryPage()
 	if not QueryAuctionItems then return false end
 	local can = true
 	if CanSendAuctionQuery then can = CanSendAuctionQuery() end
-	if not can then return false end -- try again next tick
+	if not can then
+		blockedT = blockedT + 1
+		if blockedT == 12 then AH:Status(L["Waiting for the AH query slot..."]) end
+		return false -- try again next tick
+	end
+	blockedT = 0
 	-- QueryAuctionItems(text, minLvl, maxLvl, invType, class, subClass, page,
 	--   usable, quality, getAll, exactMatch)
 	QueryAuctionItems("", 0, 0, 0, 0, 0, scan.page, 0, 0, false, false)
 	pending = true
 	waitT = 0
 	return true
+end
+
+-- give up if the server never answers a sequence of page queries
+local function Abort(msg)
+	scan.running, scan.committing, pending = false, false, false
+	if AH.scanBtn then AH.scanBtn:Enable() end
+	AH:Status(msg)
 end
 
 local frame = CreateFrame("Frame")
@@ -110,6 +127,11 @@ frame:SetScript("OnUpdate", function(_, elapsed)
 		if waitT > PAGE_TIMEOUT then
 			-- server dropped the page: retry a few times, then skip ahead
 			scan.retries = (scan.retries or 0) + 1
+			scan.drops = (scan.drops or 0) + 1
+			if scan.drops > 12 then
+				Abort(L["Scan failed - the AH never answered page queries"])
+				return
+			end
 			if scan.retries > PAGE_MAX_RETRY then
 				scan.retries, scan.page = 0, scan.page + 1
 			end
@@ -134,13 +156,6 @@ frame:SetScript("OnEvent", function()
 	local total = GetNumAuctionItems("list") or 0
 	S:SafeCall("AH:ScanPage", function()
 		local got = DigestPage(total)
-		-- the full list advertises ~50 rows per page; the last page is partial
-		if scan.totalPages == 0 then
-			scan.totalPages = math.max(1, math.ceil((total or 0) / 50))
-			-- GetNumAuctionItems returns the page size only, so estimate the
-			-- real total differently: keep paging until an empty page shows
-			scan.totalPages = 0
-		end
 		scan.retries = 0
 		if total == 0 then
 			Finish() -- empty page = end of the list
@@ -149,6 +164,10 @@ frame:SetScript("OnEvent", function()
 		scan.page = scan.page + 1
 		local est = (scan.page * 50) + (total == 50 and 50 or total)
 		AH:Status(format(L["Scanning auction house: page %d (~%d auctions)"], scan.page, est))
+		if total < 50 or scan.page >= 2000 then
+			Finish() -- partial page = last page; cap guards broken clients
+			return
+		end
 	end)
 end)
 
@@ -159,7 +178,7 @@ function scan:Start()
 	if CanSendAuctionQuery then can = CanSendAuctionQuery() end
 	if not can then AH:Status(L["AH not ready - wait a moment"]) return end
 	self.running, self.committing = true, false
-	self.seen, self.page, self.retries = {}, 0, 0
+	self.seen, self.page, self.retries, self.drops = {}, 0, 0, 0
 	pending, waitT = false, PAGE_DELAY
 	AH:Status(L["Staged scan started - page by page..."])
 	if AH.scanBtn then AH.scanBtn:Disable() end
