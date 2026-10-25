@@ -162,6 +162,13 @@ function WB:BuildFrame()
 		local p, _, rp, x, y = f:GetPoint(1)
 		S.db.profile.wildbuffs.pos = { p, "UIParent", rp, x, y }
 	end)
+	-- single expiry badge: pulses when a buff in YOUR OWN group has <10s
+	-- left. No per-person spam, other raid groups stay silent
+	f.warn = S:FontString(f, 11, "OUTLINE", S.media.numberFont)
+	f.warn:SetPoint("RIGHT", -4, -2)
+	f.warn:SetText("|cffff5555!|r")
+	f.warn:Hide()
+	f.wt = 0
 	frame = f
 	local pos = S.db.profile.wildbuffs and S.db.profile.wildbuffs.pos
 	if pos then f:SetPoint(unpack(pos)) else f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 60, -420) end
@@ -223,10 +230,14 @@ function WB:Update()
 	local function Tex(id) return (GetSpellTexture and GetSpellTexture(id)) or FALLBACK[id] end
 
 	local groups = Groups()
+	local ownGroup
+	for g, units in pairs(groups) do
+		for _, u in ipairs(units) do if u == "player" then ownGroup = g end end
+	end
 	local sorted = {}
 	for g in pairs(groups) do sorted[#sorted + 1] = g end
 	table.sort(sorted)
-	local y = 0
+	local y, expiring = 0, false
 	for idx, g in ipairs(sorted) do
 		local r = rows[idx]
 		if not r then
@@ -254,6 +265,8 @@ function WB:Update()
 		UpdateBtn(r.thorns, Tex(THORNS_ID), THORNS_ID, missT, nil, true, farT)
 		local worst = leftM or leftT
 		if leftM and leftT then worst = min(leftM, leftT) end
+		-- expiry warning only for the player's own group, single flag
+		if g == ownGroup and worst and worst <= (self.db.warnSeconds or 10) then expiring = true end
 		r.timer:SetText(FmtTime(worst))
 		if not combat then r:Show() end
 	end
@@ -261,6 +274,11 @@ function WB:Update()
 		for i = #sorted + 1, #rows do rows[i]:Hide() end
 		frame:SetHeight(18 + y)
 	end
+	-- badge visibility is layout-free -> safe even in combat
+	if frame.warn then
+		if expiring then frame.warn:Show() else frame.warn:Hide() end
+	end
+	self.expiring = expiring
 end
 
 function WB:Initialize()
@@ -269,6 +287,10 @@ function WB:Initialize()
 	self:BuildFrame()
 	self.t = 0
 	frame:SetScript("OnUpdate", function(_, dt)
+		if frame and frame.warn and frame.warn:IsShown() then
+			frame.wt = (frame.wt or 0) + dt
+			frame.warn:SetAlpha(0.4 + 0.6 * math.abs(math.sin(frame.wt * 6)))
+		end
 		self.t = self.t + dt
 		if self.t < 1.5 then return end
 		self.t = 0
