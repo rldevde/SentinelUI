@@ -8,6 +8,7 @@ local AN = S:NewModule("Announcer", "announcer")
 local _G = _G
 local ipairs, pairs, tinsert, tremove = ipairs, pairs, table.insert, table.remove
 local format, tonumber, gsub = string.format, tonumber, string.gsub
+local floor, max = math.floor, math.max
 
 local C_Timer = C_Timer
 local GetChannelName = GetChannelName

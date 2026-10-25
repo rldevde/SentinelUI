@@ -58,14 +58,18 @@ end
 -- --------------------------------------------------------------------------
 -- final commit, chunked as well
 -- --------------------------------------------------------------------------
-local commitIter
+local commitKey
 local function CommitTick()
 	local db = AH:PriceDB()
 	local store = S.db.global.ahPrices or {}
 	S.db.global.ahPrices = store
 	local ph = S.GetModule and S:GetModule("PriceHistory", true)
 	local now, i = time(), 0
-	for id, per in commitIter do
+	while true do
+		local per
+		commitKey, per = next(scan.seen, commitKey)
+		if commitKey == nil then break end
+		local id = commitKey
 		local e = db[id]
 		if not e then db[id] = { p = per, t = now } else e.p, e.t = per, now end
 		local h = store[id]
@@ -137,7 +141,7 @@ frame:SetScript("OnUpdate", function(_, elapsed)
 	end
 	if waitT < STAGE_DELAY then return end
 	if scan.classIndex > (scan.classCount or 0) then
-		commitIter = pairs(scan.seen or {})
+		commitKey = nil -- manual next() iteration survives across ticks
 		scan.committing = true
 		return
 	end

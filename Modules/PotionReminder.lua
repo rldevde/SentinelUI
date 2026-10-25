@@ -72,7 +72,13 @@ end
 local function HideBtn(self)
 	self.btn._pulse = nil
 	self.btn:SetAlpha(0)
-	self.cover:Show()
+	-- Show/Hide on the holder's children is protected in combat (the holder
+	-- parents a secure button); the cover just eats clicks, defer it
+	if InCombatLockdown() then
+		if S.RunOutOfCombat then S:RunOutOfCombat(function() if self.cover then self.cover:Show() end end) end
+	else
+		self.cover:Show()
+	end
 end
 
 function PR:Refresh()
@@ -89,7 +95,11 @@ function PR:Refresh()
 		self.btn:SetAttribute("item", "item:" .. id)
 	end
 	self.btn.tex:SetTexture((C_Item and C_Item.GetItemIconByID and C_Item.GetItemIconByID(id)) or select(10, S.GetItemInfo(id)) or 134400)
-	self.cover:Hide()
+	if InCombatLockdown() then
+		if S.RunOutOfCombat then S:RunOutOfCombat(function() if self.cover then self.cover:Hide() end end) end
+	else
+		self.cover:Hide()
+	end
 	self.btn._pulse = true
 end
 

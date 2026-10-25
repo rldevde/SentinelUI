@@ -648,9 +648,13 @@ local function SkinParchmentButton(button)
 		hooksecurefunc(fs, "SetTextColor", ForceTextColor)
 	end
 	local function FixText(b, text, skip)
-		if skip or not text or text == "" then return end
+		if skip or not text or text == "" or b.suiFixText then return end
 		local newText, n = gsub(text, "|c[fF][fF](%x%x%x%x%x%x)", ReplaceParchmentColor)
-		if n > 0 then b:SetFormattedText("%s", newText, true) end
+		if n > 0 then
+			b.suiFixText = true
+			b:SetFormattedText("%s", newText, true)
+			b.suiFixText = nil
+		end
 	end
 	hooksecurefunc(button, "SetText", FixText)
 	hooksecurefunc(button, "SetFormattedText", function(b, fmt, ...)

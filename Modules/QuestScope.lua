@@ -640,7 +640,9 @@ function QS:RefreshWorldMap()
 		local mkv = (type(Vector2D_CreateVector2D) == "function" and Vector2D_CreateVector2D)
 			or (type(CreateVector2D) == "function" and CreateVector2D)
 			or function(x, y) return { x = x, y = y } end
-		local ok, wp = pcall(C_Map.GetWorldPosFromMapPos, d.mapID, mkv(d.x, d.y))
+		local okV, vec = pcall(mkv, d.x, d.y)
+		if not okV or not vec then vec = { x = d.x, y = d.y } end
+		local ok, wp = pcall(C_Map.GetWorldPosFromMapPos, d.mapID, vec)
 		if not ok or not wp then return end
 		local ok2, mp = pcall(C_Map.GetMapPosFromWorldPos, mapID, wp)
 		if ok2 and mp and mp.x >= 0 and mp.x <= 1 and mp.y >= 0 and mp.y <= 1 then return mp.x, mp.y end
