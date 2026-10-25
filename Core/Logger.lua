@@ -236,24 +236,25 @@ function S:ShowBugtracker()
 end
 
 function S:ShowLog()
+	if viewer and not viewer.edit then viewer = nil end -- recover from a half-built frame
 	if not viewer then
-		viewer = CreateFrame("Frame", "SentinelUILogViewer", UIParent, "BackdropTemplate")
-		viewer:SetSize(760, 460)
-		viewer:SetPoint("CENTER")
-		viewer:SetFrameStrata("DIALOG")
-		viewer:EnableMouse(true)
-		viewer:SetMovable(true)
-		viewer:RegisterForDrag("LeftButton")
-		viewer:SetScript("OnDragStart", viewer.StartMoving)
-		viewer:SetScript("OnDragStop", viewer.StopMovingOrSizing)
-		if S.SetTemplate then S:SetTemplate(viewer, "Transparent", true) end
+		local f = CreateFrame("Frame", "SentinelUILogViewer", UIParent, "BackdropTemplate")
+		f:SetSize(760, 460)
+		f:SetPoint("CENTER")
+		f:SetFrameStrata("DIALOG")
+		f:EnableMouse(true)
+		f:SetMovable(true)
+		f:RegisterForDrag("LeftButton")
+		f:SetScript("OnDragStart", f.StartMoving)
+		f:SetScript("OnDragStop", f.StopMovingOrSizing)
+		if S.SetTemplate then pcall(S.SetTemplate, S, f, "Transparent", true) end
 		tinsert(UISpecialFrames, "SentinelUILogViewer")
 
-		local title = viewer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+		local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 		title:SetPoint("TOPLEFT", 10, -8)
 		title:SetText(S.title .. " - Fehlerprotokoll")
 
-		local scroll = CreateFrame("ScrollFrame", "SentinelUILogScroll", viewer, "UIPanelScrollFrameTemplate")
+		local scroll = CreateFrame("ScrollFrame", "SentinelUILogScroll", f, "UIPanelScrollFrameTemplate")
 		scroll:SetPoint("TOPLEFT", 10, -30)
 		scroll:SetPoint("BOTTOMRIGHT", -30, 40)
 		local edit = CreateFrame("EditBox", nil, scroll)
@@ -261,27 +262,29 @@ function S:ShowLog()
 		edit:SetFontObject(ChatFontNormal)
 		edit:SetWidth(710)
 		edit:SetAutoFocus(false)
-		edit:SetScript("OnEscapePressed", function() viewer:Hide() end)
+		edit:SetScript("OnEscapePressed", function() f:Hide() end)
 		scroll:SetScrollChild(edit)
-		viewer.edit = edit
+		f.edit = edit
 
 		local function Button(text, point, x, onClick)
-			local b = CreateFrame("Button", nil, viewer, "UIPanelButtonTemplate")
+			local b = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
 			b:SetSize(110, 22)
 			b:SetPoint(point, x, 10)
 			b:SetText(text)
 			b:SetScript("OnClick", onClick)
-			if S.SkinButton then S:SkinButton(b) end
+			if S.SkinButton then pcall(S.SkinButton, S, b) end
 			return b
 		end
-		Button(S.L["Close"], "BOTTOMRIGHT", -10, function() viewer:Hide() end)
-		Button(S.L["Clear"], "BOTTOMLEFT", 10, function() S:ClearLog() viewer.edit:SetText(FormatEntries()) end)
+		Button(S.L["Close"], "BOTTOMRIGHT", -10, function() f:Hide() end)
+		Button(S.L["Clear"], "BOTTOMLEFT", 10, function() S:ClearLog() edit:SetText(FormatEntries()) end)
 		Button(S.L["Reload"], "BOTTOMLEFT", 126, ReloadUI)
-		Button(S.L["Select all"], "BOTTOMLEFT", 242, function() viewer.edit:SetFocus() viewer.edit:HighlightText() end)
+		Button(S.L["Select all"], "BOTTOMLEFT", 242, function() edit:SetFocus() edit:HighlightText() end)
 		Button(S.L["Report bug"], "BOTTOMRIGHT", -126, function() S:ShowBugtracker() end)
-		local hint = viewer:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+		local hint = f:CreateFontString(nil, "OVERLAY")
+		if hint.SetFontObject then pcall(hint.SetFontObject, hint, GameFontDisableSmall or GameFontNormalSmall or ChatFontNormal) end
 		hint:SetPoint("TOPRIGHT", -12, -10)
-		hint:SetText("Bugtracker: " .. S.bugtracker)
+		hint:SetText("Bugtracker: " .. (S.bugtracker or ""))
+		viewer = f
 	end
 	viewer.edit:SetText(FormatEntries())
 	viewer:Show()
