@@ -159,7 +159,8 @@ function TF:Initialize()
 	self.db = S.db.profile.tankframes
 	self:BuildFrame()
 	self.t = 0
-	self.frame:SetScript("OnUpdate", function(_, dt)
+	self.driver = self.driver or CreateFrame("Frame") -- the frame hides itself without tanks; a hidden frame gets no OnUpdate
+	self.driver:SetScript("OnUpdate", function(_, dt)
 		self.t = self.t + dt
 		if self.t < 0.5 then return end
 		self.t = 0

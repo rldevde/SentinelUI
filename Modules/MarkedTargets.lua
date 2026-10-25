@@ -67,10 +67,11 @@ function MK:BuildFrame()
 		r:SetAttribute("type1", "target")
 		r:RegisterForClicks("AnyUp", "AnyDown")
 		r.icon, r.bar, r.name, r.hp = icon, bar, name, hp
-		r:Hide()
+		r:EnableMouse(false)
+		r:SetAlpha(0)
 		f.rows[i] = r
 	end
-	f:Hide()
+	f:SetAlpha(0) -- never Hide(): the frame parents secure buttons (blocked in combat)
 	S:CreateMover(f, "markedtargets", L["Marked Targets"], { "RIGHT", UIParent, "RIGHT", -220, 0 }, "markedtargets")
 	self.frame = f
 end
@@ -79,7 +80,7 @@ local found = {}
 function MK:Refresh()
 	self.db = self.db or S.db.profile.markedtargets
 	if not self.db.enable then
-		if self.frame then self.frame:Hide() end
+		if self.frame then self.frame:SetAlpha(0) end
 		return
 	end
 	self:BuildFrame()
@@ -114,20 +115,22 @@ function MK:Refresh()
 			if #nm > 18 then nm = nm:sub(1, 17) .. "…" end
 			r.name:SetText(nm)
 			r.hp:SetText(max > 0 and (math.floor(hp / max * 100 + 0.5) .. "%") or "")
-			r:Show()
+			r:SetAlpha(1)
+			if not InCombatLockdown() then r:EnableMouse(true) end
 		else
-			r:Hide()
+			r:SetAlpha(0)
+			if not InCombatLockdown() then r:EnableMouse(false) end
 		end
 	end
-	self.frame:SetShown(n > 0 and not (self.db.hideSolo and n == 0))
-	self.frame:SetShown(n > 0)
+	self.frame:SetAlpha(n > 0 and 1 or 0)
 end
 
 function MK:Initialize()
 	self.db = S.db.profile.markedtargets
 	self:BuildFrame()
 	self.t = 0
-	self.frame:SetScript("OnUpdate", function(_, dt)
+	self.driver = self.driver or CreateFrame("Frame") -- always shown, so it keeps ticking while the list is empty
+	self.driver:SetScript("OnUpdate", function(_, dt)
 		self.t = self.t + dt
 		if self.t < 0.4 then return end
 		self.t = 0

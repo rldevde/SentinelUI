@@ -18,7 +18,7 @@ local ITEMS = {
 	MAGE = { { 17020, 20 }, { 17031, 3 }, { 17032, 3 } },               -- Arcane Powder, Teleport, Portal
 	PRIEST = { { 17029, 20 }, { 44615, 20 }, { 17028, 20 } },           -- Sacred/Devout/Holy Candle
 	PALADIN = { { 21177, 10 }, { 17033, 1 } },                          -- Symbol of Kings, Divinity
-	DRUID = { { 22147, 20 }, { 17026, 20 }, { 17038, 2 } },             -- Quillvine, Thornroot, Ironwood
+	DRUID = { { 22147, 20 }, { 22148, 20 }, { 17026, 20 }, { 17038, 2 } },             -- Quillvine, Thornroot, Ironwood
 	SHAMAN = { { 17030, 1 } },                                          -- Ankh
 }
 
@@ -116,7 +116,7 @@ function CT:Initialize()
 	-- reagents the player does not own are often uncached: request the data and
 	-- hold the chat line until it arrives (static names as last resort).
 	local ITEM_NAMES = {
-		[22147] = "Flintweed Seed", [17026] = "Wild Thornroot", [17038] = "Wild Quillvine",
+		[22147] = "Flintweed Seed", [17026] = "Wild Thornroot", [17038] = "Ironwood Seed", [22148] = "Wild Quillvine",
 		[17020] = "Arcane Powder", [17031] = "Rune of Teleportation", [17032] = "Rune of Portals",
 		[17029] = "Sacred Candle", [44615] = "Devout Candle", [17028] = "Holy Candle",
 		[21177] = "Symbol of Kings", [17033] = "Symbol of Divinity",

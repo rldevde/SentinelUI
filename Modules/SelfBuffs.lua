@@ -19,7 +19,7 @@ local GAP = 4
 local GROUPS = {
 	MAGE = {
 		{ 168, 7300, 7301, 7302, 7320, 7321, 10219, 10220, -- frost/ice armor
-		  6117, 22782, 22783,                            -- mage armor
+		  6117, 22782, 22783, 27125,                            -- mage armor
 		  30482, 27124 },                                -- molten armor
 	},
 	PRIEST = {
@@ -31,7 +31,7 @@ local GROUPS = {
 	},
 	SHAMAN = {
 		{ 324, 325, 905, 945, 8134, 10431, 10432, 25469,     -- lightning shield
-		  24398, 33736, 57960, 49280, 49281 },               -- water shield
+		  24398, 33736, 25472, 57960, 49280, 49281 },               -- water shield
 	},
 	DRUID = {
 		{ 467, 782, 1075, 8914, 9756, 9910, 26992, 53307 },  -- thorns
