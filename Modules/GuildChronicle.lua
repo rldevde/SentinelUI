@@ -422,8 +422,15 @@ end
 
 function GC:SetProf(member, prof, skill, max, link, src)
 	local d = self:Data()
-	local m = d and d.members[member]
-	if not m or not prof then return end
+	if not d or not prof then return end
+	local m = d.members[member]
+	if not m then
+		-- self or a known guildie may broadcast before the first roster scan
+		-- filled d.members; create a stub so the profs tab isn't empty
+		if member ~= ShortName(UnitName("player")) then return end
+		m = { name = member, profs = {} }
+		d.members[member] = m
+	end
 	m.profs = m.profs or {}
 	local cur = m.profs[prof]
 	-- chat links beat note guesses; a newer skill value wins
