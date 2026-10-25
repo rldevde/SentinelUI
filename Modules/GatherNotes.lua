@@ -12,9 +12,9 @@ local GetPos = C_Map and C_Map.GetPlayerMapPosition
 
 -- gather cast spell ids (vanilla through TBC/Wrath share these)
 local KINDS = {
-	[2366] = "Herb",      -- Herb Gathering
-	[2575] = "Ore",       -- Mining
-	[8613] = "Skin",      -- Skinning
+	[2366] = "Herb", [2368] = "Herb", [3570] = "Herb", [11993] = "Herb", [28695] = "Herb", -- Herb Gathering ranks
+	[2575] = "Ore", [2576] = "Ore", [3564] = "Ore", [10248] = "Ore", [29354] = "Ore",      -- Mining ranks
+	[8613] = "Skin", [8617] = "Skin", [8618] = "Skin", [10768] = "Skin", [32678] = "Skin", -- Skinning ranks
 }
 local MAX_PINS = 200
 local MERGE_DIST = 0.02

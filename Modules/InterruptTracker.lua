@@ -10,17 +10,17 @@ local MAX_ICONS = 6
 
 -- spellId -> cooldown seconds (TBC-era interrupts + wrath additions)
 local KICKS = {
-	[1766] = 10, [1767] = 10, [1768] = 10, [1769] = 10,   -- Kick
+	[1766] = 10, [1767] = 10, [1768] = 10, [1769] = 10, [38768] = 10, -- Kick
 	[6552] = 10, [6554] = 10,                             -- Pummel
 	[2139] = 24,                                          -- Counterspell
-	[8042] = 6, [10412] = 6, [10413] = 6, [10414] = 6,     -- Earth Shock
+	[8042] = 6, [8044] = 6, [8045] = 6, [8046] = 6, [10412] = 6, [10413] = 6, [10414] = 6, [25454] = 6, -- Earth Shock
 	[19647] = 24, [119910] = 24,                          -- Spell Lock
 	[34490] = 24,                                         -- Silencing Shot
 	[15487] = 45,                                         -- Silence
 	[47528] = 15,                                         -- Mind Freeze (DK)
 	[57994] = 12,                                         -- Wind Shear
 	[96231] = 15,                                         -- Rebuke
-	[72] = 12,                                            -- Shield Bash (vanilla warrior)
+	[72] = 12, [1671] = 12, [1672] = 12,                  -- Shield Bash (vanilla warrior)
 	[29704] = 12,                                         -- Shield Bash rank 4
 	[19244] = 24, [19245] = 24,                           -- Spell Lock (felhunter low ranks)
 }
@@ -87,31 +87,29 @@ function IT:OnCLEU()
 	if bit.band(sflags, COMBATLOG_OBJECT_TYPE_PLAYER or 0x400) == 0 then return end
 	self:BuildFrame()
 	local f = self.frame
-	for _, ic in ipairs(f.icons) do
-		if ic.sid == sid then
-			ic.cd:SetCooldown(GetTime(), cd)
-			AnchorIcon(ic, f, sg, self.db)
-			return
-		end
+	local ic
+	for _, i in ipairs(f.icons) do if i.sid == sid then ic = i break end end
+	if not ic then
+		for _, i in ipairs(f.icons) do if not i:IsShown() then ic = i break end end
 	end
-	for _, ic in ipairs(f.icons) do
-		if not ic:IsShown() then
-			ic.sid = sid
-			ic.tex:SetTexture((C_Spell and C_Spell.GetSpellTexture and C_Spell.GetSpellTexture(sid)) or ICON)
-			ic.cd:SetCooldown(GetTime(), cd)
-			AnchorIcon(ic, f, sg, self.db)
-			ic:Show()
-			f:Show()
-			C_Timer.After(cd, function()
-				ic:Hide()
-				ic:SetParent(f)
-				ic:ClearAllPoints()
-				ic:SetPoint("LEFT", (ic.slot - 1) * 24, 0)
-				if not self:AnyShown() then f:Hide() end
-			end)
-			return
-		end
-	end
+	if not ic then return end
+	ic.sid = sid
+	ic.tex:SetTexture((C_Spell and C_Spell.GetSpellTexture and C_Spell.GetSpellTexture(sid)) or ICON)
+	ic.cd:SetCooldown(GetTime(), cd)
+	ic.expire = GetTime() + cd
+	AnchorIcon(ic, f, sg, self.db)
+	ic:Show()
+	f:Show()
+	-- a refreshed cooldown must not be hidden by the timer of an earlier cast
+	C_Timer.After(cd + 0.05, function()
+		if not (ic.expire and GetTime() >= ic.expire) then return end
+		ic.expire, ic.sid = nil, nil
+		ic:Hide()
+		ic:SetParent(f)
+		ic:ClearAllPoints()
+		ic:SetPoint("LEFT", (ic.slot - 1) * 24, 0)
+		if not self:AnyShown() then f:Hide() end
+	end)
 end
 
 function IT:AnyShown()

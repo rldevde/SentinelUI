@@ -25,14 +25,15 @@ local function Rows()
 	cat(L["Melee"])
 	it(L["Attack Power"], BreakUpLargeNumbers(UnitAttackPower and select(1, UnitAttackPower("player")) or 0))
 	it(L["Crit Chance"], Pct(GetCritChance and GetCritChance() or 0))
-	local mh = (GetHitModifier and GetHitModifier() or 0) + RB(CR_HIT_MELEE)
-	it(L["Hit Rating"], format("%d (+%s)", mh, Pct(RB(CR_HIT_MELEE))))
+	local mhRating = (GetCombatRating and CR_HIT_MELEE and GetCombatRating(CR_HIT_MELEE)) or 0
+	local mhPct = (GetHitModifier and GetHitModifier() or 0) + RB(CR_HIT_MELEE)
+	it(L["Hit Rating"], format("%d (%s)", mhRating, Pct(mhPct)))
 	local haste = GetHaste and GetHaste()
 	if haste and haste > 0 then it(L["Haste"], Pct(haste)) end
 	local exp = CR_EXPERTISE and RB(CR_EXPERTISE) or 0
 	if exp > 0 then it(L["Expertise"], tostring(exp)) end
 	local arp = CR_ARMOR_PENETRATION and RB(CR_ARMOR_PENETRATION) or 0
-	if arp > 0 then it(L["Armor Pen"], tostring(arp)) end
+	if arp > 0 then it(L["Armor Pen"], Pct(arp)) end
 
 	cat(L["Ranged"])
 	it(L["Attack Power"], BreakUpLargeNumbers(UnitRangedAttackPower and select(1, UnitRangedAttackPower("player")) or 0))
