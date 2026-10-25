@@ -672,7 +672,17 @@ function GC:Initialize()
 		self:RegisterEvent("PLAYER_GUILD_UPDATE", function() if IsInGuild() then GC:Initialize() end end)
 		return
 	end
-	self:RegisterEvent("GUILD_ROSTER_UPDATE")
+	self:RegisterEvent("GUILD_ROSTER_UPDATE", function()
+		-- new members broadcast on their own; poke everyone else too so late
+		-- joiners get picked up without waiting for the 15s login ping
+		if IsInGuild() and C_ChatInfo and C_ChatInfo.SendAddonMessage then
+			GC._lastProfReq = GC._lastProfReq or 0
+			if GetTime() - GC._lastProfReq > 20 then
+				GC._lastProfReq = GetTime()
+				pcall(C_ChatInfo.SendAddonMessage, PREFIX, "R	", "GUILD")
+			end
+		end
+	end)
 	self:RegisterEvent("PLAYER_GUILD_UPDATE", function() GC:Delay(1, GC.RequestScan, GC) end)
 	-- the Blizzard guild frame loads on demand; if it opens while the roster
 	-- cache is empty (throttled earlier request got eaten), force a refresh
