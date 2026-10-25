@@ -681,7 +681,8 @@ DT:Register("HealPower", { events = statEvents, unit = true,
 	update = function(slot) slot.text:SetText(StatText(L["Healing"], format("%d", GetSpellBonusHealing and GetSpellBonusHealing() or 0))) end })
 DT:Register("ManaRegen", { events = statEvents, unit = true,
 	update = function(slot)
-		local base, casting = GetManaRegen and GetManaRegen()
+		local base, casting
+		if GetManaRegen then base, casting = GetManaRegen() end
 		slot.text:SetText(StatText(L["Mana Regen"], format("%d / %d", (base or 0) * 5, (casting or 0) * 5)))
 	end })
 DT:Register("EnergyRegen", { events = statEvents, unit = true,
@@ -703,13 +704,15 @@ DT:Register("Spirit", { events = statEvents, unit = true, update = function(slot
 DT:Register("Reputation", {
 	events = { "UPDATE_FACTION", "PLAYER_ENTERING_WORLD", "CHAT_MSG_COMBAT_FACTION_CHANGE" },
 	update = function(slot)
-		local name, standing, mn, mx, cur = GetWatchedFactionInfo and GetWatchedFactionInfo()
+		local name, standing, mn, mx, cur
+		if GetWatchedFactionInfo then name, standing, mn, mx, cur = GetWatchedFactionInfo() end
 		if not name then slot.text:SetText(Label(L["Reputation"]) .. "|cffaaaaaa" .. L["None Watched"] .. "|r") return end
 		local pct = (mx - mn) > 0 and (cur - mn) / (mx - mn) * 100 or 0
 		slot.text:SetText(Label(L["Rep"]) .. Value(format("%s %.1f%%", name, pct)))
 	end,
 	enter = function(slot)
-		local name, standing, mn, mx, cur = GetWatchedFactionInfo and GetWatchedFactionInfo()
+		local name, standing, mn, mx, cur
+		if GetWatchedFactionInfo then name, standing, mn, mx, cur = GetWatchedFactionInfo() end
 		if not name then return end
 		local tt = DT:Tooltip(slot)
 		tt:AddLine(name, S.accent.r, S.accent.g, S.accent.b)

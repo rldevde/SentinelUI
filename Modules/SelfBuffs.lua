@@ -49,7 +49,8 @@ local iconPath = {
 }
 
 local function SpellInfo(id)
-	local name, _, icon = S.GetSpellInfo and S.GetSpellInfo(id)
+	local name, icon
+	if S.GetSpellInfo then name, _, icon = S.GetSpellInfo(id) end
 	if not name and GetSpellInfo then
 		local n = GetSpellInfo(id)
 		if type(n) == "table" then name, icon = n.name, n.iconID

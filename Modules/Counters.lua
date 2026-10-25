@@ -123,7 +123,8 @@ function CT:Initialize()
 		[17030] = "Ankh", [6265] = "Soul Shard",
 	}
 	local function ItemLabel(id)
-		local name, link = S.GetItemInfo and S.GetItemInfo(id)
+		local name, link
+		if S.GetItemInfo then name, link = S.GetItemInfo(id) end
 		if link then return link, true end
 		return "|cffffffff|Hitem:" .. id .. "|h[" .. (ITEM_NAMES[id] or name or ("item:" .. id)) .. "]|h|r",
 			name ~= nil or ITEM_NAMES[id] ~= nil

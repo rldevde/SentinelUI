@@ -147,7 +147,7 @@ local function ScanQuestObjectives()
 			if info then qid, title, isHeader = info.questID, info.title, info.isHeader end
 		elseif GetQuestLogTitle then
 			local t, _, _, ih = GetQuestLogTitle(i)
-			qid, title, isHeader = select(9, GetQuestLogTitle(i)), t, ih
+			qid, title, isHeader = select(8, GetQuestLogTitle(i)), t, ih
 		end
 		if qid and title and not isHeader then
 			local objs = C_QuestLog and C_QuestLog.GetQuestObjectives and C_QuestLog.GetQuestObjectives(qid)
@@ -160,7 +160,8 @@ local function ScanQuestObjectives()
 			elseif GetQuestLogLeaderBoard and GetNumQuestLeaderBoards then
 				for j = 1, GetNumQuestLeaderBoards(i) or 0 do
 					local text, _, finished = GetQuestLogLeaderBoard(j, i)
-					local cur, mx = text and text:match("(%d+)%s*/%s*(%d+)")
+					local cur, mx
+					if text then cur, mx = text:match("(%d+)%s*/%s*(%d+)") end
 					if cur then
 						out[qid .. ":" .. j] = { q = title, text = text:gsub("%s*:%s*%d+%s*/%s*%d+%s*$", ""), cur = tonumber(cur), max = tonumber(mx), done = finished }
 					end

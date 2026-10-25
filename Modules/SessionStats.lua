@@ -57,17 +57,19 @@ function SS:Initialize()
 		end,
 	})
 
-	-- XP gain amount only exists inside the localized combat text
-	-- ("You gain 320 experience." / "Ihr erhaltet 320 Erfahrung.")
-	self:RegisterEvent("CHAT_MSG_COMBAT_XP_GAIN", function(_, _, msg)
-		if type(msg) ~= "string" or (S.IsSecret and S.IsSecret(msg)) then return end
-		local n = tonumber(msg:match("(%d[%d%.]*)"))
-		if n then st.xp = st.xp + n end
+	-- XP from the bar delta (language independent); a level-up wraps the bar
+	local lastXP, lastMax = UnitXP("player"), UnitXPMax("player")
+	self:RegisterEvent("PLAYER_XP_UPDATE", function(_, _, unit)
+		if unit and unit ~= "player" then return end
+		local cur, mx = UnitXP("player"), UnitXPMax("player")
+		if cur >= lastXP then st.xp = st.xp + (cur - lastXP)
+		else st.xp = st.xp + (lastMax - lastXP) + cur end
+		lastXP, lastMax = cur, mx
 	end)
-	self:RegisterEvent("PARTY_KILL", function(_, _, unit)
-		-- PARTY_KILL fires for every group member; count kill-blow credit only
-		if not unit then st.kills = st.kills + 1 return end
-		if UnitIsUnit and (UnitIsUnit(unit, "player") or unit == "player") then st.kills = st.kills + 1 end
+	-- PARTY_KILL is a combat-log subevent: count the player's own killing blows
+	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", function()
+		local _, sub, _, sg = CombatLogGetCurrentEventInfo()
+		if sub == "PARTY_KILL" and sg == UnitGUID("player") then st.kills = st.kills + 1 end
 	end)
 	self:RegisterEvent("PLAYER_DEAD", function() st.deaths = st.deaths + 1 end)
 end

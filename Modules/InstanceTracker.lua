@@ -916,7 +916,7 @@ end
 -- ---------------------------------------------------------------------------
 function IT:OnTradeShow()
 	self.tradeWho = UnitName("npc") or UnitName("target") or "?"
-	local _, cf = UnitClass("npc") or UnitClass("target")
+	local cf = select(2, UnitClass("npc")) or select(2, UnitClass("target"))
 	self.tradeWhoClass = cf
 end
 

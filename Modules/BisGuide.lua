@@ -234,7 +234,7 @@ local iconWatcher = CreateFrame("Frame")
 pcall(iconWatcher.RegisterEvent, iconWatcher, "GET_ITEM_INFO_RECEIVED")
 
 local function CachedIcon(iid)
-	local _, _, _, _, icon = GetItemInfoInstant and GetItemInfoInstant(iid)
+	local icon = GetItemInfoInstant and select(5, GetItemInfoInstant(iid))
 	if icon and icon > 0 then return icon end
 	if C_Item and C_Item.GetItemIconByID then
 		local ic = C_Item.GetItemIconByID(iid)

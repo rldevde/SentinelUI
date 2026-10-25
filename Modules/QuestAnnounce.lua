@@ -17,7 +17,7 @@ local function Snapshot()
 	if not (GetNumQuestLogEntries and GetQuestLogTitle and GetQuestLogLeaderBoard) then return map end
 	for i = 1, GetNumQuestLogEntries() do
 		local title, _, _, isHeader = GetQuestLogTitle(i)
-		local qid = select(9, GetQuestLogTitle(i))
+		local qid = select(8, GetQuestLogTitle(i))
 		if title and not isHeader and (qid or title) then
 			local key = qid or title
 			local objs = {}
@@ -33,7 +33,7 @@ local function Snapshot()
 end
 
 function QA:Scan()
-	if not IsInGroup() then prev = Snapshot() return end
+	if not IsInGroup() or IsInRaid() then prev = Snapshot() return end -- party only; "PARTY" fails inside a raid
 	local now = Snapshot()
 	for key, q in pairs(now) do
 		local old = prev[key]

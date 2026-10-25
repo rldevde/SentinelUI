@@ -64,7 +64,8 @@ local function PendingQuestXP()
 		or (GetNumQuestLogEntries and GetNumQuestLogEntries())
 	local sel = GetQuestLogSelection and GetQuestLogSelection()
 	for i = 1, n or 0 do
-		local a, _, _, isHeader, _, isComplete, _, questID = GetQuestLogTitle and GetQuestLogTitle(i)
+		local a, isHeader, isComplete, questID
+		if GetQuestLogTitle then a, _, _, isHeader, _, isComplete, _, questID = GetQuestLogTitle(i) end
 		local done, qid, hdr
 		if type(a) == "table" then
 			hdr = a.isHeader

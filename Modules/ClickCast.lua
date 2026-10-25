@@ -20,8 +20,8 @@ local COMBOS = {
 function CC:ApplyTo(btn)
 	if not btn or not btn.SetAttribute then return end
 	for _, c in ipairs(COMBOS) do
-		local typeAttr = c[2] .. "-type" .. c[3]
-		local spellAttr = c[2] .. "-spell" .. c[3]
+		local typeAttr = c[2] .. "type" .. c[3]
+		local spellAttr = c[2] .. "spell" .. c[3]
 		local spell = self.db[c[1]]
 		if spell and spell ~= "" then
 			-- numbers are spell IDs, everything else is a spell name

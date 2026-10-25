@@ -32,7 +32,7 @@ local function Ilvl(link)
 	return il
 end
 
-local function Decorate(f)
+local function Decorate(f, tries)
 	if not f or not f.rollID then return end
 	if not f.suiRollBadge then
 		local b = S:FontString(f.IconFrame or f, 11, "OUTLINE", S.media.numberFont)
@@ -44,7 +44,14 @@ local function Decorate(f)
 	if not link or not GetItemInfo then b:Hide() return end
 	local _, _, _, ilvl, _, _, _, _, invType = GetItemInfo(link)
 	local slots = invType and SLOTS[invType]
-	if not ilvl or not slots then b:Hide() return end
+	if not ilvl or not slots then
+		b:Hide()
+		-- item data may not be cached yet: look again a few times
+		if not ilvl and (tries or 0) < 3 then
+			C_Timer.After(0.5, function() if f:IsShown() then Decorate(f, (tries or 0) + 1) end end)
+		end
+		return
+	end
 	local best = 0
 	for _, s in ipairs(slots) do
 		local eq = GetInventoryItemLink and GetInventoryItemLink("player", s)

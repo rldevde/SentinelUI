@@ -1121,7 +1121,8 @@ local BLIZZARD_BIND = {
 local function BindCommand(btn)
 	if btn.bindCommand then return btn.bindCommand end
 	local name = btn.GetName and btn:GetName()
-	local prefix, idx = name and name:match("^(%a+)(%d+)$")
+	local prefix, idx
+	if name then prefix, idx = name:match("^(%a+)(%d+)$") end
 	local cmd = prefix and BLIZZARD_BIND[prefix]
 	if cmd then return cmd .. idx end
 end

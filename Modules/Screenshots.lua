@@ -47,6 +47,9 @@ local function NpcID(guid)
 end
 
 function SC:Shoot(what)
+	local now = GetTime()
+	if self.lastShot and now - self.lastShot < 15 then return end
+	self.lastShot = now
 	if self.db.chatNote ~= false then
 		S:Print(format(L["Screenshot taken (%s)"], what))
 	end

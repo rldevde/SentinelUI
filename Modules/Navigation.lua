@@ -165,11 +165,13 @@ function NAV:ClearWaypoints(mapID)
 end
 
 function NAV:SetArrowToClosest()
-	local px, py, pInst = HBD and HBD:GetPlayerWorldPosition()
+	local px, py, pInst
+	if HBD then px, py, pInst = HBD:GetPlayerWorldPosition() end
 	local best, bestDist
 	for mapID, list in pairs(WP()) do
 		for _, wp in ipairs(list) do
-			local wx, wy, wInst = HBD and HBD:GetWorldCoordinatesFromZone(wp.x, wp.y, mapID)
+			local wx, wy, wInst
+			if HBD then wx, wy, wInst = HBD:GetWorldCoordinatesFromZone(wp.x, wp.y, mapID) end
 			if px and wx and pInst == wInst then
 				local d = sqrt((wx - px) ^ 2 + (wy - py) ^ 2)
 				if not bestDist or d < bestDist then

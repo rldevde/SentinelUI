@@ -392,7 +392,8 @@ function QS:BuildObjectives()
 				-- Blizzard's own quest POI is the authoritative "?" spot;
 				-- our spawn DB can drift a few meters off (patrol NPCs,
 				-- stale crowd-sourced coords), so prefer it when present
-				local pm, px, py = nav and nav.QuestPosition and nav:QuestPosition(qid)
+				local pm, px, py
+				if nav and nav.QuestPosition then pm, px, py = nav:QuestPosition(qid) end
 				if pm then
 					tinsert(out, { qid = qid, title = qs.title, level = qs.level, mapID = pm, x = px, y = py, kind = "turnin" })
 				end

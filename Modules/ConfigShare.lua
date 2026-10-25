@@ -17,10 +17,14 @@ StaticPopupDialogs.SENTINELUI_EXPORT = {
 	whileDead = true,
 	hideOnEscape = true,
 	preferredIndex = 3,
+	maxLetters = 0,
 	OnShow = function(d)
-		d.editBox:SetText(CS.exportString or "")
-		d.editBox:HighlightText()
-		d.editBox:SetFocus()
+		local eb = d.editBox or d.EditBox
+		if not eb then return end
+		eb:SetMaxLetters(0)
+		eb:SetText(CS.exportString or "")
+		eb:HighlightText()
+		eb:SetFocus()
 	end,
 	EditBoxOnEscapePressed = function(b) b:GetParent():Hide() end,
 }
@@ -35,7 +39,15 @@ StaticPopupDialogs.SENTINELUI_IMPORT = {
 	whileDead = true,
 	hideOnEscape = true,
 	preferredIndex = 3,
-	OnAccept = function(d) CS:Import(d.editBox:GetText()) end,
+	maxLetters = 0,
+	OnShow = function(d)
+		local eb = d.editBox or d.EditBox
+		if eb then eb:SetMaxLetters(0) eb:SetText("") eb:SetFocus() end
+	end,
+	OnAccept = function(d)
+		local eb = d.editBox or d.EditBox
+		CS:Import(eb and eb:GetText())
+	end,
 	EditBoxOnEscapePressed = function(b) b:GetParent():Hide() end,
 }
 
@@ -79,5 +91,5 @@ function CS:Initialize()
 	SLASH_SUIEXPORT1 = "/suiexport"
 	SlashCmdList.SUIEXPORT = function() CS:Export() end
 	SLASH_SUIIMPORT1 = "/suiimport"
-	SlashCmdList.SUIIMPORT = function() CS:Import() end
+	SlashCmdList.SUIIMPORT = function() StaticPopup_Show("SENTINELUI_IMPORT") end
 end

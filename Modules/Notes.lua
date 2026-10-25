@@ -29,7 +29,8 @@ local function TooltipNote(tt)
 	if not unit or IsSecret(unit) or not UnitIsPlayer(unit) then return end
 	local name = FullName(unit)
 	if not name or IsSecret(name) then return end
-	local note = Store()[name]
+	local store = Store()
+	local note = store[name] or store[(name:gsub("%-.*", ""))]
 	if note and note ~= "" then
 		tt:AddDoubleLine(L["Note"] .. ":", "|cffffd700" .. note .. "|r", 0.6, 0.6, 0.6, 1, 1, 1)
 		tt:Show()
