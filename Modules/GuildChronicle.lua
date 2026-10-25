@@ -337,7 +337,11 @@ end
 -- alt management
 -- ---------------------------------------------------------------------------
 function GC:CanManageAlts()
-	return (IsGuildLeader and IsGuildLeader()) and true or false
+	if IsGuildLeader and IsGuildLeader() then return true end
+	-- IsGuildLeader is unreliable on some classic clients; rank index 0
+	-- from GetGuildInfo("player") is the authoritative GM check
+	local _, _, rankIndex = GetGuildInfo("player")
+	return rankIndex == 0
 end
 
 function GC:SetMain(alt, main)
