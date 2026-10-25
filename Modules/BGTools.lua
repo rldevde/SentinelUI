@@ -11,7 +11,7 @@ local UnitName = UnitName
 local UnitClass = UnitClass
 local UnitAura = S.UnitAura
 local IsInInstance = IsInInstance
-local FLAG_ALLY, FLAG_HORDE = 23333, 23335
+local FLAG_ALLY, FLAG_HORDE = 23335, 23333
 local GetAuraByID = C_UnitAuras and C_UnitAuras.GetAuraDataBySpellID
 
 local function FlagOf(unit)

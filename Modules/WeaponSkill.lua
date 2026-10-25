@@ -10,15 +10,30 @@ local CreateFrame = CreateFrame
 local UnitLevel, UnitIsDeadOrGhost = UnitLevel, UnitIsDeadOrGhost
 local GetNumSkillLines, GetSkillLineInfo = GetNumSkillLines, GetSkillLineInfo
 
+-- weapon proficiency passives; only these skill lines are weapon skills
+local WEAPON_SPELLS = { 196, 197, 198, 199, 200, 201, 202, 203, 204, 227, 264, 266, 1180, 2567, 5009, 5011, 15590 }
+local weaponNames
+local function WeaponNames()
+	if weaponNames then return weaponNames end
+	local set, n = {}, 0
+	for _, id in ipairs(WEAPON_SPELLS) do
+		local name = GetSpellInfo and GetSpellInfo(id)
+		if name then set[name] = true n = n + 1 end
+	end
+	if n > 0 then weaponNames = set end -- do not cache an empty (not yet loaded) result
+	return set
+end
+
 local function UnderMax(skipDefense)
 	local out = {}
 	if not (GetNumSkillLines and GetSkillLineInfo) then return out end
 	local cap = (UnitLevel("player") or 1) * 5
 	local secret = S.IsSecret or _G.IsSecret
+	local weapons = WeaponNames()
 	for i = 1, (GetNumSkillLines() or 0) do
 		local name, isHeader, _, rank, _, _, maxRank = GetSkillLineInfo(i)
 		if name and not isHeader and not (secret and (secret(name) or secret(rank) or secret(maxRank)))
-			and maxRank == cap and rank < maxRank then
+			and maxRank == cap and rank < maxRank and weapons[name] then
 			if not (skipDefense and DEFENSE and name == DEFENSE) then
 				out[#out + 1] = { name = name, rank = rank, max = maxRank }
 			end

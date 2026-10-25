@@ -11,7 +11,7 @@ local CreateFrame = CreateFrame
 local UnitName, UnitClass = UnitName, UnitClass
 local IsInGroup = IsInGroup
 local ICON, MAX = 22, 5
-local SS = { [20707] = true, [47883] = true, [47884] = true } -- soulstone resurrection aura
+local SS = { [20707] = true, [20762] = true, [20763] = true, [20764] = true, [20765] = true, [27239] = true, [47883] = true, [47884] = true } -- soulstone resurrection aura (all ranks)
 
 local holder, icons = nil, {}
 

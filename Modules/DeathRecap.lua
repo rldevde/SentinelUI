@@ -68,12 +68,12 @@ function DR:Fill()
 	local n = #self.buf
 	for i, t in ipairs(self.frame.rows) do
 		local e = self.buf[n - (i - 1)]
-		t:SetFormattedText(e and "%s — %s |cffff6a6a%s|r" or "", e.src, e.what, S:Abbrev(e.amt))
+		if e then t:SetFormattedText("%s — %s |cffff6a6a%s|r", e.src, e.what, S:Abbrev(e.amt)) else t:SetText("") end
 	end
 end
 
 function DR:Report()
-	local e = self.buf[#self.buf]
+	local e = self.buf[#self.buf] or self.last
 	if not e then return end
 	local ch = IsInRaid() and "RAID" or IsInGroup() and "PARTY"
 	if not ch then return end
@@ -89,6 +89,8 @@ function DR:Initialize()
 		DR:BuildFrame()
 		DR:Fill()
 		DR.frame:Show()
+		DR.last = DR.buf[#DR.buf] -- keep the killing blow for the Report button
+		wipe(DR.buf) -- next death starts clean
 		C_Timer.After(20, function() if DR.frame then DR.frame:Hide() end end)
 	end)
 end

@@ -10,8 +10,21 @@ local floor, format = math.floor, format
 
 local ups = 0
 
+local FISHING_NAMES = { Fishing = true, Angeln = true, ["Pêche"] = true, Pesca = true, ["Рыбная ловля"] = true }
+local function FishingSkillFromList()
+	if not (GetNumSkillLines and GetSkillLineInfo) then return end
+	local localized = GetSpellInfo and GetSpellInfo(7620) -- Fishing, localized by the client
+	for i = 1, GetNumSkillLines() do
+		local name, isHeader, _, rank, _, _, maxRank = GetSkillLineInfo(i)
+		if name and not isHeader and not (S.IsSecret and S.IsSecret(name))
+			and (name == localized or FISHING_NAMES[name]) then
+			return rank, maxRank
+		end
+	end
+end
+
 local function FishingSkill()
-	if not GetProfessions or not GetProfessionInfo then return end
+	if not GetProfessions or not GetProfessionInfo then return FishingSkillFromList() end
 	for _, idx in ipairs({ GetProfessions() }) do
 		local name, _, _, rank, maxRank = GetProfessionInfo(idx)
 		if name and not (S.IsSecret and S.IsSecret(name))

@@ -83,7 +83,16 @@ function AW:Initialize()
 	f:RegisterEvent("UNIT_AURA")
 	f:RegisterEvent("PLAYER_TARGET_CHANGED")
 	f:RegisterEvent("PLAYER_FOCUS_CHANGED")
-	f:SetScript("OnEvent", function(_, _, unit)
+	f:SetScript("OnEvent", function(_, event, unit)
+		if event == "UNIT_AURA" then
+			-- only react to units that one of the watches actually looks at
+			local hit
+			for i = 1, 3 do
+				local c = AW.db and AW.db["watch" .. i]
+				if c and (c.unit or "target") == unit then hit = true break end
+			end
+			if not hit then return end
+		end
 		AW:UpdateAll()
 	end)
 	-- slow ticker catches aura-less state changes (unit became invalid)
