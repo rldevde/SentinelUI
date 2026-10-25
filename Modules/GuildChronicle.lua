@@ -366,6 +366,21 @@ function GC:SetMain(alt, main)
 	self:RefreshFrame()
 end
 
+-- explicit "this is a main" flag; alts keep linking via m.main as before
+function GC:SetMainMark(name, on)
+	local d = self:Data()
+	if not d or not d.members[name] then return end
+	if not self:CanManageAlts() then self:Print(L["Only the guild master can link main characters."]) return end
+	local m = d.members[name]
+	if on and m.main then
+		-- marking an alt as main severs its own link
+		m.main, m.autoMain, m.mainLocked = nil, nil, true
+	end
+	m.isMain = on or nil
+	self:AddLog("alt", name, on and L["marked as main"] or L["main mark removed"])
+	self:RefreshFrame()
+end
+
 -- main name + sorted list of alts of a member (whichever is passed)
 function GC:AltGroup(name)
 	local d = self:Data()

@@ -427,6 +427,7 @@ local function CellText(row, col, now)
 	if key == "idle" then return GC:DaysAgoText(row.idle) end
 	if key == "timesJoined" then return tostring(m.timesJoined or 1) end
 	if key == "main" then
+		if m.isMain then return "|cffffd700" .. L["Main"] .. "|r" end
 		if not m.main then return "" end
 		local mm = GC:Data().members[m.main]
 		return GC:ColoredName(m.main, mm and mm.class) .. (m.autoMain and " |cff888888?|r" or "")
@@ -589,7 +590,8 @@ function GC:MemberTooltip(name, m, former)
 	end
 	if not former and d then
 		local main, alts = self:AltGroup(name)
-		if main ~= name then tip:AddDoubleLine(L["Main"], self:ColoredName(main, d.members[main] and d.members[main].class), 0.6, 0.8, 1, 1, 1, 1) end
+		if m.isMain then tip:AddDoubleLine(L["Main"], "|cffffd700" .. name .. "|r", 0.6, 0.8, 1, 1, 1, 1)
+		elseif main ~= name then tip:AddDoubleLine(L["Main"], self:ColoredName(main, d.members[main] and d.members[main].class), 0.6, 0.8, 1, 1, 1, 1) end
 		if #alts > 0 then
 			local parts = {}
 			for _, a in ipairs(alts) do parts[#parts + 1] = self:ColoredName(a, d.members[a].class) end
@@ -713,6 +715,9 @@ function GC:MemberMenu(anchor, name)
 	-- main/alt linking is a guild-master tool; plain members get read-only view
 	if self.CanManageAlts and self:CanManageAlts() then
 		items[#items + 1] = { text = L["Set main..."], func = function() self:MainPicker(name) end }
+		items[#items + 1] = m.isMain
+			and { text = L["Remove main mark"], func = function() self:SetMainMark(name, false) end }
+			or { text = L["Mark as main"], func = function() self:SetMainMark(name, true) end }
 		if m.main then items[#items + 1] = { text = format(L["Remove alt link (%s)"], m.main), func = function() self:SetMain(name, nil) end } end
 	end
 	items[#items + 1] = { text = L["Chronicle note..."], func = function() self:PromptNote(name) end }
