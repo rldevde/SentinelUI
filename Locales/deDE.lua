@@ -1340,6 +1340,7 @@ local T = {
 	["Staged scan started - page by page..."] = "Etappen-Scan gestartet - Seite für Seite...",
 	["Scan stopped"] = "Scan gestoppt",
 	["AH API unavailable"] = "AH-API nicht verfügbar",
+	["out of range"] = "außer Reichweite",
 	["Waiting for the AH query slot..."] = "Warte auf freien AH-Abfrageplatz...",
 	["Scan failed - the AH never answered page queries"] = "Scan fehlgeschlagen - das AH antwortet nicht auf Seitenabfragen",
 	["Scan returned no items (empty AH or query blocked)"] = "Scan ohne Ergebnis (AH leer oder Abfrage blockiert)",

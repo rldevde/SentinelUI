@@ -66,17 +66,35 @@ local function HasAuraName(unit, ...)
 	end
 end
 
-local function ScanUnits(units, ...)
-	local missing, minLeft = {}, nil
+local function InBuffRange(u, spellName)
+	if u == "player" then return true end
+	if not UnitExists(u) or UnitIsDeadOrGhost(u) or (UnitIsConnected and not UnitIsConnected(u)) then return false end
+	if IsSpellInRange and spellName then
+		local r = IsSpellInRange(spellName, u)
+		if r == 1 or r == true then return true end
+		if r == 0 or r == false then return false end
+	end
+	-- IsSpellInRange can't check some units -> coarser ~40y band
+	if UnitInRange then return UnitInRange(u) and true or false end
+	return true
+end
+
+local function ScanUnits(units, spellName, ...)
+	-- three buckets: buffed (drives the timer), missing-in-range (buffable
+	-- now) and missing-but-out-of-range/dead/offline (skipped, they re-enter
+	-- the missing list automatically once they are back in range)
+	local missing, far, minLeft = {}, {}, nil
 	for _, u in ipairs(units) do
 		local has, left = HasAuraName(u, ...)
 		if has then
 			if left and (not minLeft or left < minLeft) then minLeft = left end
-		else
+		elseif InBuffRange(u, spellName) then
 			tinsert(missing, u)
+		else
+			tinsert(far, u)
 		end
 	end
-	return missing, minLeft
+	return missing, minLeft, far
 end
 
 local function FmtTime(sec)
@@ -150,10 +168,16 @@ function WB:BuildFrame()
 	f:Hide()
 end
 
-local function UpdateBtn(btn, iconTex, spellId, missing, unit, rotate)
+local function UpdateBtn(btn, iconTex, spellId, missing, unit, rotate, far)
 	btn.icon:SetTexture(iconTex)
-	local n = #missing
-	btn.cnt:SetText(n == 0 and "|cff66ff66+|r" or ("|cffff5555" .. n .. "|r"))
+	local n, nf = #missing, #(far or {})
+	if n > 0 then
+		btn.cnt:SetText("|cffff5555" .. n .. "|r")
+	elseif nf > 0 then
+		btn.cnt:SetText("|cffffcc00" .. nf .. "|r") -- missing but out of range
+	else
+		btn.cnt:SetText("|cff66ff66+|r")
+	end
 	if rotate and n > 0 then
 		-- sequential targeting: keep cycling the missing list
 		if btn.selIdx > n then btn.selIdx = 1 end
@@ -169,7 +193,10 @@ local function UpdateBtn(btn, iconTex, spellId, missing, unit, rotate)
 		for _, u in ipairs(missing) do
 			GameTooltip:AddLine("  " .. (UnitName(u) or u), 1, 0.5, 0.5)
 		end
-		if n == 0 then GameTooltip:AddLine("|cff66ff66OK|r") end
+		for _, u in ipairs(far or {}) do
+			GameTooltip:AddLine("  " .. (UnitName(u) or u) .. " |cffffcc00(" .. L["out of range"] .. ")|r", 1, 0.5, 0.5)
+		end
+		if n == 0 and nf == 0 then GameTooltip:AddLine("|cff66ff66OK|r") end
 		GameTooltip:Show()
 	end)
 	btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -208,8 +235,8 @@ function WB:Update()
 		y = y + 30
 		r.label:SetText(IsInRaid() and ("G" .. g) or "")
 		local units = groups[g]
-		local missM, leftM = ScanUnits(units, markN, giftN)
-		local missT, leftT = ScanUnits(units, thornN)
+		local missM, leftM, farM = ScanUnits(units, markN, markN, giftN)
+		local missT, leftT, farT = ScanUnits(units, thornN, thornN)
 		-- rotate target through the missing list on click (OOC only)
 		for _, b in ipairs({ r.mark, r.thorns }) do
 			if not b.suiRotate then
@@ -217,9 +244,9 @@ function WB:Update()
 				b:HookScript("OnClick", function(self) self.selIdx = (self.selIdx or 1) + 1 S:SafeCall("WildBuffs:Update", WB.Update, WB) end)
 			end
 		end
-		UpdateBtn(r.gift, Tex(GIFT_ID), GIFT_ID, missM, units[1])
-		UpdateBtn(r.mark, Tex(MARK_ID), MARK_ID, missM, nil, true)
-		UpdateBtn(r.thorns, Tex(THORNS_ID), THORNS_ID, missT, nil, true)
+		UpdateBtn(r.gift, Tex(GIFT_ID), GIFT_ID, missM, units[1], nil, farM)
+		UpdateBtn(r.mark, Tex(MARK_ID), MARK_ID, missM, nil, true, farM)
+		UpdateBtn(r.thorns, Tex(THORNS_ID), THORNS_ID, missT, nil, true, farT)
 		local worst = leftM or leftT
 		if leftM and leftT then worst = min(leftM, leftT) end
 		r.timer:SetText(FmtTime(worst))
