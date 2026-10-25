@@ -265,8 +265,8 @@ function WB:Update()
 		UpdateBtn(r.thorns, Tex(THORNS_ID), THORNS_ID, missT, nil, true, farT)
 		local worst = leftM or leftT
 		if leftM and leftT then worst = min(leftM, leftT) end
-		-- expiry warning only for the player's own group, single flag
-		if g == ownGroup and worst and worst <= (self.db.warnSeconds or 10) then expiring = true end
+		-- expiry warning only in party (never in raid), player's own group
+		if not IsInRaid() and g == ownGroup and worst and worst <= (self.db.warnSeconds or 10) then expiring = true end
 		r.timer:SetText(FmtTime(worst))
 		if not combat then r:Show() end
 	end
