@@ -275,10 +275,10 @@ function AH:Initialize()
 		-- background re-scan: keeps the price DB fresh without a manual button
 		-- (the getAll cooldown still applies, CanSendAuctionQuery gates it)
 		if AH.db.autoScan ~= false and AH.scan and not AH.scan.running then
-			local can, canAll = true, true
-			if CanSendAuctionQuery then can, canAll = CanSendAuctionQuery() end
+			local can = true
+			if CanSendAuctionQuery then can = CanSendAuctionQuery() end
 			local stale = not AH.scan.lastDone or (time() - AH.scan.lastDone) > 900
-			if can and canAll and stale then
+			if can and stale then
 				AH:Status(L["Auto-scanning auction house..."])
 				AH.scan:Start()
 			end
