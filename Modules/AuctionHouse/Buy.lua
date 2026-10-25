@@ -116,8 +116,9 @@ function buy:Build(pf)
 	S:CreateBackdrop(left, "Hover")
 	self.left = left
 
-	S:FontString(left, 10, "OUTLINE", S.media.unitFont)
-		:SetPoint("TOP", 0, -6):SetText(L["Shopping Lists"])
+	local lt = S:FontString(left, 10, "OUTLINE", S.media.unitFont)
+	lt:SetPoint("TOP", 0, -6)
+	lt:SetText(L["Shopping Lists"])
 	-- list-name rows
 	left.lists = {}
 	for i = 1, 5 do
@@ -155,8 +156,9 @@ function buy:Build(pf)
 	end)
 
 	-- items of the current list
-	S:FontString(left, 10, "OUTLINE", S.media.unitFont)
-		:SetPoint("TOP", newBtn, "BOTTOM", 0, -8):SetText(L["Entries"])
+	local et = S:FontString(left, 10, "OUTLINE", S.media.unitFont)
+	et:SetPoint("TOP", newBtn, "BOTTOM", 0, -8)
+	et:SetText(L["Entries"])
 	left.items = {}
 	for i = 1, LIST_ROWS do
 		local r = CreateFrame("Button", nil, left)
