@@ -261,6 +261,9 @@ end
 
 function AH:Initialize()
 	self.db = S.db.profile.auctionhouse
+	-- feature switch: turning the module off in profile stops every hook,
+	-- event and the auto-scan even if the private module flag stayed on
+	if self.db.enable == false then return end
 	S.db.global.ahShopping = S.db.global.ahShopping
 		or { lists = { { name = L["Default List"], items = {} } }, current = 1 }
 	-- pull the external feed (SentinelAHData) once at init and again when
