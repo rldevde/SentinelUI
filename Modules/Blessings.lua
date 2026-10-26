@@ -915,7 +915,7 @@ local function CycleBlessing(pname, cid, back)
 	for _ = 0, MAX_BLESS do
 		nxt = back and (nxt - 1) or (nxt + 1)
 		if nxt < 0 then nxt = MAX_BLESS elseif nxt > MAX_BLESS then nxt = 0 end
-		if nxt == 0 or (info and info[nxt] and (info[nxt].rank or 0) > 0) or pname == playerName then break end
+		if nxt == 0 or not info or (info[nxt] and (info[nxt].rank or 0) > 0) then break end
 		if nxt == cur then break end
 	end
 	PB:SetAssignment(pname, cid, nxt)

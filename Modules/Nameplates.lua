@@ -514,7 +514,13 @@ function NP:StyleFilter(f)
 		f.suiAlpha = nil
 		f:SetAlpha(1)
 	end
-	if nameColor then f.Name:SetTextColor(nameColor[1], nameColor[2], nameColor[3]) end
+	if nameColor then
+		f.suiNameColored = true
+		f.Name:SetTextColor(nameColor[1], nameColor[2], nameColor[3])
+	elseif f.suiNameColored then
+		f.suiNameColored = nil
+		self:UpdateName(f)
+	end
 end
 
 SLASH_SUISF1 = "/suisf"

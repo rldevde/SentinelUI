@@ -114,7 +114,7 @@ DT:Register("System", {
 				total = total + mem
 			end
 		end
-		sort(list, function(a, b) return (a[3] > 0 or b[3] > 0) and a[3] > b[3] or a[2] > b[2] end)
+		sort(list, function(a, b) if a[3] ~= b[3] then return a[3] > b[3] end return a[2] > b[2] end) -- consistent order (the old and/or chain could say a<b and b<a)
 		local function fmt(kb) return kb > 1024 and format("%.2f MB", kb / 1024) or format("%.0f KB", kb) end
 		tt:AddDoubleLine(L["Total Memory"], fmt(total), 1, 1, 1, S.accent.r, S.accent.g, S.accent.b)
 		for i = 1, min(#list, IsShiftKeyDown() and 60 or 15) do
