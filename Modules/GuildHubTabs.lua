@@ -831,7 +831,21 @@ tabs.builder = function(self, page)
 		local label = t and t.name or ("+" .. i)
 		local b = Btn(page, 76, 18, (label or ""):sub(1, 10))
 		b:SetPoint("TOPLEFT", x, -2)
-		b:SetScript("OnClick", function() st.sel = i GH:RenderTab("builder") end)
+		b:SetScript("OnClick", function(_, btn)
+			if GH.pickup then
+				local t2 = h.teams[i] or { name = "Team " .. i, size = 40, members = {} }
+				h.teams[i] = t2
+				t2.members = t2.members or {}
+				if not t2.members[GH.pickup] then
+					t2.members[GH.pickup] = h.roles[GH.pickup] or "D"
+					Bump() Send("T|" .. Ser(h.teams))
+				end
+				GH.pickup = nil
+				if GH.chip then GH.chip:Hide() end
+			end
+			if btn ~= "RightButton" then st.sel = i end
+			GH:RenderTab("builder")
+		end)
 		b:SetScript("OnDoubleClick", function()
 			local t2 = h.teams[i] or { name = "Team " .. i, size = 40, members = {} }
 			StaticPopupDialogs["SUGH_TEAMNAME"] = {
@@ -852,7 +866,7 @@ tabs.builder = function(self, page)
 	end
 	local hint = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
 	hint:SetPoint("TOPLEFT", 4, -24)
-	hint:SetText("|cff777777" .. L["Click a card to edit it · double-click renames. Members: left = add to team, right = remove."] .. "|r")
+	hint:SetText("|cff777777" .. L["Click a member to pick them up, then click a team card to drop. Right-click a member removes them. Double-click a card renames."] .. "|r")
 	local t = h.teams[st.sel]
 	if t then
 		local del = Btn(page, 90, 16, L["Hide team"])
@@ -878,7 +892,21 @@ tabs.builder = function(self, page)
 			if btn == "RightButton" then
 				if t.members[m.n] then t.members[m.n] = nil Bump() Send("T|" .. Ser(h.teams)) GH:RenderTab("builder") end
 			elseif not t.members[m.n] then
-				t.members[m.n] = h.roles[m.n] or "D" Bump() Send("T|" .. Ser(h.teams)) GH:RenderTab("builder")
+				-- pick up the member; next card click drops them there
+				GH.pickup = m.n
+				if not GH.chip then
+					local c = CreateFrame("Frame", nil, UIParent)
+					c:SetSize(120, 18) c:SetFrameStrata("TOOLTIP")
+					c.fs = S:FontString(c, 11, "OUTLINE", S.media.font, nil, "LEFT")
+					c.fs:SetPoint("CENTER")
+					c:SetScript("OnUpdate", function()
+						local x, y = GetCursorPosition()
+						c:ClearAllPoints() c:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x / UIParent:GetEffectiveScale(), y / UIParent:GetEffectiveScale())
+					end)
+					GH.chip = c
+				end
+				GH.chip.fs:SetText("|cff" .. ACC .. "» " .. m.n .. "|r")
+				GH.chip:Show()
 			end
 		end)
 	end)
@@ -1426,6 +1454,7 @@ function GH:Initialize()
 	C_Timer.NewTicker(900, function() Send("Q|") end)
 	self:RegisterEvent("TRADE_SKILL_SHOW", function() GH:Delay(0.7, GH.ScanTradeRecipes, GH) end)
 	GH:Delay(8, GH.ScanAndShareProfs, GH)
+	GH:Delay(10, GH.ShareAttunements, GH)
 	-- broadcast own state
 	self:Delay(5, function()
 		local h = Shared()
@@ -1597,4 +1626,27 @@ function GH:ExportTeams()
 	f:Show()
 	f.eb:HighlightText()
 	f.eb:SetFocus()
+end
+
+function GH:ShareAttunements()
+	local h = Shared()
+	local D = ns.InstanceTrackerData
+	if not (h and D and D.attunements) then return end
+	local cd = SentinelUIInstanceDB and SentinelUIInstanceDB[GetRealmName() or ""]
+	cd = cd and cd.chars
+	if not cd then return end
+	local p = Priv()
+	local out = {}
+	for name in pairs(p.myChars or {}) do
+		local c = cd[name]
+		if c then
+			local keys = {}
+			for _, a in ipairs(D.attunements) do if c[a.key] then keys[a.key] = true end end
+			out[name] = keys
+		end
+	end
+	if next(out) then
+		for char, keys in pairs(out) do h.attun[char] = keys end
+		Send("ATN|" .. Ser(out))
+	end
 end

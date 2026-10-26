@@ -62,6 +62,7 @@ local function Shared()
 	h.crafts = h.crafts or {}
 	h.loot = h.loot or {}
 	h.layers = h.layers or {}
+	h.attun = h.attun or {}
 	h.profs = h.profs or {}
 	h.rosterSnap = h.rosterSnap or {}
 	h.ver = h.ver or 0
@@ -336,6 +337,15 @@ appliers.PF = function(rest, sender)
 	if type(t) == "table" then
 		Shared().profs[sender] = t Bump()
 		GH:MaybeRefresh("profs")
+	end
+end
+
+appliers.ATN = function(rest, sender)       -- attunements: "ATN|<ser {char->{key=1}}>"
+	local t = Unser(rest)
+	if type(t) == "table" then
+		local h = Shared()
+		for char, keys in pairs(t) do h.attun[char] = keys end
+		GH:MaybeRefresh("chars")
 	end
 end
 
