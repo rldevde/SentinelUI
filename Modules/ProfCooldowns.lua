@@ -55,7 +55,10 @@ local function TimeLeft(expires)
 	return format("%dm", math.max(1, m))
 end
 
-function PC:Scan()
+function PC:Scan(force)
+	local nowT = GetTime()
+	if not force and self.lastScan and nowT - self.lastScan < 2 then return end
+	self.lastScan = nowT
 	local cds = Store()
 	for id, key in pairs(SPELLS) do
 		if IsSpellKnown and IsSpellKnown(id) then
@@ -194,7 +197,7 @@ end
 
 function PC:Toggle()
 	self:BuildFrame()
-	if self.frame:IsShown() then self.frame:Hide() else self:Scan() self.frame:Show() end
+	if self.frame:IsShown() then self.frame:Hide() else self:Scan(true) self.frame:Show() end
 end
 
 function PC:UpdateMinimap()
@@ -223,7 +226,7 @@ function PC:Initialize()
 	self.private = S.private.profcds or {}
 	self:RegisterEvent("SPELL_UPDATE_COOLDOWN", function() PC:Scan() end)
 	self:RegisterEvent("BAG_UPDATE_COOLDOWN", function() PC:Scan() end)
-	C_Timer.After(3, function() PC:Scan() end)
+	C_Timer.After(3, function() PC:Scan(true) end)
 	self:UpdateMinimap()
 	S:RegisterChatCommand("suipcd", function() PC:Toggle() end)
 	S:RegisterChatCommand("pcd", function() PC:Toggle() end)

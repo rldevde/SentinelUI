@@ -125,6 +125,7 @@ function DR:Initialize()
 		DR:Draw()
 	end)
 	self:RegisterEvent("PLAYER_TARGET_CHANGED", function() DR:Draw() end)
+	if C_Timer and C_Timer.NewTicker then C_Timer.NewTicker(1, function() if DR.row then DR:Draw() end end) end
 	-- periodic cleanup of expired icons
 	self:RegisterEvent("PLAYER_REGEN_ENABLED", function() DR:Draw() end)
 end
