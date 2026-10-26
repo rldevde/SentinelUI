@@ -633,7 +633,7 @@ end
 function CH:UpdateKeywords()
 	self.keywords = {}
 	for word in (self.db.keywords or ""):gmatch("[^,]+") do
-		word = word:trim()
+		word = strtrim(word)
 		if word == "%MYNAME%" then word = S.myName end
 		if word ~= "" then tinsert(self.keywords, word) end
 	end
