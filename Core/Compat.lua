@@ -119,9 +119,9 @@ function S.UnitAura(unit, index, filter)
 	if not a then return end
 	return a.name, a.icon, a.applications or 0, a.dispelName,
 		a.duration or 0, a.expirationTime or 0, a.sourceUnit,
-		a.nameplateShowPersonal, a.nameplateShowAll, a.spellId,
+		a.isStealable, a.nameplateShowPersonal, a.spellId,
 		a.canApplyAura, a.isBossAura, a.isFromPlayerOrPlayerPet,
-		a.nameplateShowPersonal, a.points and a.points[1]
+		a.nameplateShowAll, a.timeMod
 end
 
 -- Mouse focus

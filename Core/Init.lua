@@ -35,13 +35,16 @@ local function errorHandler(err)
 	return err
 end
 
+local function SafeCallDone(prev, ok, ...)
+	currentContext = prev
+	if ok then return ... end -- varargs keep nil holes, unlike {...} + unpack
+end
+
 function S:SafeCall(context, func, ...)
 	if type(func) ~= "function" then return end
 	local prev = currentContext
 	currentContext = context
-	local results = { xpcall(func, errorHandler, ...) }
-	currentContext = prev
-	if results[1] then return select(2, unpack(results)) end
+	return SafeCallDone(prev, xpcall(func, errorHandler, ...))
 end
 
 function S:Wrap(context, func)

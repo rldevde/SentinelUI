@@ -21,7 +21,7 @@ function S:SetUIScale()
 	self:UpdatePixelScale()
 end
 
-local function OnScaleEvent(event)
+local function OnScaleEvent(_, event)
 	-- windowed-mode / resolution changes go through a transition where the
 	-- client reports intermediate scales; settle a bit longer for those
 	local delay = event == "DISPLAY_SIZE_CHANGED" and 0.5 or 0.1
