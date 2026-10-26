@@ -396,6 +396,7 @@ end
 -- one-shot toast when free bag space drops to <= 3 slots (60s throttle)
 local lastBagWarn, lastFree = 0, 99
 function M:BAG_UPDATE()
+	if self.questItemRefresh then self.questItemRefresh() end
 	AmmoCheck()
 	if self.db.bagFullWarn == false or not S.GetContainerNumFreeSlots then return end
 	local free = 0
@@ -546,6 +547,7 @@ local function ConsumeCheck()
 end
 
 function M:QUEST_LOG_UPDATE()
+	if self.questItemRefresh then self.questItemRefresh() end
 	local fresh = ScanQuestObjectives()
 	if objReady and self.db.questAnnounce and IsInGroup() then
 		for k, o in pairs(fresh) do
@@ -1215,9 +1217,9 @@ function M:SetupQuestItems()
 		f:SetHeight(math.max(1, #questItemTmp) * 31)
 	end
 	self.questItemRefresh = Refresh
-	self:RegisterEvent("QUEST_LOG_UPDATE", Refresh)
+	-- QUEST_LOG_UPDATE / BAG_UPDATE are registered once in Initialize (one handler per event and owner);
+	-- their methods call self.questItemRefresh
 	self:RegisterEvent("QUEST_WATCH_UPDATE", Refresh)
-	self:RegisterEvent("BAG_UPDATE", Refresh)
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA", Refresh)
 	Refresh()
 end
@@ -1724,12 +1726,15 @@ function M:Initialize()
 		if tf then S:SetFont(tf, S.media.font, 13) end
 		MoveBlizzardFrame(th, "talkingHead", L["Talking Head"], { "TOP", "UIParent", "TOP", 0, -40 }, "TOP")
 	end
+	local onAddonLoaded = {}
+	self:RegisterEvent("ADDON_LOADED", function(_, _, addon)
+		local h = onAddonLoaded[addon]
+		if h then h() end
+	end)
 	if _G.TalkingHeadFrame then
 		SkinTalkingHead()
 	else
-		self:RegisterEvent("ADDON_LOADED", function(_, _, addon)
-			if addon == "Blizzard_TalkingHeadUI" then SkinTalkingHead() end
-		end)
+		onAddonLoaded.Blizzard_TalkingHeadUI = SkinTalkingHead
 	end
 	-- Blizzard guild news bug (TBC/Anniversary client): GuildUtil.lua formats
 	-- dungeon-encounter news with GUILD_NEWS_DUNGEON_ENCOUNTER_* strings the
@@ -1755,9 +1760,7 @@ function M:Initialize()
 	end
 	FixGuildNews()
 	if not _G.GuildNewsButton_SetNews then
-		self:RegisterEvent("ADDON_LOADED", function(_, _, addon)
-			if addon == "Blizzard_FrameXML" then FixGuildNews() end
-		end)
+		onAddonLoaded.Blizzard_FrameXML = FixGuildNews
 	end
 	if S.isRetail then
 		self:RegisterEvent("ACHIEVEMENT_EARNED", function() if M.db.screenshotAchievement then C_Timer.After(1, Screenshot) end end)
