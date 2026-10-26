@@ -778,8 +778,24 @@ end
 
 tabs.teams = function(self, page)
 	local h = Shared()
+	if CanI("teams") or CanI("leader") then
+		local nb = Btn(page, 110, 18, L["+ New team"])
+		nb:SetPoint("TOPRIGHT", -4, -4)
+		nb:SetScript("OnClick", function()
+			for i = 1, 9 do
+				if not h.teams[i] then
+					h.teams[i] = { name = "Team " .. i, size = 40, members = {} }
+					Bump() Send("T|" .. Ser(h.teams))
+					GH.bldState = GH.bldState or {}
+					GH.bldState.sel = i
+					GH:SelectTab("builder")
+					return
+				end
+			end
+		end)
+	end
 	local any = false
-	local x, y = 4, -4
+	local x, y = 4, -28
 	for i = 1, 9 do
 		local t = h.teams[i]
 		if t and t.name and not t.hidden then
@@ -814,7 +830,7 @@ tabs.teams = function(self, page)
 	if not any then
 		local em = S:FontString(page, 11, nil, S.media.font, nil, "LEFT")
 		em:SetPoint("TOPLEFT", 8, -8)
-		em:SetText("|cff777777" .. L["No raid teams yet — a raid builder can create them in Raid Builder."] .. "|r")
+		em:SetText("|cff777777" .. L["No raid teams yet — use '+ New team' or the Raid Builder tab."] .. "|r")
 	end
 end
 
