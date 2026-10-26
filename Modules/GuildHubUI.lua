@@ -355,6 +355,20 @@ tabs.chars = function(self, page)
 		RowFS(r, "rank", 250):SetText((e and e.rankName) or "")
 		RowFS(r, "badge", 400):SetText(badge)
 		RowFS(r, "seen", 470):SetText(ch.name == MN() and "" or (Ago(ch.c.t)))
+		-- role per own character: T/H/D
+		local rx = -100
+		for _, rr in ipairs({ "T", "H", "D" }) do
+			local role = rr
+			local rb = Btn(r, 26, 16, role)
+			rb:SetPoint("RIGHT", rx, 0)
+			if Shared().roles[ch.name] == role then rb.fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b) end
+			rb:SetScript("OnClick", function()
+				Shared().roles[ch.name] = role Bump()
+				Send("SR|" .. ch.name .. "|" .. role)
+				GH:RenderTab("chars")
+			end)
+			rx = rx - 28
+		end
 		if ch.name == MN() then
 			local mk = Btn(r, 90, 18, L["Make main"])
 			mk:SetPoint("RIGHT", -4, 0)
@@ -384,20 +398,40 @@ tabs.chars = function(self, page)
 	hd2:SetPoint("TOPLEFT", 4, y)
 	y = y - 18
 	local D = ns.InstanceTrackerData
-	local cd = SentinelUIInstanceDB and SentinelUIInstanceDB[GetRealmName() or ""] and SentinelUIInstanceDB[GetRealmName() or ""].chars
+	local realm = GetRealmName() or ""
+	local cd = SentinelUIInstanceDB and SentinelUIInstanceDB[realm] and SentinelUIInstanceDB[realm].chars
+	local ATT_LABELS = {
+		mcAttune = "Molten Core", onyAttune = "Onyxia", bwlAttune = "Blackwing Lair",
+		naxxAttune = "Naxxramas", karaAttune = "Karazhan",
+		shatteredHallsAttune = "Shattered Halls", serpentshrineAttune = "Serpentshrine",
+		blackMorassAttune = "Black Morass", hyjalAttune = "Hyjal", blackTempleAttune = "Black Temple",
+		hellfireCitadelAttune = "HC (heroisch)", coilfangAttune = "Coilfang (heroisch)",
+		auchindounAttune = "Auchindoun (heroisch)", shadowLabAttune = "Schattens labyrinth",
+		tempestKeepAttune = "Festung der Stürme (heroisch)", cavernsAttune = "HdZ (heroisch)",
+		arcatrazAttune = "Arkatraz",
+	}
+	local attKeys = {}
+	for _, a in ipairs((D and D.attunements) or {}) do attKeys[#attKeys + 1] = a.key end
+	local seen2 = {}
+	for _, akey in ipairs(attKeys) do seen2[akey] = true end
+	for _, k in pairs((D and D.keyAttunements) or {}) do if not seen2[k] then attKeys[#attKeys + 1] = k end end
+	local h2 = Shared()
 	local any = false
-	for _, a in ipairs((D and D.attunements) or {}) do
-		local line = a.label or a.key
-		local vals = {}
+	for _, akey in ipairs(attKeys) do
+		local vals, seen = {}, {}
 		for name in pairs(p.myChars or {}) do
+			seen[name] = true
 			local c = cd and cd[name]
-			vals[#vals + 1] = (c and c[a.key]) and (ClassColor(name)) or ("|cff555555" .. name .. "|r")
+			if c and c[akey] then vals[#vals + 1] = ClassColor(name) end
+		end
+		for name, keys in pairs((h2 and h2.attun) or {}) do
+			if not seen[name] and keys[akey] then vals[#vals + 1] = "|cff44aa44" .. name .. "|r" end
 		end
 		if #vals > 0 then
 			any = true
 			local fs = S:FontString(page, 11, nil, S.media.font, nil, "LEFT")
 			fs:SetPoint("TOPLEFT", 10, y)
-			fs:SetText(line .. ":  " .. table.concat(vals, "  "))
+			fs:SetText((ATT_LABELS[akey] or akey) .. ":  " .. table.concat(vals, "  "))
 			y = y - 16
 		end
 	end
