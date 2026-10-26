@@ -182,9 +182,13 @@ end
 
 -- extra appliers installed here (leader-set role for others)
 GH._appliers.SR = function(rest, sender)
-	if not (HasRight(sender, "roles") or HasRight(sender, "leader")) then return end
 	local name, role = rest:match("^(.-)|([THDN])$")
-	if name and role and IsMember(name) then Shared().roles[name] = role Bump() GH:MaybeRefresh("roster") end
+	if not (name and role and IsMember(name)) then return end
+	-- allowed: roles/leader right, or the sender setting a role on one of their
+	-- own linked characters (alt of sender / main is sender)
+	local mine = MainOf(name) == sender or name == sender
+	if not (mine or HasRight(sender, "roles") or HasRight(sender, "leader")) then return end
+	Shared().roles[name] = role Bump() GH:MaybeRefresh("roster")
 end
 
 -------------------------------------------------------------------------------
