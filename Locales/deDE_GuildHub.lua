@@ -137,3 +137,4 @@ L["No raid teams yet — use '+ New team' or the Raid Builder tab."] = "Noch kei
 L["No raids yet — create one under Raid Signups."] = "Noch keine Raids — einen unter Raid-Anmeldungen anlegen."
 L["New raid…"] = "Neuer Raid…"
 L["Non-guild name…"] = "Externer Name…"
+L["No data for this tab yet — open the guild bank tab once, or wait for a shared snapshot."] = "Noch keine Daten für dieses Fach — Gildenbank-Fach einmal öffnen oder auf einen geteilten Snapshot warten."

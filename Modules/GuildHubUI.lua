@@ -647,7 +647,13 @@ tabs.gbank = function(self, page)
 		local b = Btn(page, 54, 18, format(L["Tab %d"], t))
 		b:SetPoint("TOPLEFT", x, -2)
 		b:SetScript("OnClick", function() st.tab = t GH:RenderTab("gbank") end)
-		if st.tab == t then b.fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b) end
+		local has = tabsData[t] and next(tabsData[t].items or {}) ~= nil
+		if st.tab == t then
+			b.fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b)
+			if b.suiBackdrop then b.suiBackdrop:SetBackdropBorderColor(S.accent.r, S.accent.g, S.accent.b, 0.9) end
+		elseif not has then
+			b.fs:SetTextColor(0.4, 0.4, 0.4)
+		end
 		x = x + 58
 	end
 	local gold = S:FontString(page, 11, nil, S.media.font, nil, "RIGHT")
@@ -677,6 +683,11 @@ tabs.gbank = function(self, page)
 			rows[#rows + 1] = { id = id, n = n, name = name }
 		end
 		sort(rows, function(a, b) return a.name < b.name end)
+	end
+	if #rows == 0 then
+		local em = S:FontString(page, 11, nil, S.media.font, nil, "LEFT")
+		em:SetPoint("TOPLEFT", 8, -56)
+		em:SetText("|cff777777" .. L["No data for this tab yet — open the guild bank tab once, or wait for a shared snapshot."] .. "|r")
 	end
 	ListRows(page, -50, 20, min(#rows, 24), function(r, i)
 		local it = rows[i]
