@@ -891,11 +891,12 @@ tabs.builder = function(self, page)
 		RowFS(r, "name", 6):SetText((inteam and ("|cff" .. ACC .. "» |r") or "") .. ClassColor(m.n))
 		RowFS(r, "role", 280):SetText(RoleIcon(h.roles[m.n] or "N", 12) .. " " .. (RoleName(h.roles[m.n] or "N") or ""))
 		r:SetScript("OnClick", function(_, btn)
-			if not t then return end
-			t.members = t.members or {}
 			if btn == "RightButton" then
-				if t.members[m.n] then t.members[m.n] = nil Bump() Send("T|" .. Ser(h.teams)) GH:RenderTab("builder") end
-			elseif not t.members[m.n] then
+				if t and t.members and t.members[m.n] then t.members[m.n] = nil Bump() Send("T|" .. Ser(h.teams)) GH:RenderTab("builder") end
+				return
+			end
+			-- pick up always (even with no team yet — next card click creates it)
+			if not (t and t.members and t.members[m.n]) then
 				-- pick up the member; next card click drops them there
 				GH.pickup = m.n
 				if not GH.chip then
@@ -911,6 +912,7 @@ tabs.builder = function(self, page)
 				end
 				GH.chip.fs:SetText("|cff" .. ACC .. "» " .. m.n .. "|r")
 				GH.chip:Show()
+				GH:RenderTab("builder")
 			end
 		end)
 	end)
