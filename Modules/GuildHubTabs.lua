@@ -902,6 +902,22 @@ tabs.builder = function(self, page)
 	local hint = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
 	hint:SetPoint("TOPLEFT", 4, -24)
 	hint:SetText("|cff777777" .. L["Click a member to pick them up, then click a team card to drop. Right-click a member removes them. Double-click a card renames."] .. "|r")
+	-- externals: add a non-guild player by name into the selected team
+	local ext = Edit(page, 110, 16, L["Non-guild name…"])
+	ext:SetPoint("TOPRIGHT", -78, -24)
+	local extBtn = Btn(page, 68, 16, L["Add"])
+	extBtn:SetPoint("LEFT", ext, "RIGHT", 4, 0)
+	extBtn:SetScript("OnClick", function()
+		local nm = (ext:GetText() or ""):match("^%s*(.-)%s*$")
+		if nm == "" or not st.sel then return end
+		local t2 = h.teams[st.sel] or { name = "Team " .. st.sel, size = 40, members = {} }
+		h.teams[st.sel] = t2
+		t2.members = t2.members or {}
+		t2.members[nm] = "D"
+		ext:SetText("")
+		Bump() Send("T|" .. Ser(h.teams))
+		GH:RenderTab("builder")
+	end)
 	local t = h.teams[st.sel]
 	if t then
 		local del = Btn(page, 90, 16, L["Hide team"])
