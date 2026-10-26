@@ -455,75 +455,104 @@ end
 
 tabs.profs = function(self, page)
 	local h = Shared()
-	local st = GH.profState or { search = "", onlineOnly = false, showReq = false }
+	local st = GH.profState or { search = "", onlineOnly = false, view = "members" }
 	GH.profState = st
-	local tab1 = Btn(page, 80, 18, L["Recipes"])
-	tab1:SetPoint("TOPLEFT", 4, -2)
-	tab1:SetScript("OnClick", function() st.showReq = false GH:RenderTab("profs") end)
-	local tab2 = Btn(page, 80, 18, L["Requests"])
-	tab2:SetPoint("TOPLEFT", 88, -2)
-	tab2:SetScript("OnClick", function() st.showReq = true GH:RenderTab("profs") end)
-	;(st.showReq and tab2 or tab1).fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b)
+	local views = { members = L["Members"], recipes = L["Recipes"], requests = L["Requests"] }
+	local x = 4
+	for _, key in ipairs({ "members", "recipes", "requests" }) do
+		local k = key
+		local tb = Btn(page, 90, 18, views[k])
+		tb:SetPoint("TOPLEFT", x, -2)
+		if st.view == k then tb.fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b) end
+		tb:SetScript("OnClick", function() st.view = k GH:RenderTab("profs") end)
+		x = x + 94
+	end
 
-	if not st.showReq then
+	if st.view == "members" then
+		-- who has which profession (member-centric directory)
+		local srch = Edit(page, 140, 16, L["Name or profession"])
+		srch:SetPoint("TOPLEFT", 4, -26)
+		srch:SetText(st.search or "")
+		srch:SetScript("OnTextChanged", function(e) st.search = e:GetText() GH:RenderTab("profs") end)
+		local cb = Checkbox(page, L["Online only"], st.onlineOnly, function(v) st.onlineOnly = v GH:RenderTab("profs") end)
+		cb:SetPoint("TOPLEFT", 152, -26)
+		local hdr = S:FontString(page, 11, "OUTLINE", S.media.font, nil, "LEFT")
+		hdr:SetPoint("TOPLEFT", 8, -48)
+		hdr:SetText("|cff" .. ACC .. L["MEMBER"] .. "|r")
+		local hdr2 = S:FontString(page, 11, "OUTLINE", S.media.font, nil, "LEFT")
+		hdr2:SetPoint("TOPLEFT", 250, -48)
+		hdr2:SetText("|cff" .. ACC .. L["PROFESSIONS"] .. "|r")
+		local roster = Roster()
+		local q = lower(st.search or "")
+		local rows = {}
+		for name, e in pairs(roster) do
+			local pset = h.profs[name] or {}
+			local plist = {}
+			for prof, p in pairs(pset) do
+				local sk = p.skill and format(" (%d/%s)", p.skill, tostring(p.max or "?")) or ""
+				plist[#plist + 1] = prof .. sk
+			end
+			sort(plist)
+			local line = table.concat(plist, "  ·  ")
+			if (#plist > 0) and (q == "" or lower(name):find(q, 1, true) or lower(line):find(q, 1, true))
+				and (not st.onlineOnly or e.online) then
+				rows[#rows + 1] = { n = name, e = e, line = line }
+			end
+		end
+		sort(rows, function(a, b) return a.n < b.n end)
+		ListRows(page, -66, 20, min(#rows, 26), function(r, i)
+			local m = rows[i]
+			if not m then return end
+			RowFS(r, "name", 6):SetText(ClassColor(m.n) .. (m.e.online and "" or " |cff555555(off)|r"))
+			RowFS(r, "prof", 250):SetText(m.line)
+			r:SetScript("OnClick", function(_, b)
+				if b == "RightButton" then Invite(m.n) else Whisper(m.n) end
+			end)
+		end)
+		local hint = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
+		hint:SetPoint("BOTTOMLEFT", 4, 4)
+		hint:SetText("|cff777777" .. L["Click: whisper · Right-click: invite. Professions share via the addon channel."] .. "|r")
+		return
+	end
+
+	if st.view == "recipes" then
 		local srch = Edit(page, 140, 16, L["Recipe or item"])
 		srch:SetPoint("TOPLEFT", 4, -26)
 		srch:SetText(st.search or "")
 		srch:SetScript("OnTextChanged", function(e) st.search = e:GetText() GH:RenderTab("profs") end)
 		local cb = Checkbox(page, L["Online only"], st.onlineOnly, function(v) st.onlineOnly = v GH:RenderTab("profs") end)
-		cb:SetPoint("TOPLEFT", 160, -26)
-		-- gather recipes from shared prof data (member.profs[prof].link/rcp list)
+		cb:SetPoint("TOPLEFT", 152, -26)
 		local roster = Roster()
 		local q = lower(st.search or "")
-		local rows = {}
+		local grouped, order = {}, {}
 		for name, e in pairs(roster) do
-			local pset = Shared().profs[name] or e.profs or {}
-			for prof, p in pairs(pset) do
-				if (not st.onlineOnly or OnlineOf(name)) then
+			if not st.onlineOnly or e.online then
+				for prof, p in pairs(h.profs[name] or {}) do
 					local rcp = p.recipes or p.rcp
-					if type(rcp) == "table" and next(rcp) then
+					if type(rcp) == "table" then
 						for rname in pairs(rcp) do
-							if q == "" or lower(rname):find(q, 1, true) or lower(prof):find(q, 1, true) then
-								rows[#rows + 1] = { r = rname, prof = prof, who = name, skill = p.skill, online = e.online }
+							if q == "" or lower(rname):find(q, 1, true) then
+								local g = grouped[rname]
+								if not g then g = { r = rname, prof = prof, crafters = {} } grouped[rname] = g order[#order + 1] = g end
+								g.crafters[#g.crafters + 1] = { who = name, skill = p.skill, online = e.online }
 							end
-						end
-					else
-						if q == "" or lower(prof):find(q, 1, true) then
-							rows[#rows + 1] = { r = prof, prof = prof, who = name, skill = p.skill, online = e.online, justProf = true }
 						end
 					end
 				end
 			end
 		end
-		sort(rows, function(a, b) if a.r == b.r then return (a.who or "") < (b.who or "") end return a.r < b.r end)
-		-- dedupe per recipe: show crafter count
-		local grouped, order = {}, {}
-		for _, r in ipairs(rows) do
-			local g = grouped[r.r]
-			if not g then g = { r = r.r, prof = r.prof, crafters = {} } grouped[r.r] = g order[#order + 1] = g end
-			g.crafters[#g.crafters + 1] = r
-		end
+		sort(order, function(a, b) return a.r < b.r end)
 		ListRows(page, -50, 20, min(#order, 24), function(row, i)
 			local g = order[i]
 			if not g then return end
 			local on = 0
 			for _, c in ipairs(g.crafters) do if c.online then on = on + 1 end end
-			local cdTxt = ""
-			for _, c in ipairs(g.crafters) do
-				local pd = Shared().profs[c.who]
-				local rt = pd and pd[g.prof] and pd[g.prof].cds and pd[g.prof].cds[g.r]
-				if rt and rt - time() > 0 then cdTxt = " |cff888888(cd)|r" break end
-			end
-			RowFS(row, "r", 6):SetText(g.r .. cdTxt)
+			RowFS(row, "r", 6):SetText(g.r)
 			RowFS(row, "p", 320):SetText(g.prof)
 			RowFS(row, "c", 440):SetText(format("%d/%d", on, #g.crafters))
-			row:SetScript("OnClick", function()
-				GH.profSel = g
-				GH:RenderTab("profs")
-			end)
+			row:SetScript("OnClick", function() GH.profSel = g GH:RenderTab("profs") end)
 			if GH.profSel and GH.profSel.r == g.r then row.bg:SetColorTexture(S.accent.r, S.accent.g, S.accent.b, 0.12) end
 		end)
-		-- detail panel
 		local g = GH.profSel
 		if g then
 			local dp = CreateFrame("Frame", nil, page, S.BackdropTemplate)
@@ -534,19 +563,16 @@ tabs.profs = function(self, page)
 			local t = S:FontString(dp, 12, "OUTLINE", S.media.font, nil, "LEFT")
 			t:SetPoint("TOPLEFT", 8, -8)
 			t:SetText("|cff" .. ACC .. g.r .. "|r")
-			local info = S:FontString(dp, 10, nil, S.media.font, nil, "LEFT")
-			info:SetPoint("TOPLEFT", 8, -26)
-			info:SetText(g.prof)
 			local wh = Header(dp, L["Who can craft it"])
-			wh:SetPoint("TOPLEFT", 8, -46)
-			local yy = -64
+			wh:SetPoint("TOPLEFT", 8, -28)
+			local yy = -46
 			for _, c in ipairs(g.crafters) do
 				local fs = S:FontString(dp, 11, nil, S.media.font, nil, "LEFT")
 				fs:SetPoint("TOPLEFT", 10, yy)
 				fs:SetText(ClassColor(c.who) .. (c.skill and ("  |cff888888" .. c.skill .. "|r") or ""))
-				local st3 = S:FontString(dp, 11, nil, S.media.font, nil, "RIGHT")
-				st3:SetPoint("TOPRIGHT", -10, yy)
-				st3:SetText(c.online and "|cff55ff55" .. L["online"] .. "|r" or "|cff666666" .. L["offline"] .. "|r")
+				local stt = S:FontString(dp, 11, nil, S.media.font, nil, "RIGHT")
+				stt:SetPoint("TOPRIGHT", -10, yy)
+				stt:SetText(c.online and "|cff55ff55" .. L["online"] .. "|r" or "|cff666666" .. L["offline"] .. "|r")
 				yy = yy - 17
 			end
 			local req = Btn(dp, 90, 20, L["Request it"])
@@ -559,47 +585,43 @@ tabs.profs = function(self, page)
 				Notify(format(L["Craft request posted: %s"], g.r))
 			end)
 		end
-	else
-		-- requests list
-		local rows = {}
-		for id, c in pairs(h.crafts) do
-			if not c.done and (time() - (c.t or 0)) < 7 * 86400 then rows[#rows + 1] = c end
-		end
-		sort(rows, function(a, b) return (a.t or 0) > (b.t or 0) end)
-		ListRows(page, -30, 22, min(#rows, 24), function(row, i)
-			local c = rows[i]
-			if not c then return end
-			RowFS(row, "item", 6):SetText(format("%s x%d", c.item or "?", c.qty or 1))
-			RowFS(row, "by", 260):SetText(ClassColor(c.char or "?"))
-			RowFS(row, "prof", 400):SetText(c.prof or "")
-			RowFS(row, "t", 500):SetText(Ago(c.t))
-			local txt = c.claimer and (L["claimed by"] .. " " .. (c.claimer or "?")) or ""
-			RowFS(row, "cl", 560):SetText(txt)
-			row:SetScript("OnClick", function(_, btn)
-				if c.char == MN() then
-					if btn == "RightButton" then
-						Send("CCD|" .. c.id .. "|")
-						Shared().crafts[c.id] = nil Bump() GH:RenderTab("profs")
-					else
-						Send("CCD|" .. c.id .. "|d")
-						Shared().crafts[c.id].done = true Bump() GH:RenderTab("profs")
-					end
-				elseif btn == "RightButton" then Whisper(c.char)
-				elseif not c.claimer then
-					Send("CCC|" .. c.id)
-					Shared().crafts[c.id].claimer = MN() Bump() GH:RenderTab("profs")
-				end
-			end)
-		end)
-		local hint = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
-		hint:SetPoint("BOTTOMLEFT", 4, 4)
-		hint:SetText("|cff777777" .. L["Click: I'll make it / mark done (own). Right-click: whisper / cancel (own)."] .. "|r")
+		return
 	end
-end
 
--------------------------------------------------------------------------------
--- TAB: Guild Bank (remote view of last snapshot)
--------------------------------------------------------------------------------
+	-- requests view
+	local rows = {}
+	for id, c in pairs(h.crafts) do
+		if not c.done and (time() - (c.t or 0)) < 7 * 86400 then rows[#rows + 1] = c end
+	end
+	sort(rows, function(a, b) return (a.t or 0) > (b.t or 0) end)
+	ListRows(page, -30, 22, min(#rows, 24), function(row, i)
+		local c = rows[i]
+		if not c then return end
+		RowFS(row, "item", 6):SetText(format("%s x%d", c.item or "?", c.qty or 1))
+		RowFS(row, "by", 260):SetText(ClassColor(c.char or "?"))
+		RowFS(row, "prof", 400):SetText(c.prof or "")
+		RowFS(row, "t", 500):SetText(Ago(c.t))
+		RowFS(row, "cl", 560):SetText(c.claimer and (L["claimed by"] .. " " .. c.claimer) or "")
+		row:SetScript("OnClick", function(_, btn)
+			if c.char == MN() then
+				if btn == "RightButton" then
+					Send("CCD|" .. c.id .. "|")
+					Shared().crafts[c.id] = nil Bump() GH:RenderTab("profs")
+				else
+					Send("CCD|" .. c.id .. "|d")
+					Shared().crafts[c.id].done = true Bump() GH:RenderTab("profs")
+				end
+			elseif btn == "RightButton" then Whisper(c.char)
+			elseif not c.claimer then
+				Send("CCC|" .. c.id)
+				Shared().crafts[c.id].claimer = MN() Bump() GH:RenderTab("profs")
+			end
+		end)
+	end)
+	local hint = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
+	hint:SetPoint("BOTTOMLEFT", 4, 4)
+	hint:SetText("|cff777777" .. L["Click: I'll make it / mark done (own). Right-click: whisper / cancel (own)."] .. "|r")
+end
 
 tabs.gbank = function(self, page)
 	local h = Shared()
