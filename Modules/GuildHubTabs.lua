@@ -1400,6 +1400,7 @@ end
 
 function GH:Initialize()
 	myName = Ambiguate(UnitName("player"), "short")
+	GH._SetMyName(myName)
 	self:SetupShell()
 	if not IsInGuild() then
 		if not self._guildWait then
@@ -1410,7 +1411,6 @@ function GH:Initialize()
 		end
 		return
 	end
-	GH._SetMyName(myName)
 	if C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix then
 		pcall(C_ChatInfo.RegisterAddonMessagePrefix, PREFIX)
 	end
@@ -1500,13 +1500,13 @@ function GH:Initialize()
 		for n, g in pairs(GH.gf) do if now - (g.t or 0) > 660 then GH.gf[n] = nil end end
 		for n, g in pairs(GH.bgf) do if now - (g.t or 0) > 660 then GH.bgf[n] = nil end end
 	end)
-	self:UpdateMinimap()
-	self:UpdateCTA()
 end
 
 function GH:SetupShell()
 	if self._shellDone then return end
 	self._shellDone = true
+	self:UpdateMinimap()
+	self:UpdateCTA()
 	-- commands
 	SLASH_SENTINELGUILD1 = "/sgh"
 	SLASH_SENTINELGUILD2 = "/sguild"
