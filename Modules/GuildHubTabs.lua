@@ -1341,13 +1341,17 @@ function GH:UpdateMinimap()
 end
 
 function GH:Initialize()
+	myName = Ambiguate(UnitName("player"), "short")
+	self:SetupShell()
 	if not IsInGuild() then
-		self:RegisterEvent("PLAYER_GUILD_UPDATE", function()
-			if IsInGuild() then GH:Initialize() end
-		end)
+		if not self._guildWait then
+			self._guildWait = true
+			self:RegisterEvent("PLAYER_GUILD_UPDATE", function()
+				if IsInGuild() then GH._guildWait = nil GH:Initialize() end
+			end)
+		end
 		return
 	end
-	myName = Ambiguate(UnitName("player"), "short")
 	GH._SetMyName(myName)
 	if C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix then
 		pcall(C_ChatInfo.RegisterAddonMessagePrefix, PREFIX)
@@ -1418,6 +1422,11 @@ function GH:Initialize()
 	end)
 	self:UpdateMinimap()
 	self:UpdateCTA()
+end
+
+function GH:SetupShell()
+	if self._shellDone then return end
+	self._shellDone = true
 	-- commands
 	SLASH_SENTINELGUILD1 = "/sgh"
 	SLASH_SENTINELGUILD2 = "/sguild"
@@ -1458,7 +1467,7 @@ function OnComm2(_, _, prefix, msg, dist, sender)
 	GH:OnCommRaw(prefix, msg, dist, sender)
 end
 
-local function Hello2()
+function Hello2()
 	Send("V|" .. (GH._VERSION or 1) .. "|" .. (Shared() and Shared().ver or 0))
 	GH:Delay(3, function() Send("Q|") end)
 end
