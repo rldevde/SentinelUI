@@ -583,6 +583,17 @@ tabs.att = function(self, page)
 	local rl = S:FontString(page, 11, nil, S.media.font, nil, "LEFT")
 	rl:SetPoint("TOPLEFT", 4, -4)
 	rl:SetText(L["Raid:"])
+	if #raids == 0 then
+		local em = S:FontString(page, 11, nil, S.media.font, nil, "LEFT")
+		em:SetPoint("TOPLEFT", 4, -28)
+		em:SetText("|cff777777" .. L["No raids yet — create one under Raid Signups."] .. "|r")
+		if CanI("leader") then
+			local nb = Btn(page, 100, 18, L["New raid…"])
+			nb:SetPoint("TOPLEFT", 4, -50)
+			nb:SetScript("OnClick", function() GH:RaidEditDialog(nil) end)
+		end
+		return
+	end
 	local x = 46
 	for i = 1, min(6, #raids) do
 		local r = raids[i]
