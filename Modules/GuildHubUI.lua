@@ -157,7 +157,7 @@ local function Whisper(name) SetItemRef("player:" .. name, "|Hplayer:" .. name .
 local function Invite(name) if C_PartyInfo and C_PartyInfo.InviteUnit then C_PartyInfo.InviteUnit(name) elseif InviteUnit then InviteUnit(name) end end
 
 local function MemberMenu(name)
-	if not (EasyMenu and DropDownList1) then return end
+	if not EasyMenu then return end
 	local menu = {
 		{ text = name, isTitle = true, notCheckable = true },
 		{ text = L["Whisper"], notCheckable = true, func = function() Whisper(name) end },
@@ -337,7 +337,7 @@ tabs.chars = function(self, page)
 	y = y - 20
 	local chars = {}
 	for name, c in pairs(p.myChars) do chars[#chars + 1] = { name = name, c = c } end
-	chars[#chars + 1] = chars[#chars + 1] or { name = MN(), c = {} }
+	if #chars == 0 then chars[1] = { name = MN(), c = {} } end
 	sort(chars, function(a, b) return (a.c.level or 0) > (b.c.level or 0) end)
 	local roster = Roster()
 	ListRows(page, y, 24, #chars, function(r, i)

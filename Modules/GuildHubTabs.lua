@@ -1409,6 +1409,10 @@ function GH:Initialize()
 	-- record this character as one of the account's guild characters
 	local p = Priv()
 	if p then
+		local d = p.settings
+		for _, k in ipairs({ "raidAlerts", "ctaAlerts", "ctaPin", "chatNotices", "shareBank", "ctaButton", "minimap" }) do
+			if d[k] == nil then d[k] = true end
+		end
 		p.myChars[myName] = p.myChars[myName] or {}
 		local e = Roster(true)[myName]
 		p.myChars[myName].level = (e and e.level) or UnitLevel("player")

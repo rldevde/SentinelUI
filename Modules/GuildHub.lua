@@ -150,7 +150,7 @@ local function Roster(force)
 	if GetNumGuildMembers and GetGuildRosterInfo then
 		local now = time()
 		for i = 1, GetNumGuildMembers() do
-			local name, rankName, rankIdx, level, classLoc, zone, note, onote, online, _, _, _, _, _, _, classFile = GetGuildRosterInfo(i)
+			local name, rankName, rankIdx, level, classLoc, zone, note, onote, online, _, classFile = GetGuildRosterInfo(i)
 			if name then
 				local short = Ambiguate(name, "short")
 				if IsSecret(short) then short = name end
