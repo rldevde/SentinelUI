@@ -213,7 +213,6 @@ function GB:Fill()
 			#list, offset, tostring(d and d.name), tostring(d and d.sender),
 			tostring(d and d.class), tostring(d and d.t), tostring(d and (S.IsSecret and S.IsSecret(d.msg))))
 		S:LogInfo("gb", s)
-		if print then print("|cff7fff9fgb: " .. s .. "|r") end
 	end
 	self.frame.pager:SetFormattedText("%d %s", #list, L["entries"])
 end

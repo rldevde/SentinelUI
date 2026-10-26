@@ -45,6 +45,7 @@ function AFK:Create()
 	f:SetFrameStrata("FULLSCREEN")
 	f:SetScale(UIParent:GetScale())
 	f:EnableKeyboard(true)
+	f:EnableMouse(true) -- the real UI stays alive underneath, do not let clicks fall through
 	f:SetPropagateKeyboardInput(true)
 	f:SetScript("OnKeyDown", function(self, key)
 		if InCombatLockdown() then return end
@@ -192,7 +193,7 @@ function AFK:Toggle(show)
 		if UnitCastingInfo("player") then return end
 		self.start = GetTime()
 		S:SafeCall("AFK:Fill", self.Fill, self)
-		UIParent:Hide()
+		UIParent:SetAlpha(0)
 		f:Show()
 		f.model:SetUnit("player")
 		f.model:SetFacing(-0.4)
@@ -204,7 +205,7 @@ function AFK:Toggle(show)
 		self.active = nil
 		MoveViewLeftStop()
 		f:Hide()
-		if not InCombatLockdown() then UIParent:Show() else S:RunOutOfCombat(function() UIParent:Show() end) end
+		UIParent:SetAlpha(1) -- alpha is combat-safe; Show/Hide of UIParent is not
 	end
 end
 

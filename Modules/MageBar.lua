@@ -91,7 +91,7 @@ local function FlyoutButton(parent, i)
 	btn:SetScript("PostClick", function(self, button)
 		if button == "RightButton" and IsAltKeyDown() and self.spellID then
 			MB.db.hidden[self.spellID] = true
-			self:Hide()
+			if not InCombatLockdown() then self:Hide() end
 		end
 	end)
 	return btn
