@@ -201,6 +201,7 @@ function TR:StaticServices()
 
 	local function addSpell(sp, level, tome)
 		local spellID = tome and sp.taughtSpell or sp.id
+		if type(spellID) == "string" then spellID = tonumber(spellID:match(":(%d+)$")) or tonumber(spellID) end
 		if type(spellID) ~= "number" then return end
 		local okInfo, name, rank, icon = pcall(GetSpellInfo, spellID)
 		if not okInfo or not name then return end
