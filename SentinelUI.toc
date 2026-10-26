@@ -81,8 +81,6 @@ Modules\InstanceTracker\UI.lua
 Modules\WorldBuffs\Data.lua
 Modules\WorldBuffs.lua
 Modules\WorldBuffs\UI.lua
-Modules\GuildChronicle.lua
-Modules\GuildChronicle\UI.lua
 Modules\GuildHub.lua
 Modules\GuildHubUI.lua
 Modules\GuildHubTabs.lua

@@ -373,7 +373,7 @@ function MM:CreateMenuButton()
 	local suiEntries = {
 		{ L["Options"], nil, nil, function() S:ToggleConfig() end },
 		{ L["Toggle Movers"], nil, nil, function() S:ToggleMovers() end },
-		{ L["Guild Chronicle"], "GuildChronicle", "Toggle" },
+		{ L["Guild Hub"], "GuildHub", "Toggle" },
 		{ L["Instance Tracker"], "InstanceTracker", "Toggle" },
 		{ L["Instance Resets"], "RaidReset", "Toggle" },
 		{ L["Reputation"], "Reputation", "Toggle" },

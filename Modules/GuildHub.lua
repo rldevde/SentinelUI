@@ -62,6 +62,8 @@ local function Shared()
 	h.crafts = h.crafts or {}
 	h.loot = h.loot or {}
 	h.layers = h.layers or {}
+	h.profs = h.profs or {}
+	h.rosterSnap = h.rosterSnap or {}
 	h.ver = h.ver or 0
 	return h
 end
@@ -127,27 +129,27 @@ end
 -- roster access
 -------------------------------------------------------------------------------
 
-local function GCData()
-	local gc = S.GetModule and S:GetModule("GuildChronicle")
-	return gc and gc.Data and gc:Data()
-end
-
+-- roster: live API merged over a persisted snapshot (offline members keep
+-- their data once seen); professions ride in h.profs via addon sync
 local rosterCache, rosterAt
 local function Roster(force)
+	local h = Shared()
+	if h then
+		h.rosterSnap = h.rosterSnap or {}
+		h.profs = h.profs or {}
+	end
 	if rosterCache and not force and GetTime() - rosterAt < 10 then return rosterCache end
-	local d = GCData()
 	local r = {}
-	if d and d.members then
-		for name, m in pairs(d.members) do
-			if not m.stub then
-				r[name] = { rank = m.rank, rankName = m.rankName, level = m.level, class = m.class,
-					lastOnline = m.lastOnline, main = m.main, profs = m.profs }
-			end
+	if h then
+		for name, m in pairs(h.rosterSnap) do
+			r[name] = { rank = m.rank, rankName = m.rankName, level = m.level, class = m.class,
+				lastOnline = m.lastOnline, online = false, profs = h.profs[name] }
 		end
 	end
 	if GetNumGuildMembers and GetGuildRosterInfo then
+		local now = time()
 		for i = 1, GetNumGuildMembers() do
-			local name, rankName, rankIdx, level, classLoc, zone, note, onote, online = GetGuildRosterInfo(i)
+			local name, rankName, rankIdx, level, classLoc, zone, note, onote, online, _, _, _, _, _, _, classFile = GetGuildRosterInfo(i)
 			if name then
 				local short = Ambiguate(name, "short")
 				if IsSecret(short) then short = name end
@@ -156,12 +158,18 @@ local function Roster(force)
 				e.rank, e.rankName, e.level = rankIdx, rankName, level
 				e.online = online and true or false
 				e.zone = (not IsSecret(zone)) and zone or nil
-				if not e.class and classLoc then e.class = classLoc end
+				e.class = classFile or e.class
 				e.note = (not IsSecret(note)) and note or nil
 				e.onote = (not IsSecret(onote)) and onote or nil
+				e.lastOnline = online and now or e.lastOnline
+				if h then
+					h.rosterSnap[short] = { rank = rankIdx, rankName = rankName, level = level,
+						class = e.class, lastOnline = e.lastOnline }
+				end
 			end
 		end
 	end
+	if h then for name in pairs(h.profs or {}) do local e = r[name] if e then e.profs = h.profs[name] end end end
 	rosterCache, rosterAt = r, GetTime()
 	return r
 end
@@ -320,6 +328,14 @@ appliers.V = function(rest, sender)          -- hello: "V|<ver>|<docver>"
 	if v and v > VERSION and not GH._verNotified then
 		GH._verNotified = true
 		Notify(format(L["%s runs a newer GuildHub version — consider updating."], sender))
+	end
+end
+
+appliers.PF = function(rest, sender)
+	local t = Unser(rest)
+	if type(t) == "table" then
+		Shared().profs[sender] = t Bump()
+		GH:MaybeRefresh("profs")
 	end
 end
 
