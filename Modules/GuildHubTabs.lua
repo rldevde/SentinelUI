@@ -43,7 +43,7 @@ local function Checkbox(parent, label, checked, onClick)
 	cb.fs:SetPoint("LEFT", cb, "RIGHT", 4, 0)
 	cb.fs:SetText(label)
 	cb:SetScript("OnClick", function(c) onClick(c:GetChecked() and true or false) end)
-	cb:SetHitRectInsets(0, -max(60, cb.fs:GetStringWidth() + 8), 0, 0)
+	cb:SetHitRectInsets(0, -min(44, cb.fs:GetStringWidth() + 6), 0, 0)
 	return cb
 end
 
