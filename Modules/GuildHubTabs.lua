@@ -323,6 +323,12 @@ tabs.bgf = function(self, page)
 		local cf = S:FontString(row, 11, nil, S.media.font, nil, "RIGHT")
 		cf:SetPoint("RIGHT", -120, 0)
 		cf:SetText(format("%d / %d%s", n + (st.bgs[name] and 1 or 0), team, heals > 0 and format(" (%d %s)", heals, L["healers"]) or ""))
+		if n + (st.bgs[name] and 1 or 0) >= team and GH._bgAnnounced ~= name then
+			GH._bgAnnounced = name
+			Notify(format(L["%s has %d — form up!"], name, team))
+		elseif n + (st.bgs[name] and 1 or 0) < team then
+			GH._bgAnnounced = nil
+		end
 		local fb = Btn(row, 110, 18, L["Form premade"])
 		fb:SetPoint("RIGHT", -4, 0)
 		fb:SetScript("OnClick", function()
@@ -710,7 +716,23 @@ tabs.loot = function(self, page)
 		RowFS(r, "item", 6):SetText(e.iname or ("item:" .. tostring(e.item)))
 		RowFS(r, "who", 300):SetText(ClassColor(e.char or "?"))
 		RowFS(r, "boss", 440):SetText(e.boss or "")
-		RowFS(r, "how", 560):SetText(e.how or "")
+		RowFS(r, "how", 560):SetText((e.disp and ("|cffffaa55" .. e.disp .. "|r")) or e.how or "")
+		if CanI("leader") then
+			r:SetScript("OnClick", function(_, btn)
+				if btn ~= "RightButton" then return end
+				local order = { "Disenchanted", "Banked", "Rotted" }
+				local cur = 0
+				for j, d in ipairs(order) do if e.disp == d then cur = j end end
+				e.disp = order[cur % 3 + 1]
+				local audit = { t = time(), by = myName, act = "disp", item = e.iname, to = e.disp }
+				Shared().lootAudit = Shared().lootAudit or {}
+				tinsert(Shared().lootAudit, audit)
+				if #Shared().lootAudit > 300 then tremove(Shared().lootAudit, 1) end
+				Bump()
+				Send("LA|" .. Ser({ i = e.item, who = e.char, t2 = e.t, disp = e.disp, audit = audit }))
+				GH:RenderTab("loot")
+			end)
+		end
 		RowFS(r, "t", 660):SetText(Ago(e.t))
 		r:SetScript("OnEnter", function()
 			GameTooltip:SetOwner(r, "ANCHOR_CURSOR")
@@ -1402,6 +1424,8 @@ function GH:Initialize()
 	-- sync hello + periodic re-request
 	Hello2()
 	C_Timer.NewTicker(900, function() Send("Q|") end)
+	self:RegisterEvent("TRADE_SKILL_SHOW", function() GH:Delay(0.7, GH.ScanTradeRecipes, GH) end)
+	GH:Delay(8, GH.ScanAndShareProfs, GH)
 	-- broadcast own state
 	self:Delay(5, function()
 		local h = Shared()
@@ -1410,6 +1434,21 @@ function GH:Initialize()
 		if h.altDecl[myName] then Send("M|" .. h.altDecl[myName]) end
 		if h.mainDecl[myName] then for alt in pairs(h.mainDecl[myName]) do Send("MC|" .. alt) end end
 		GH:BroadcastFinder() GH:BroadcastBG() GH:ReportLayer()
+	end)
+	-- auto attendance: a leader inside the raid window records every 5 min
+	C_Timer.NewTicker(60, function()
+		S:SafeCall("GuildHub:AutoAtt", function()
+			if not (CanI("leader") and IsInRaid()) then return end
+			local now = time()
+			for id, r in pairs(Shared().raids) do
+				if r.status == "open" and r.epoch and now >= r.epoch - 900 and now <= r.epoch + (r.dur or 3) * 3600 then
+					if not GH._attT or now - GH._attT >= 300 then
+						GH._attT = now
+						GH:RecordAttendance(r)
+					end
+				end
+			end
+		end)
 	end)
 	-- alert tickers
 	C_Timer.NewTicker(30, function() S:SafeCall("GuildHub:Alerts", CheckRaidAlerts) end)
@@ -1456,6 +1495,8 @@ function GH:SetupShell()
 				end
 			end
 			Notify(L["No guildmate on that layer."])
+		elseif first == "export" then
+			GH:ExportTeams()
 		else
 			GH:Toggle()
 		end
@@ -1472,3 +1513,88 @@ function Hello2()
 	GH:Delay(3, function() Send("Q|") end)
 end
 
+
+-------------------------------------------------------------------------------
+-- profession recipe + cooldown sharing (GetTradeSkill* family)
+-------------------------------------------------------------------------------
+
+function GH:ScanAndShareProfs()
+	local h = Shared()
+	if not (h and GetProfessions and GetProfessionInfo) then return end
+	h.profs = h.profs or {}
+	h.profs[myName] = h.profs[myName] or {}
+	local changed = false
+	for _, idx in ipairs({ GetProfessions() }) do
+		local name, _, skill, maxSkill = GetProfessionInfo(idx)
+		if name then
+			local e = h.profs[myName][name] or {}
+			e.skill, e.max = skill, maxSkill
+			h.profs[myName][name] = e
+			changed = true
+		end
+	end
+	if changed then Send("PF|" .. Ser(h.profs[myName])) end
+end
+
+function GH:ScanTradeRecipes()
+	local h = Shared()
+	if not (h and GetNumTradeSkills and GetTradeSkillInfo) then return end
+	local n = GetNumTradeSkills() or 0
+	if n == 0 then return end
+	local prof = GetTradeSkillLine and GetTradeSkillLine() or "?"
+	local rcp, cds = {}, {}
+	for i = 1, n do
+		local name, stype = GetTradeSkillInfo(i)
+		if name and stype ~= "header" then
+			rcp[name] = true
+			local cd = GetTradeSkillCooldown and GetTradeSkillCooldown(i)
+			if cd and cd > 0 then cds[name] = time() + cd end
+		end
+	end
+	if next(rcp) then
+		h.profs[myName] = h.profs[myName] or {}
+		local e = h.profs[myName][prof] or {}
+		e.rcp, e.cds = rcp, cds
+		h.profs[myName][prof] = e
+		Send("PF|" .. Ser({ [prof] = e }))
+	end
+end
+
+-------------------------------------------------------------------------------
+-- teams export (/sgh export)
+-------------------------------------------------------------------------------
+
+function GH:ExportTeams()
+	local h = Shared()
+	local lines = { "SentinelGuild raid teams — " .. date("%Y-%m-%d %H:%M") }
+	for i = 1, 9 do
+		local t = h.teams[i]
+		if t and t.name and not t.hidden then
+			lines[#lines + 1] = ""
+			lines[#lines + 1] = t.name .. " (" .. (t.size or 40) .. ")"
+			for nm, mr in pairs(t.members or {}) do
+				lines[#lines + 1] = "  " .. nm .. " (" .. (RoleName(mr) or mr) .. ")"
+			end
+		end
+	end
+	local txt = table.concat(lines, "
+")
+	local f = GH.exportFrame
+	if not f then
+		f = CreateFrame("Frame", "SentinelUIGuildExport", UIParent, S.BackdropTemplate)
+		f:SetSize(420, 320)
+		f:SetPoint("CENTER")
+		f:SetFrameStrata("DIALOG")
+		S:SetTemplate(f, "Default")
+		local eb = CreateFrame("EditBox", nil, f)
+		eb:SetMultiLine(true) eb:SetAutoFocus(false) eb:SetFontObject("GameFontHighlight")
+		eb:SetPoint("TOPLEFT", 10, -10) eb:SetPoint("BOTTOMRIGHT", -10, 10)
+		eb:SetScript("OnEscapePressed", function() f:Hide() end)
+		f.eb = eb
+		GH.exportFrame = f
+	end
+	f.eb:SetText(txt)
+	f:Show()
+	f.eb:HighlightText()
+	f.eb:SetFocus()
+end

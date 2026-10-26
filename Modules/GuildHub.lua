@@ -560,6 +560,25 @@ appliers.CTA = function(rest, sender)        -- call to arms
 	end
 end
 
+appliers.LA = function(rest, sender)         -- loot edit + audit (leader)
+	if not HasRight(sender, "leader") then return end
+	local t = Unser(rest)
+	if type(t) ~= "table" then return end
+	local h = Shared()
+	if t.audit then
+		h.lootAudit = h.lootAudit or {}
+		tinsert(h.lootAudit, t.audit)
+		if #h.lootAudit > 300 then tremove(h.lootAudit, 1) end
+	end
+	if t.i then
+		for _, e in ipairs(h.loot) do
+			if e.item == t.i and e.char == t.who and e.t == t.t2 then e.disp = t.disp end
+		end
+	end
+	Bump()
+	GH:MaybeRefresh("loot")
+end
+
 appliers.LI = function(rest, sender)         -- loot record (leader): "LI|<ser>"
 	if not HasRight(sender, "leader") then return end
 	local r = Unser(rest)

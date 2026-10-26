@@ -427,9 +427,10 @@ tabs.profs = function(self, page)
 		local q = lower(st.search or "")
 		local rows = {}
 		for name, e in pairs(roster) do
-			for prof, p in pairs(e.profs or {}) do
+			local pset = Shared().profs[name] or e.profs or {}
+			for prof, p in pairs(pset) do
 				if (not st.onlineOnly or OnlineOf(name)) then
-					local rcp = p.recipes
+					local rcp = p.recipes or p.rcp
 					if type(rcp) == "table" and next(rcp) then
 						for rname in pairs(rcp) do
 							if q == "" or lower(rname):find(q, 1, true) or lower(prof):find(q, 1, true) then
@@ -457,7 +458,13 @@ tabs.profs = function(self, page)
 			if not g then return end
 			local on = 0
 			for _, c in ipairs(g.crafters) do if c.online then on = on + 1 end end
-			RowFS(row, "r", 6):SetText(g.r)
+			local cdTxt = ""
+			for _, c in ipairs(g.crafters) do
+				local pd = Shared().profs[c.who]
+				local rt = pd and pd[g.prof] and pd[g.prof].cds and pd[g.prof].cds[g.r]
+				if rt and rt - time() > 0 then cdTxt = " |cff888888(cd)|r" break end
+			end
+			RowFS(row, "r", 6):SetText(g.r .. cdTxt)
 			RowFS(row, "p", 320):SetText(g.prof)
 			RowFS(row, "c", 440):SetText(format("%d/%d", on, #g.crafters))
 			row:SetScript("OnClick", function()
