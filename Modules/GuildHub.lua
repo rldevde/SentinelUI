@@ -651,7 +651,10 @@ local function Checkbox(parent, label, checked, onClick)
 	cb.fs:SetPoint("LEFT", cb, "RIGHT", 4, 0)
 	cb.fs:SetText(label)
 	cb:SetScript("OnClick", function(c) onClick(c:GetChecked() and true or false) end)
-	cb:SetHitRectInsets(0, -min(44, cb.fs:GetStringWidth() + 6), 0, 0)
+	local hit = CreateFrame("Button", nil, parent)
+	hit:SetPoint("TOPLEFT", cb) hit:SetPoint("BOTTOMLEFT", cb)
+	hit:SetWidth(16 + (cb.fs:GetStringWidth() or 0) + 6)
+	hit:SetScript("OnClick", function() if not cb.IsEnabled or cb:IsEnabled() then cb:Click() end end)
 	return cb
 end
 
