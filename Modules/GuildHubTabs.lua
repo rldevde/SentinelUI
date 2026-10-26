@@ -89,7 +89,7 @@ local function SendWhisper(text, who)
 	if SendChatMessage then SendChatMessage(text, "WHISPER", nil, who) end
 end
 local function Whisper(name)
-	if ChatEdit_InsertLink then ChatEdit_InsertLink("|Hplayer:" .. name .. "|h[" .. name .. "]|h") end
+	if ChatFrame_OpenChat then ChatFrame_OpenChat("/w " .. name .. " ") end
 end
 local function Invite(name)
 	if C_PartyInfo and C_PartyInfo.InviteUnit then C_PartyInfo.InviteUnit(name) elseif InviteUnit then InviteUnit(name) end
@@ -1125,13 +1125,15 @@ tabs.manager = function(self, page)
 		fs:SetText(label)
 		for ci, rank in ipairs(cols) do
 			local rk = rank
-			local cb = Checkbox(page, "", h.perms.ranks[rk] and h.perms.ranks[rk]:find(key, 1, true) ~= nil, function(v)
+			local cb = Checkbox(page, "", (function()
+				for tok in gmatch(h.perms.ranks[rk] or "", "([^;]+)") do if tok == key then return true end end
+				return false
+			end)(), function(v)
 				if not gm then return end
-				h.perms.ranks[rk] = h.perms.ranks[rk] or ""
-				local cur = h.perms.ranks[rk]
-				if v and not cur:find(key, 1, true) then cur = cur .. key
-				elseif not v then cur = cur:gsub(key, "") end
-				h.perms.ranks[rk] = cur
+				local toks = {}
+				for tok in gmatch(h.perms.ranks[rk] or "", "([^;]+)") do if tok ~= "" and tok ~= key then toks[#toks + 1] = tok end end
+				if v then toks[#toks + 1] = key end
+				h.perms.ranks[rk] = ";" .. table.concat(toks, ";") .. ";"
 				Bump() Send("P|" .. Ser(h.perms))
 			end)
 			cb:SetPoint("TOPLEFT", x0 + (ci - 1) * 60 + 18, y)
@@ -1160,6 +1162,7 @@ tabs.manager = function(self, page)
 		if not gm then return end
 		local n, r = strtrim(ge:GetText() or ""), strtrim(gb:GetText() or "")
 		if n == "" then return end
+		if r ~= "" and r:sub(1,1) ~= ";" then r = ";" .. r:gsub(",", ";") .. ";" end
 		h.perms.grants[n] = r
 		Bump() Send("P|" .. Ser(h.perms)) GH:RenderTab("manager")
 	end)

@@ -153,7 +153,10 @@ end
 local function SendWhisper(text, who)
 	if SendChatMessage then SendChatMessage(text, "WHISPER", nil, who) end
 end
-local function Whisper(name) SetItemRef("player:" .. name, "|Hplayer:" .. name .. "|h[" .. name .. "]|h", "LeftButton") end
+local function Whisper(name)
+	if ChatFrame_OpenChat then ChatFrame_OpenChat("/w " .. name .. " ")
+	elseif SendChatMessage then SendChatMessage("", "WHISPER", nil, name) end
+end
 local function Invite(name) if C_PartyInfo and C_PartyInfo.InviteUnit then C_PartyInfo.InviteUnit(name) elseif InviteUnit then InviteUnit(name) end end
 
 local function MemberMenu(name)

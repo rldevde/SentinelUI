@@ -183,10 +183,10 @@ local function HasRight(name, right) -- roles,teams,bounty,mbounty,excom,leader
 	local h = Shared()
 	if not h or not name then return false end
 	if IsGM(name) then return true end
-	local bits = h.perms.grants[name]
+	local bits = h.perms.grants[name] or ""
 	local e = Roster()[name]
-	if e and h.perms.ranks[e.rank] then bits = (bits or "") .. h.perms.ranks[e.rank] end
-	return bits and bits:find(right, 1, true) ~= nil or false
+	if e and h.perms.ranks[e.rank] then bits = bits .. h.perms.ranks[e.rank] end
+	return bits:find(";" .. right .. ";", 1, true) ~= nil
 end
 local function CanI(right) return HasRight(myName, right) end
 
@@ -818,7 +818,15 @@ function GH:RenderTab(key)
 	page:SetAllPoints()
 	f.page = page
 	local fn = self.tabs and self.tabs[key]
-	if fn then S:SafeCall("GuildHub:" .. key, fn, self, page) end
+	if fn then
+		if not Shared() then
+			local fs = S:FontString(page, 12, nil, S.media.font, nil, "LEFT")
+			fs:SetPoint("TOPLEFT", 8, -8)
+			fs:SetText("|cff888888" .. L["You are not in a guild."] .. "|r")
+		else
+			S:SafeCall("GuildHub:" .. key, fn, self, page)
+		end
+	end
 end
 
 function GH:Toggle()
