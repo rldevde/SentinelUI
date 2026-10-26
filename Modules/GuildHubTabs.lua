@@ -1328,6 +1328,12 @@ function GH:UpdateCTA()
 			end,
 		})
 	end
+	-- hand it to ButtonBars explicitly (auto-scan skips SentinelUI-named buttons
+	-- unless collectSUI is on)
+	local bb = S.GetModule and S:GetModule("ButtonBars")
+	if bb and bb.GrabButton and self.cta:GetParent() == Minimap then
+		bb:GrabButton(self.cta, "SentinelUIMinimapButton_cta")
+	end
 	self.cta:Show()
 end
 
@@ -1449,6 +1455,10 @@ function GH:UpdateMinimap()
 				GameTooltip:AddLine(L["Left-click: window · Right-click: Guild Manager"], 0.7, 0.7, 0.7)
 			end,
 		})
+	end
+	local bb = S.GetModule and S:GetModule("ButtonBars")
+	if bb and bb.GrabButton and self.minimapBtn:GetParent() == Minimap then
+		bb:GrabButton(self.minimapBtn, "SentinelUIMinimapButton_guildhub")
 	end
 	self.minimapBtn:Show()
 end
