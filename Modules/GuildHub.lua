@@ -867,7 +867,10 @@ function GH:Toggle()
 	local f = BuildWindow()
 	if f:IsShown() then f:Hide() return end
 	local p = Priv()
-	if p and p.settings.winW then f:SetSize(max(WIN_MIN_W, p.settings.winW), max(WIN_MIN_H, p.settings.winH)) end
+	if p then
+		local w, h2 = tonumber(p.settings.winW), tonumber(p.settings.winH)
+		if w and h2 then f:SetSize(max(WIN_MIN_W, w), max(WIN_MIN_H, h2)) end
+	end
 	f:Show()
 	self:SelectTab(self.tab or "roster")
 end
