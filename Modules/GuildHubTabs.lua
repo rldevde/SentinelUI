@@ -1255,7 +1255,7 @@ function GH:UpdateCTA()
 		-- bottom icon bar automatically, with the horn texture as its icon
 		self.cta = S:CreateMinimapButton({
 			name = "cta",
-			icon = "Interface\Icons\INV_Misc_Horn_04",
+			icon = "Interface\\Icons\\INV_Misc_Horn_04",
 			angle = 280,
 			onLeft = function() GH:CallToArms() end,
 			tooltip = function()
