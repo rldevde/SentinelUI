@@ -428,6 +428,8 @@ function UF:UpdatePower(f)
 		local cost
 		local name, _, _, _, _, _, _, spellId = UnitCastingInfo(unit)
 		if not name then name, _, _, _, _, _, _, spellId = UnitChannelInfo(unit) end
+			-- the 8th return is notInterruptible (boolean) on clients that have it
+			if type(spellId) ~= "number" then spellId = nil end
 		if name then
 			local cts
 			if C_Spell and C_Spell.GetSpellPowerCost then cts = C_Spell.GetSpellPowerCost(spellId or name) end
