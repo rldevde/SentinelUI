@@ -719,7 +719,8 @@ tabs.layers = function(self, page)
 	hd:SetPoint("TOPLEFT", 4, -4)
 	local fs = S:FontString(page, 12, nil, S.media.font, nil, "LEFT")
 	fs:SetPoint("TOPLEFT", 8, -24)
-	fs:SetText(format("%s · %s %s", myZone or "?", L["Layer"], tostring(myLayer or "?")))
+	local layerTxt = myLayer and format("%s %s", L["Layer"], tostring(myLayer)) or "|cff888888" .. L["not detected yet"] .. "|r"
+	fs:SetText(format("%s · %s", myZone or "?", layerTxt))
 	if wb and wb.LayerNum and myLayer then
 		GH:ReportLayer()
 	end
