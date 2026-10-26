@@ -50,6 +50,7 @@ function TT:Refresh()
 end
 
 function TT:Layout()
+	if not self.bar then return end
 	local db = self.db
 	local size, spacing = db.size or 26, db.spacing or 3
 	for i, button in ipairs(self.bar.buttons) do

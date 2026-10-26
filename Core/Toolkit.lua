@@ -649,8 +649,7 @@ function S:SkinCheckBox(cb)
 	if cb.SetDisabledCheckedTexture then
 		cb:SetDisabledCheckedTexture(BLANK)
 		local d = cb:GetDisabledCheckedTexture()
-		d:SetVertexColor(0.4, 0.4, 0.4)
-		self:SetInside(d, bd, 3, 3)
+		if d then d:SetVertexColor(0.4, 0.4, 0.4) self:SetInside(d, bd, 3, 3) end
 	end
 	self:AddHover(cb)
 end

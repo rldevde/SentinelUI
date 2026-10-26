@@ -1241,8 +1241,8 @@ function UF:CastStart(f, channel)
 	cb.timerObject = nil
 	cb.Spark:SetShown(f.db.castbar.spark ~= false)
 	self:UpdateTicks(f, channel and name or nil)
-	cb.startTime = startMS / 1000
-	cb.endTime = endMS / 1000
+	cb.startTime = (startMS or 0) / 1000
+	cb.endTime = (endMS or 0) / 1000
 	cb.duration = cb.endTime - cb.startTime
 	cb:SetMinMaxValues(0, cb.duration)
 	cb.casting, cb.channeling = not channel, channel

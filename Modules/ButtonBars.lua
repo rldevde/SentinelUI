@@ -96,7 +96,7 @@ function BB:Ignored(name)
 		if name:match(pat) then return true end
 	end
 	for pat in self.db.ignorePatterns:gmatch("[^,]+") do
-		pat = pat:trim()
+		pat = strtrim(pat)
 		if pat ~= "" and name:match(pat) then return true end
 	end
 	local cfg = self.db.btn[name]
@@ -519,7 +519,7 @@ end
 
 function BB:CustomGrab()
 	for name in self.db.customGrab:gmatch("[^,]+") do
-		name = name:trim()
+		name = strtrim(name)
 		if name ~= "" then
 			local f = ResolvePath(name)
 			if f then self:GrabButton(f, name) end

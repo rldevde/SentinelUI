@@ -36,6 +36,7 @@ local function FindBanish(unit)
 end
 
 function BT:Refresh()
+	if not frame then Ensure() end
 	local icon, exp = FindBanish("target")
 	if not icon then icon, exp = FindBanish("focus") end
 	if icon then
