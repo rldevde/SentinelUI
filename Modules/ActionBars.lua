@@ -186,7 +186,7 @@ function AB:UpdateUsable(btn)
 		btn.icon:SetVertexColor(1, 1, 1)
 		return
 	end
-	btn.outOfRange = (inRange == false)
+	btn.outOfRange = (inRange == false or inRange == 0) -- legacy clients return 0/1
 	if db.useRangeColor and btn.outOfRange then
 		local c = db.rangeColor
 		btn.icon:SetVertexColor(c and c.r or 0.9, c and c.g or 0.2, c and c.b or 0.2)
