@@ -42,6 +42,13 @@ local function Btn(parent, w, h, label)
 	return b
 end
 
+local function SelBtn(b, on)
+	if on then
+		b.fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b)
+		if b.suiBackdrop then b.suiBackdrop:SetBackdropBorderColor(S.accent.r, S.accent.g, S.accent.b, 0.9) end
+	end
+end
+
 local function Checkbox(parent, label, checked, onClick)
 	local cb = CreateFrame("CheckButton", nil, parent)
 	cb:SetSize(16, 16)
@@ -221,7 +228,7 @@ tabs.roster = function(self, page)
 			Send("R|" .. r)
 			GH:RenderTab("roster")
 		end)
-		if h.roles[MN()] == r then b.fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b) end
+		SelBtn(b, h.roles[MN()] == r)
 		x = x + 66
 	end
 
@@ -231,7 +238,7 @@ tabs.roster = function(self, page)
 		local b = Btn(page, w or 56, 16, label)
 		b:SetPoint("TOPLEFT", x, -28)
 		b:SetScript("OnClick", function() st.roleFilter = val GH:RenderTab("roster") end)
-		if st.roleFilter == val then b.fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b) end
+		SelBtn(b, st.roleFilter == val)
 		x = x + (w or 56) + 4
 	end
 	FBtn(L["All"], nil, "all")
@@ -372,7 +379,7 @@ tabs.chars = function(self, page)
 			local role = rr
 			local rb = Btn(r, 26, 16, role)
 			rb:SetPoint("RIGHT", rx, 0)
-			if Shared().roles[ch.name] == role then rb.fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b) end
+			SelBtn(rb, Shared().roles[ch.name] == role)
 			rb:SetScript("OnClick", function()
 				Shared().roles[ch.name] = role Bump()
 				Send("SR|" .. ch.name .. "|" .. role)
@@ -467,7 +474,7 @@ tabs.profs = function(self, page)
 		local k = key
 		local tb = Btn(page, 90, 18, views[k])
 		tb:SetPoint("TOPLEFT", x, -2)
-		if st.view == k then tb.fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b) end
+		SelBtn(tb, st.view == k)
 		tb:SetScript("OnClick", function() st.view = k GH:RenderTab("profs") end)
 		x = x + 94
 	end

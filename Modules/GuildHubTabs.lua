@@ -34,6 +34,13 @@ local function Btn(parent, w, h, label)
 	return b
 end
 
+local function SelBtn(b, on)
+	if on then
+		b.fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b)
+		if b.suiBackdrop then b.suiBackdrop:SetBackdropBorderColor(S.accent.r, S.accent.g, S.accent.b, 0.9) end
+	end
+end
+
 local function Checkbox(parent, label, checked, onClick)
 	local cb = CreateFrame("CheckButton", nil, parent)
 	cb:SetSize(16, 16)
@@ -392,7 +399,7 @@ tabs.signups = function(self, page)
 	local t2 = Btn(page, 90, 18, L["Past raids"])
 	t2:SetPoint("TOPLEFT", 98, -2)
 	t2:SetScript("OnClick", function() st.past = true GH:RenderTab("signups") end)
-	;(st.past and t2 or t1).fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b)
+	SelBtn(st.past and t2 or t1, true)
 	if CanI("leader") then
 		local nb = Btn(page, 100, 18, L["New raid…"])
 		nb:SetPoint("TOPRIGHT", -4, -2)
@@ -604,7 +611,7 @@ tabs.att = function(self, page)
 		local b = Btn(page, 84, 16, (r.title or "?"):sub(1, 12))
 		b:SetPoint("TOPLEFT", x, -4)
 		b:SetScript("OnClick", function() st.raid = r.id GH:RenderTab("att") end)
-		if st.raid == r.id then b.fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b) end
+		SelBtn(b, st.raid == r.id)
 		x = x + 88
 	end
 	local raid = st.raid and h.raids[st.raid]
@@ -896,7 +903,7 @@ tabs.builder = function(self, page)
 				end, timeout = 0, whileDead = true, hideOnEscape = true }
 			StaticPopup_Show("SUGH_TEAMNAME")
 		end)
-		if st.sel == i then b.fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b) end
+		SelBtn(b, st.sel == i)
 		x = x + 80
 	end
 	local hint = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
