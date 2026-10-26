@@ -21,6 +21,7 @@ Core\Logger.lua
 Core\Compat.lua
 Locales\enUS.lua
 Locales\deDE.lua
+Locales\deDE_GuildHub.lua
 Core\Defaults.lua
 Core\Media.lua
 Core\Toolkit.lua
