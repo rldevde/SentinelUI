@@ -35,9 +35,17 @@ local function Btn(parent, w, h, label)
 end
 
 local function SelBtn(b, on)
-	if on then
-		b.fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b)
-		if b.suiBackdrop then b.suiBackdrop:SetBackdropBorderColor(S.accent.r, S.accent.g, S.accent.b, 0.9) end
+	if not on then return end
+	b.fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b)
+	if b.suiBackdrop then b.suiBackdrop:SetBackdropBorderColor(S.accent.r, S.accent.g, S.accent.b, 0.9) end
+	if not b.suiSelHook then
+		b.suiSelHook = true
+		-- AddHover's OnLeave resets the border to default; re-apply while selected
+		b:HookScript("OnLeave", function()
+			if b.suiBackdrop and b.fs:GetTextColor() == S.accent.r then
+				b.suiBackdrop:SetBackdropBorderColor(S.accent.r, S.accent.g, S.accent.b, 0.9)
+			end
+		end)
 	end
 end
 
