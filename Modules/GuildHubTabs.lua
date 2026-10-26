@@ -1606,8 +1606,7 @@ function GH:ExportTeams()
 			end
 		end
 	end
-	local txt = table.concat(lines, "
-")
+	local txt = table.concat(lines, "\n")
 	local f = GH.exportFrame
 	if not f then
 		f = CreateFrame("Frame", "SentinelUIGuildExport", UIParent, S.BackdropTemplate)
