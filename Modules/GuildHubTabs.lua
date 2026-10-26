@@ -1251,27 +1251,18 @@ function GH:UpdateCTA()
 		return
 	end
 	if not self.cta then
-		local b = CreateFrame("Button", "SentinelUICTA", UIParent, S.BackdropTemplate)
-		b:SetSize(46, 46)
-		b:SetPoint("CENTER", UIParent, "CENTER", 0, -180)
-		b:SetMovable(true) b:EnableMouse(true) b:RegisterForDrag("LeftButton")
-		b:SetClampedToScreen(true)
-		S:SetTemplate(b, "Default")
-		b:SetScript("OnDragStart", b.StartMoving)
-		b:SetScript("OnDragStop", b.StopMovingOrSizing)
-		local t = b:CreateTexture(nil, "ARTWORK")
-		t:SetAllPoints()
-		t:SetTexture("Interface\\Icons\\INV_Misc_Horn_04")
-		t:SetTexCoord(0.07, 0.93, 0.07, 0.93)
-		b:SetScript("OnEnter", function()
-			GameTooltip:SetOwner(b, "ANCHOR_TOP")
-			GameTooltip:SetText(L["Call to Arms"])
-			GameTooltip:AddLine(L["Click: call the guild to your position · Drag: move"], 1, 1, 1)
-			GameTooltip:Show()
-		end)
-		b:SetScript("OnLeave", function() GameTooltip:Hide() end)
-		b:SetScript("OnClick", function() GH:CallToArms() end)
-		self.cta = b
+		-- registered as a minimap-family button: ButtonBars collects it into the
+		-- bottom icon bar automatically, with the horn texture as its icon
+		self.cta = S:CreateMinimapButton({
+			name = "cta",
+			icon = "Interface\Icons\INV_Misc_Horn_04",
+			angle = 280,
+			onLeft = function() GH:CallToArms() end,
+			tooltip = function()
+				GameTooltip:AddLine(L["Call to Arms"])
+				GameTooltip:AddLine(L["Click: call the guild to your position · Drag: move"], 1, 1, 1)
+			end,
+		})
 	end
 	self.cta:Show()
 end
