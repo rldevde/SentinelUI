@@ -18,6 +18,7 @@ local IsSecret = S.IsSecret
 local Shared, Priv, Roster, Send, Bump, Notify = GH._Shared, GH._Priv, GH._Roster, GH._Send, GH._Bump, GH._Notify
 local IsMember, OnlineOf, IsGM, HasRight, CanI = GH._IsMember, GH._OnlineOf, GH._IsGM, GH._HasRight, GH._CanI
 local AltStatus, MainOf, AltsOf, RoleIcon, RoleName = GH._AltStatus, GH._MainOf, GH._AltsOf, GH._RoleIcon, GH._RoleName
+local ROLE_ORDER = { "T", "H", "D", "N" }
 local myName
 local function MN()
 	if not myName then myName = GH._GetMyName() or UnitName("player") or "?" end
