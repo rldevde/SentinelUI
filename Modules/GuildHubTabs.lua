@@ -518,7 +518,8 @@ function GH:SignupDialog(raid, status)
 		OnAccept = function(self2)
 			local txt = self2.editBox and self2.editBox:GetText() or ""
 			local char, note = txt:match("^(%S*)%s*(.-)%s*$")
-			char = (char ~= "" and Priv().myChars[char]) and char or myName
+			local pv = Priv()
+			char = (char ~= "" and pv and pv.myChars[char]) and char or myName
 			h.signups[raid.id] = h.signups[raid.id] or {}
 			h.signups[raid.id][MainOf(myName)] = { status = status, role = h.roles[myName] or "D",
 				char = char, note = note ~= "" and note or nil, t = time() }
@@ -1206,6 +1207,7 @@ end
 
 tabs.settings = function(self, page)
 	local p = Priv()
+	if not p then return end
 	local s = p.settings
 	local y = -6
 	local function Tog(key, label, invert)
