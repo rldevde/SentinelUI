@@ -173,7 +173,8 @@ local function MemberMenu(name)
 				end }
 		end
 	end
-	EasyMenu(menu, GH.menuFrame or CreateFrame("Frame", "SUGHMenu", UIParent, "UIDropDownMenuTemplate"), "cursor", 0, 0, "MENU")
+	GH.menuFrame = GH.menuFrame or CreateFrame("Frame", "SUGHMenu", UIParent, "UIDropDownMenuTemplate")
+	EasyMenu(menu, GH.menuFrame, "cursor", 0, 0, "MENU")
 end
 
 -- extra appliers installed here (leader-set role for others)

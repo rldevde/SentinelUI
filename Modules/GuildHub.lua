@@ -369,7 +369,7 @@ end
 
 GH.bgf = {}                                  -- sender -> bg finder state
 appliers.F2 = function(rest, sender)         -- "F2|<heal?>|<bg1,bg2>"
-	local heal, list = rest:match("^(%a)|(.*)$")
+	local heal, list = rest:match("^(%d)|(.*)$")
 	local bgs = {}
 	for b in gmatch(list or "", "[^,]+") do bgs[b] = true end
 	GH.bgf[sender] = { heal = heal == "1", bgs = bgs, t = GetTime() }
