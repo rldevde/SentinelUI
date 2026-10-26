@@ -701,83 +701,114 @@ local function BuildWindow()
 	f:SetFrameStrata("DIALOG")
 	f:SetClampedToScreen(true)
 	f:SetMovable(true) f:EnableMouse(true) f:RegisterForDrag("LeftButton")
-	f:EnableMouseWheel(false)
 	if f.SetResizeBounds then f:SetResizeBounds(WIN_MIN_W, WIN_MIN_H, 1600, 1200) end
 	f:SetScript("OnDragStart", f.StartMoving)
 	f:SetScript("OnDragStop", f.StopMovingOrSizing)
 	S:SkinFrame(f, "Default")
 	tinsert(UISpecialFrames, "SentinelUIGuildHub")
 
-	-- title
-	f.title = S:FontString(f, 13, "OUTLINE", S.media.font, nil, "LEFT")
-	f.title:SetPoint("TOPLEFT", 12, -10)
-	f.title:SetText("|cff" .. (S.accentHex or "ffcc00") .. "SentinelGuild|r")
-	f.sub = S:FontString(f, 11, nil, S.media.font, nil, "LEFT")
-	f.sub:SetPoint("LEFT", f.title, "RIGHT", 8, 0)
-	f.sub:SetTextColor(0.6, 0.6, 0.6)
-	local g = GetGuildInfo and GetGuildInfo("player")
-	f.sub:SetText(g or "")
+	-- header band: title + guild, gold rule underneath
+	f.head = CreateFrame("Frame", nil, f)
+	f.head:SetPoint("TOPLEFT", 0, 0)
+	f.head:SetPoint("TOPRIGHT", 0, 0)
+	f.head:SetHeight(44)
+	f.head.bg = f.head:CreateTexture(nil, "BACKGROUND")
+	f.head.bg:SetAllPoints()
+	f.head.bg:SetColorTexture(0.05, 0.05, 0.07, 0.9)
+	f.rule = f.head:CreateTexture(nil, "ARTWORK")
+	f.rule:SetPoint("BOTTOMLEFT")
+	f.rule:SetPoint("BOTTOMRIGHT")
+	f.rule:SetHeight(1)
+	f.rule:SetColorTexture(S.accent.r, S.accent.g, S.accent.b, 0.9)
 
-	local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
-	close:SetPoint("TOPRIGHT", -6, -6)
-	S:SkinCloseButton(close)
+	f.title = S:FontString(f.head, 14, "OUTLINE", S.media.font, nil, "LEFT")
+	f.title:SetPoint("LEFT", 14, 0)
+	f.title:SetText("|cff" .. (S.accentHex or "ffcc00") .. "SENTINEL|r GUILD")
+	f.sub = S:FontString(f.head, 11, nil, S.media.font, nil, "LEFT")
+	f.sub:SetPoint("LEFT", f.title, "RIGHT", 10, -1)
+	f.sub:SetTextColor(0.55, 0.55, 0.6)
+	f.sub:SetText(GetGuildInfo and GetGuildInfo("player") or "")
+
+	local close = CreateFrame("Button", nil, f.head)
+	close:SetSize(30, 30)
+	close:SetPoint("RIGHT", -8, 0)
+	close.fs = S:FontString(close, 13, "OUTLINE", S.media.font, nil, "CENTER")
+	close.fs:SetPoint("CENTER")
+	close.fs:SetText("x")
+	close.fs:SetTextColor(0.6, 0.6, 0.6)
+	close:SetScript("OnClick", function() f:Hide() end)
+	close:SetScript("OnEnter", function() close.fs:SetTextColor(1, 0.4, 0.4) end)
+	close:SetScript("OnLeave", function() close.fs:SetTextColor(0.6, 0.6, 0.6) end)
 
 	-- resize grip
 	f.grip = CreateFrame("Button", nil, f)
 	f.grip:SetSize(16, 16)
-	f.grip:SetPoint("BOTTOMRIGHT", -2, 2)
+	f.grip:SetPoint("BOTTOMRIGHT", -3, 3)
 	f.grip.tex = f.grip:CreateTexture(nil, "OVERLAY")
 	f.grip.tex:SetAllPoints()
 	f.grip.tex:SetTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
 	f.grip:SetScript("OnMouseDown", function() f:StartSizing("BOTTOMRIGHT") end)
 	f.grip:SetScript("OnMouseUp", function() f:StopMovingOrSizing() GH:SaveSize() end)
 
-	-- sidebar
-	f.side = CreateFrame("Frame", nil, f)
-	f.side:SetPoint("TOPLEFT", 10, -34)
-	f.side:SetPoint("BOTTOMLEFT", 10, 10)
-	f.side:SetWidth(SIDEBAR_W)
+	-- sidebar: own dark panel
+	f.side = CreateFrame("Frame", nil, f, S.BackdropTemplate)
+	f.side:SetPoint("TOPLEFT", 8, -52)
+	f.side:SetPoint("BOTTOMLEFT", 8, 8)
+	f.side:SetWidth(SIDEBAR_W + 12)
+	S:SetTemplate(f.side, "Default")
 	f.sideRows = {}
-	local y = 0
+	local y = 10
 	for _, grp in ipairs(NAV) do
 		if grp.group ~= "" then
-			local gh = S:FontString(f.side, 10, nil, S.media.font, nil, "LEFT")
-			gh:SetPoint("TOPLEFT", 4, -y)
+			local gh = S:FontString(f.side, 9, "OUTLINE", S.media.font, nil, "LEFT")
+			gh:SetPoint("TOPLEFT", 12, -y)
 			gh:SetText(upper(grp.group))
-			gh:SetTextColor(0.45, 0.45, 0.45)
-			y = y + 18
+			gh:SetTextColor(0.5, 0.45, 0.25)
+			y = y + 17
 		end
 		for _, item in ipairs(grp.items) do
 			local key, label = item[1], item[2]
 			local b = CreateFrame("Button", nil, f.side)
 			b:SetPoint("TOPLEFT", 8, -y)
-			b:SetSize(SIDEBAR_W - 12, 20)
+			b:SetSize(SIDEBAR_W - 4, 19)
 			b.bg = b:CreateTexture(nil, "BACKGROUND")
 			b.bg:SetAllPoints()
 			b.bg:SetColorTexture(1, 1, 1, 0)
 			b.bar = b:CreateTexture(nil, "OVERLAY")
-			b.bar:SetPoint("TOPLEFT", -8, 0)
-			b.bar:SetSize(3, 20)
+			b.bar:SetPoint("TOPLEFT", -4, 0)
+			b.bar:SetSize(2, 19)
 			b.bar:SetColorTexture(S.accent.r, S.accent.g, S.accent.b, 0)
 			b.fs = S:FontString(b, 11, nil, S.media.font, nil, "LEFT")
-			b.fs:SetPoint("LEFT", 6, 0)
+			b.fs:SetPoint("LEFT", 8, 0)
 			b.fs:SetText(label)
+			b.fs:SetTextColor(0.72, 0.72, 0.75)
 			b.key = key
 			b:SetScript("OnClick", function() GH:SelectTab(key) end)
-			b:SetScript("OnEnter", function() b.bg:SetColorTexture(1, 1, 1, 0.05) end)
+			b:SetScript("OnEnter", function()
+				if GH.tab ~= key then b.bg:SetColorTexture(1, 1, 1, 0.06) end
+			end)
 			b:SetScript("OnLeave", function()
 				b.bg:SetColorTexture(1, 1, 1, GH.tab == key and 0.07 or 0)
 			end)
 			f.sideRows[key] = b
 			y = y + 20
 		end
-		y = y + 10
+		y = y + 8
 	end
 
-	-- content
-	f.content = CreateFrame("Frame", nil, f)
-	f.content:SetPoint("TOPLEFT", f.side, "TOPRIGHT", 10, 0)
-	f.content:SetPoint("BOTTOMRIGHT", -10, 10)
+	-- version tag bottom of sidebar
+	f.ver = S:FontString(f.side, 9, nil, S.media.font, nil, "LEFT")
+	f.ver:SetPoint("BOTTOMLEFT", 12, 8)
+	f.ver:SetText("|cff555544v" .. VERSION .. "|r")
+
+	-- content: inset panel
+	f.content = CreateFrame("Frame", nil, f, S.BackdropTemplate)
+	f.content:SetPoint("TOPLEFT", f.side, "TOPRIGHT", 6, 0)
+	f.content:SetPoint("BOTTOMRIGHT", -8, 8)
+	S:SetTemplate(f.content, "Default")
+	f.content.inner = CreateFrame("Frame", nil, f.content)
+	f.content.inner:SetPoint("TOPLEFT", 10, -8)
+	f.content.inner:SetPoint("BOTTOMRIGHT", -10, 8)
 
 	f:Hide()
 	GH.frame = f
@@ -808,7 +839,7 @@ function GH:SelectTab(key)
 		local active = k == key
 		b.bar:SetColorTexture(S.accent.r, S.accent.g, S.accent.b, active and 1 or 0)
 		b.bg:SetColorTexture(1, 1, 1, active and 0.07 or 0)
-		b.fs:SetTextColor(active and 1 or 0.75, active and 1 or 0.75, active and 1 or 0.75)
+		b.fs:SetTextColor(active and 1 or 0.72, active and 1 or 0.72, active and 0.95 or 0.75)
 	end
 	self:RenderTab(key)
 end
@@ -817,7 +848,7 @@ function GH:RenderTab(key)
 	local f = self.frame
 	if not f then return end
 	if f.page then f.page:Hide() f.page = nil end
-	local page = CreateFrame("Frame", nil, f.content)
+	local page = CreateFrame("Frame", nil, f.content.inner)
 	page:SetAllPoints()
 	f.page = page
 	local fn = self.tabs and self.tabs[key]
