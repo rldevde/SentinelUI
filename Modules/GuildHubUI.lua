@@ -704,7 +704,12 @@ tabs.layers = function(self, page)
 	local wb = S.GetModule and S:GetModule("WorldBuffs")
 	local myLayer, myZone
 	if wb then
-		if wb.LayerNum then myLayer = wb:LayerNum() end
+		local entry, num = wb.LayerContext and wb:LayerContext()
+		myLayer = num
+		if not myLayer and wb.CurrentLayerID then
+			local id = wb:CurrentLayerID()
+			if id then myLayer = wb:LayerNum(id) end
+		end
 	end
 	myZone = GetRealZoneText and GetRealZoneText() or GetZoneText and GetZoneText() or "?"
 	local hd = Header(page, L["Your layer"])
@@ -745,8 +750,12 @@ end
 
 function GH:ReportLayer()
 	local wb = S.GetModule and S:GetModule("WorldBuffs")
-	if not (wb and wb.LayerNum) then return end
-	local l = wb:LayerNum()
+	if not wb then return end
+	local entry, l = wb.LayerContext and wb:LayerContext()
+	if not l and wb.CurrentLayerID then
+		local id = wb:CurrentLayerID()
+		if id then l = wb:LayerNum(id) end
+	end
 	local z = GetRealZoneText and GetRealZoneText() or ""
 	if not l then return end
 	local h = Shared()
