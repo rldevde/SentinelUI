@@ -10,6 +10,8 @@ standalone RLBetterItem release.
 ## [1.4.7] unreleased
 
 ### Added
+- **GuildHub** (`/sgh` or `/sguild`, minimap button): guild suite in one window — grouped sidebar (Guild / Raids / PvP / Rules / Admin / Settings) with Guild Roster (roles Tank/Healer/DPS, filters, sort, mains/alts via mutual linking, right-click whisper/invite/set-role), My Characters (profs + attunements), Professions directory + craft requests, Guild Bank remote view (shared snapshots), Layers (who's on which layer + hop), Group Finder and BG Finder (live, nothing stored), Raid Signups (create/sign/lineup/alerts), Attendance (auto + leader corrections), Loot History (recorded by the master looter), Raid Groups + Raid Builder, Bounties (post/claim/approve), Excommunication + private blacklist (hides chat and declines invites), Guild Manager (per-rank rights, GM only), Settings, a draggable Call to Arms button, and raid alerts — all synced between guildmates' addons over the guild channel, validated against the roster
+
 
 - **AuctionHouse**: staged category/page scan (no freeze), external realm price feed (`SentinelAHData`, merged on login and AH open)
 - **WildBuffs**: out-of-range / dead / offline targets are skipped and re-buffed once back in range; live scan in combat; pulsing `!` when the own party's buff has <10s left (party only, never raid)

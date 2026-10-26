@@ -819,6 +819,7 @@ S.privateDefaults = {
 		instancetracker = { enable = true },
 		worldbuffs = { enable = true },
 		guildchronicle = { enable = true },
+		guildhub = { enable = true },
 		decurse = { enable = true },
 		rep = { enable = true },
 		itemsync = { enable = true },

@@ -83,6 +83,9 @@ Modules\WorldBuffs.lua
 Modules\WorldBuffs\UI.lua
 Modules\GuildChronicle.lua
 Modules\GuildChronicle\UI.lua
+Modules\GuildHub.lua
+Modules\GuildHubUI.lua
+Modules\GuildHubTabs.lua
 Modules\Decurse.lua
 Modules\Reputation.lua
 Modules\ItemSync.lua
