@@ -234,6 +234,12 @@ end
 
 local function Bump() local h = Shared() if h then h.ver = (h.ver or 0) + 1 end end
 local function Notify(text) GH:Print("|cff" .. (S.accentHex or "ffcc00") .. "[Guild]|r " .. text) end
+-- broadcast-driven notices (other people's raids/bounties/requests) honour the "Chat notices" setting
+local function Notice(text)
+	local p = Priv()
+	if p and p.settings.chatNotices == false then return end
+	Notify(text)
+end
 
 local appliers = {}
 local inbox = {}
@@ -381,7 +387,7 @@ appliers.E = function(rest, sender)          -- raid event: "E|<ser>" (leader)
 	local r = Unser(rest)
 	if type(r) == "table" and r.id then
 		Shared().raids[r.id] = r Bump()
-		Notify(format(L["Raid updated: %s"], r.title or r.id))
+		Notice(format(L["Raid updated: %s"], r.title or r.id))
 		GH:MaybeRefresh("signups")
 	end
 end
@@ -392,7 +398,7 @@ appliers.ED = function(rest, sender)         -- delete raid
 	local id = strtrim(rest)
 	if h.raids[id] then
 		h.raids[id], h.signups[id] = nil, nil Bump()
-		Notify(format(L["Raid deleted: %s"], id))
+		Notice(format(L["Raid deleted: %s"], id))
 		GH:MaybeRefresh("signups")
 	end
 end
@@ -451,7 +457,7 @@ appliers.B = function(rest, sender)          -- bounty: "B|<ser>" (posters)
 	local b = Unser(rest)
 	if type(b) == "table" and b.id then
 		Shared().bounties[b.id] = b Bump()
-		Notify(format(L["New bounty on %s (%sg)"], b.target or "?", b.gold or 0))
+		Notice(format(L["New bounty on %s (%sg)"], b.target or "?", b.gold or 0))
 		GH:MaybeRefresh("bounties")
 	end
 end
@@ -462,7 +468,7 @@ appliers.BC = function(rest, sender)         -- claim: "BC|<id>"
 	local b = h.bounties[id]
 	if b and not b.claimer and sender ~= b.poster then
 		b.claimer, b.claimT = sender, time() Bump()
-		Notify(format(L["%s claimed the bounty on %s"], sender, b.target or "?"))
+		Notice(format(L["%s claimed the bounty on %s"], sender, b.target or "?"))
 		GH:MaybeRefresh("bounties")
 	end
 end
@@ -490,7 +496,7 @@ appliers.X = function(rest, sender)          -- excom: "X|<name>|<reason>"
 	name = strtrim(name or "")
 	if name == "" then return end
 	Shared().excom[name] = { reason = strtrim(reason or ""), by = sender, t = time() } Bump()
-	Notify(format(L["%s was excommunicated."], name))
+	Notice(format(L["%s was excommunicated."], name))
 	GH:MaybeRefresh("excom")
 end
 
@@ -522,7 +528,7 @@ appliers.CR = function(rest, sender)         -- craft request: "CR|<ser>"
 	if mine >= 5 then return end
 	c.char = sender
 	h.crafts[c.id] = c Bump()
-	Notify(format(L["Craft request: %s x%d from %s"], c.item or "?", c.qty or 1, sender))
+	Notice(format(L["Craft request: %s x%d from %s"], c.item or "?", c.qty or 1, sender))
 	GH:MaybeRefresh("profs")
 end
 
@@ -543,7 +549,7 @@ appliers.CCC = function(rest, sender)        -- crafter claims: "CCC|<id>"
 	local c = h.crafts and h.crafts[id]
 	if c and not c.claimer and sender ~= c.char then
 		c.claimer = sender Bump()
-		Notify(format(L["%s will craft %s for %s"], sender, c.item or "?", c.char or "?"))
+		Notice(format(L["%s will craft %s for %s"], sender, c.item or "?", c.char or "?"))
 		GH:MaybeRefresh("profs")
 	end
 end
@@ -630,87 +636,6 @@ local NAV = {
 
 local WIN_W, WIN_H, WIN_MIN_W, WIN_MIN_H = 900, 620, 780, 500
 local SIDEBAR_W = 148
-
-local function Btn(parent, w, h, label)
-	local b = CreateFrame("Button", nil, parent)
-	b:SetSize(w, h)
-	S:CreateBackdrop(b, "Default")
-	b.fs = S:FontString(b, 11, nil, S.media.font, nil, "CENTER")
-	b.fs:SetPoint("CENTER")
-	b.fs:SetText(label)
-	S:AddHover(b)
-	return b
-end
-
-local function SelBtn(b, on)
-	if not on then return end
-	b.fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b)
-	if b.suiBackdrop then b.suiBackdrop:SetBackdropBorderColor(S.accent.r, S.accent.g, S.accent.b, 0.9) end
-	if not b.suiSelHook then
-		b.suiSelHook = true
-		-- AddHover's OnLeave resets the border to default; re-apply while selected
-		b:HookScript("OnLeave", function()
-			if b.suiBackdrop and b.fs:GetTextColor() == S.accent.r then
-				b.suiBackdrop:SetBackdropBorderColor(S.accent.r, S.accent.g, S.accent.b, 0.9)
-			end
-		end)
-	end
-end
-
-local function Checkbox(parent, label, checked, onClick)
-	local cb = CreateFrame("CheckButton", nil, parent)
-	cb:SetSize(16, 16)
-	S:SkinCheckBox(cb)
-	cb:SetChecked(checked and true or false)
-	cb.fs = S:FontString(cb, 11, nil, S.media.font, nil, "LEFT")
-	cb.fs:SetPoint("LEFT", cb, "RIGHT", 4, 0)
-	cb.fs:SetText(label)
-	cb:SetScript("OnClick", function(c) onClick(c:GetChecked() and true or false) end)
-	local hit = CreateFrame("Button", nil, parent)
-	hit:SetPoint("TOPLEFT", cb) hit:SetPoint("BOTTOMLEFT", cb)
-	hit:SetWidth(16 + (cb.fs:GetStringWidth() or 0) + 6)
-	hit:SetScript("OnClick", function()
-		if cb.IsEnabled and not cb:IsEnabled() then return end
-		cb:SetChecked(not cb:GetChecked())
-		local oc = cb:GetScript("OnClick") if oc then oc(cb) end
-	end)
-	return cb
-end
-
-local function Edit(parent, w, h, placeholder)
-	local e = CreateFrame("EditBox", nil, parent)
-	e:SetSize(w, h)
-	e:SetAutoFocus(false)
-	e:SetFontObject("GameFontHighlight")
-	S:SkinEditBox(e, h)
-	if placeholder then
-		e.ph = S:FontString(e, 11, nil, S.media.font, nil, "LEFT")
-		e.ph:SetPoint("LEFT", 6, 0)
-		e.ph:SetText("|cff777777" .. placeholder .. "|r")
-		e.ph:Show()
-		e:SetScript("OnTextChanged", function(s) s.ph:SetShown(s:GetText() == "") end)
-	end
-	e:SetScript("OnEscapePressed", function(s) s:ClearFocus() end)
-	return e
-end
-
-local function Header(parent, text, y)
-	local fs = S:FontString(parent, 12, "OUTLINE", S.media.font, nil, "LEFT")
-	fs:SetPoint("TOPLEFT", 0, y or 0)
-	fs:SetText("|cff" .. (S.accentHex or "ffcc00") .. text .. "|r")
-	return fs
-end
-
-local function Row(parent, h, i)
-	local r = CreateFrame("Button", nil, parent)
-	r:SetHeight(h)
-	r:SetPoint("TOPLEFT", 0, -(i - 1) * h)
-	r:SetPoint("TOPRIGHT", 0, -(i - 1) * h)
-	r.bg = r:CreateTexture(nil, "BACKGROUND")
-	r.bg:SetAllPoints()
-	r.bg:SetColorTexture(1, 1, 1, (i % 2 == 1) and 0.03 or 0)
-	return r
-end
 
 local function BuildWindow()
 	if GH.frame then return GH.frame end
@@ -853,6 +778,7 @@ end
 
 function GH:SelectTab(key)
 	BuildWindow()
+	if self.W then self.W.refocus = nil end
 	self.tab = key
 	for k, b in pairs(self.frame.sideRows) do
 		local active = k == key
@@ -867,6 +793,7 @@ function GH:RenderTab(key)
 	local f = self.frame
 	if not f then return end
 	if f.page then f.page:Hide() f.page = nil end
+	if self.W then self.W.ReleaseAll() end
 	local page = CreateFrame("Frame", nil, f.content.inner)
 	page:SetAllPoints()
 	f.page = page
@@ -880,6 +807,7 @@ function GH:RenderTab(key)
 			S:SafeCall("GuildHub:" .. key, fn, self, page)
 		end
 	end
+	if self.W then self.W.refocus = nil end
 end
 
 function GH:Toggle()

@@ -20,142 +20,11 @@ local AltStatus, MainOf, AltsOf, RoleIcon, RoleName = GH._AltStatus, GH._MainOf,
 local Ser, Unser = GH._Ser, GH._Unser
 local myName
 
+local W = GH.W
+local Btn, SelBtn, Checkbox, Edit, Header, ClassColor, Ago = W.Btn, W.SelBtn, W.Checkbox, W.Edit, W.Header, W.ClassColor, W.Ago
+local ListRows, RowFS, SendWhisper, Whisper, Invite = W.ListRows, W.RowFS, W.SendWhisper, W.Whisper, W.Invite
 local ACC = S.accentHex or "ffcc00"
 local tabs = GH.tabs
-
-local function Btn(parent, w, h, label)
-	local b = CreateFrame("Button", nil, parent)
-	b:SetSize(w, h)
-	S:CreateBackdrop(b, "Default")
-	b.fs = S:FontString(b, 11, nil, S.media.font, nil, "CENTER")
-	b.fs:SetPoint("CENTER")
-	b.fs:SetText(label)
-	S:AddHover(b)
-	return b
-end
-
-local function SelBtn(b, on)
-	if not on then return end
-	b.fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b)
-	if b.suiBackdrop then b.suiBackdrop:SetBackdropBorderColor(S.accent.r, S.accent.g, S.accent.b, 0.9) end
-	if not b.suiSelHook then
-		b.suiSelHook = true
-		-- AddHover's OnLeave resets the border to default; re-apply while selected
-		b:HookScript("OnLeave", function()
-			if b.suiBackdrop and b.fs:GetTextColor() == S.accent.r then
-				b.suiBackdrop:SetBackdropBorderColor(S.accent.r, S.accent.g, S.accent.b, 0.9)
-			end
-		end)
-	end
-end
-
-local function Checkbox(parent, label, checked, onClick)
-	local cb = CreateFrame("CheckButton", nil, parent)
-	cb:SetSize(16, 16)
-	S:SkinCheckBox(cb)
-	cb:SetChecked(checked and true or false)
-	cb.fs = S:FontString(cb, 11, nil, S.media.font, nil, "LEFT")
-	cb.fs:SetPoint("LEFT", cb, "RIGHT", 4, 0)
-	cb.fs:SetText(label)
-	cb:SetScript("OnClick", function(c) onClick(c:GetChecked() and true or false) end)
-	local hit = CreateFrame("Button", nil, parent)
-	hit:SetPoint("TOPLEFT", cb) hit:SetPoint("BOTTOMLEFT", cb)
-	hit:SetWidth(16 + (cb.fs:GetStringWidth() or 0) + 6)
-	hit:SetScript("OnClick", function()
-		if cb.IsEnabled and not cb:IsEnabled() then return end
-		cb:SetChecked(not cb:GetChecked())
-		local oc = cb:GetScript("OnClick") if oc then oc(cb) end
-	end)
-	return cb
-end
-
-local function Edit(parent, w, h, placeholder)
-	local e = CreateFrame("EditBox", nil, parent)
-	e:SetSize(w, h)
-	e:SetAutoFocus(false)
-	e:SetFontObject("GameFontHighlight")
-	S:SkinEditBox(e, h)
-	if placeholder then
-		e.ph = S:FontString(e, 11, nil, S.media.font, nil, "LEFT")
-		e.ph:SetPoint("LEFT", 6, 0)
-		e.ph:SetText("|cff777777" .. placeholder .. "|r")
-		e:SetScript("OnTextChanged", function(s) s.ph:SetShown(s:GetText() == "") end)
-	end
-	e:SetScript("OnEscapePressed", function(s) s:ClearFocus() end)
-	return e
-end
-
-local function Header(parent, text)
-	local fs = S:FontString(parent, 12, "OUTLINE", S.media.font, nil, "LEFT")
-	fs:SetText("|cff" .. ACC .. upper(text) .. "|r")
-	return fs
-end
-
-local function ClassColor(name)
-	local e = Roster()[name]
-	local c = e and e.class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[e.class]
-	if c then return format("|cff%02x%02x%02x%s|r", c.r * 255, c.g * 255, c.b * 255, name) end
-	return name
-end
-
-local function Ago(t)
-	if not t then return "?" end
-	local d = time() - t
-	if d < 60 then return L["just now"] end
-	if d < 3600 then return format(L["%d min ago"], floor(d / 60)) end
-	if d < 86400 then return format(L["%d h ago"], floor(d / 3600)) end
-	return format(L["%d d ago"], floor(d / 86400))
-end
-
-local function SendWhisper(text, who)
-	if SendChatMessage then SendChatMessage(text, "WHISPER", nil, who) end
-end
-local function Whisper(name)
-	if ChatFrame_OpenChat then ChatFrame_OpenChat("/w " .. name .. " ") end
-end
-local function Invite(name)
-	if C_PartyInfo and C_PartyInfo.InviteUnit then C_PartyInfo.InviteUnit(name) elseif InviteUnit then InviteUnit(name) end
-end
-
-local function ListRows(page, topY, rowH, n, fill)
-	local rows = page._lrows or {}
-	page._lrows = rows
-	for _, r in ipairs(rows) do r:Hide() end
-	for i = 1, n do
-		local r = rows[i]
-		if not r then
-			r = CreateFrame("Button", nil, page)
-			r:SetHeight(rowH)
-			r.bg = r:CreateTexture(nil, "BACKGROUND")
-			r.bg:SetAllPoints()
-			r.fss = {}
-			rows[i] = r
-		end
-		r:ClearAllPoints()
-		r:SetPoint("TOPLEFT", 0, topY - (i - 1) * rowH)
-		r:SetPoint("TOPRIGHT", 0, topY - (i - 1) * rowH)
-		r.bg:SetColorTexture(1, 1, 1, (i % 2 == 1) and 0.03 or 0)
-		for _, fs in pairs(r.fss) do fs:Hide() end
-		for _, ch in ipairs({ r:GetChildren() }) do if ch ~= r.bg then ch:Hide() end end
-		fill(r, i)
-		r:Show()
-	end
-	return rows
-end
-
-local function RowFS(r, key, x, justify)
-	local fs = r.fss[key]
-	if not fs then
-		fs = S:FontString(r, 11, nil, S.media.font, nil, justify or "LEFT")
-		r.fss[key] = fs
-	end
-	fs:ClearAllPoints()
-	if justify == "RIGHT" then fs:SetPoint("RIGHT", r, "RIGHT", x, 0)
-	else fs:SetPoint("LEFT", x, 0) end
-	fs:SetJustifyH(justify or "LEFT")
-	fs:Show()
-	return fs
-end
 
 -------------------------------------------------------------------------------
 -- static lists
@@ -271,7 +140,7 @@ tabs.finder = function(self, page)
 		end
 		local sub = S:FontString(dp, 10, nil, S.media.font, nil, "LEFT")
 		sub:SetPoint("TOPLEFT", 10, -28)
-		sub:SetText(format("%d %s, %d %s, %d DPS", cnt.T, L["tank"], cnt.H, L["healer"], L["and"]))
+		sub:SetText(format("%d %s, %d %s, %d DPS", cnt.T, L["tank"], cnt.H, L["healer"], cnt.D))
 		local yy = -48
 		for _, o in ipairs(oth) do
 			local e = Roster()[o.n]
@@ -388,6 +257,7 @@ local SIGNUP_ST = {
 	coming = { L["Coming"], "|cff55ff55" }, tentative = { L["Tentative"], "|cffffff55" },
 	late = { L["Late"], "|cffff8855" }, cant = { L["Can't"], "|cffff5555" },
 }
+local SIGNUP_ORDER = { "coming", "tentative", "late", "cant" }
 local LINEUP_ST = { confirmed = { L["Confirmed"], "|cff55ff55" }, bench = { L["Bench"], "|cffaaaaaa" } }
 
 tabs.signups = function(self, page)
@@ -449,59 +319,83 @@ tabs.signups = function(self, page)
 		sub:SetPoint("TOPLEFT", 10, -28)
 		sub:SetText(format("%s · %s %d · %s", raid.epoch and date("%A %d.%m. %H:%M", raid.epoch) or "?",
 			L["Size"], raid.size or 40, raid.note or ""))
-		-- signup buttons
+		-- signup buttons (fixed order)
 		local bx = 10
-		for key, s in pairs(SIGNUP_ST) do
+		for _, key in ipairs(SIGNUP_ORDER) do
 			local k = key
-			local b = Btn(dp, 78, 18, s[1])
+			local b = Btn(dp, 78, 18, SIGNUP_ST[k][1])
 			b:SetPoint("TOPLEFT", bx, -48)
 			b:SetScript("OnClick", function()
 				GH:SignupDialog(raid, k)
 			end)
 			bx = bx + 82
 		end
-		-- counts + lineup
+		-- counts
 		local sg = h.signups[raid.id] or {}
 		local counts = {}
 		for p, su in pairs(sg) do counts[su.status] = (counts[su.status] or 0) + 1 end
 		local cy = -74
-		for key, s in pairs(SIGNUP_ST) do
-			if counts[key] then
-				local fs = S:FontString(dp, 10, nil, S.media.font, nil, "LEFT")
-				fs:SetPoint("TOPLEFT", 10, cy)
-				fs:SetText(s[2] .. s[1] .. ": " .. counts[key] .. "|r")
-				cy = cy - 14
-			end
+		local parts = {}
+		for _, key in ipairs(SIGNUP_ORDER) do
+			if counts[key] then parts[#parts + 1] = SIGNUP_ST[key][2] .. SIGNUP_ST[key][1] .. ": " .. counts[key] .. "|r" end
 		end
+		if #parts > 0 then
+			local fs = S:FontString(dp, 10, nil, S.media.font, nil, "LEFT")
+			fs:SetPoint("TOPLEFT", 10, cy)
+			fs:SetText(table.concat(parts, "   "))
+			cy = cy - 16
+		end
+		-- lineup: every signup with its slot; leaders confirm/bench per row
 		local lh = Header(dp, L["Lineup"])
-		lh:SetPoint("TOPLEFT", 10, cy - 6)
+		lh:SetPoint("TOPLEFT", 10, cy - 4)
 		cy = cy - 24
 		raid.lineup = raid.lineup or {}
-		local done = {}
-		for _, slot in ipairs({ "confirmed", "bench" }) do
-			for p, su in pairs(sg) do
-				if raid.lineup[p] == slot and not done[p] then
-					done[p] = true
-					local fs = S:FontString(dp, 11, nil, S.media.font, nil, "LEFT")
-					fs:SetPoint("TOPLEFT", 12, cy)
-					fs:SetText((LINEUP_ST[slot][2] .. "[" .. LINEUP_ST[slot][1] .. "]|r  ") .. RoleIcon(su.role, 12) .. " " .. ClassColor(su.char or p) .. (su.role and ("  |cff888888" .. (RoleName(su.role) or "") .. "|r") or ""))
-					cy = cy - 16
-				end
-			end
+		local canLead = CanI("leader")
+		local order = { confirmed = 1, bench = 2 }
+		local plist = {}
+		for p in pairs(sg) do plist[#plist + 1] = p end
+		sort(plist, function(a, b)
+			local ra, rb = order[raid.lineup[a]] or 3, order[raid.lineup[b]] or 3
+			if ra ~= rb then return ra < rb end
+			return (sg[a].char or a) < (sg[b].char or b)
+		end)
+		if #plist == 0 then
+			local fs = S:FontString(dp, 10, nil, S.media.font, nil, "LEFT")
+			fs:SetPoint("TOPLEFT", 12, cy)
+			fs:SetText("|cff777777" .. L["Nobody has signed up yet."] .. "|r")
 		end
-		local na = Header(dp, L["No answer"])
-		na:SetPoint("TOPLEFT", 10, cy - 4)
-		cy = cy - 20
-		local nShown = 0
-		for p in pairs(sg) do
-			if not raid.lineup[p] and nShown < 14 then
-				nShown = nShown + 1
-				local su = sg[p]
-				local fs = S:FontString(dp, 10, nil, S.media.font, nil, "LEFT")
-				fs:SetPoint("TOPLEFT", 12, cy)
-				fs:SetText("|cff888888" .. (su.char or p) .. " — " .. (SIGNUP_ST[su.status] and SIGNUP_ST[su.status][1] or su.status or "?") .. "|r")
-				cy = cy - 14
+		for i, p in ipairs(plist) do
+			if i > 16 then break end
+			local su = sg[p]
+			local slot = raid.lineup[p]
+			local sst = SIGNUP_ST[su.status]
+			local fs = S:FontString(dp, 11, nil, S.media.font, nil, "LEFT")
+			fs:SetPoint("TOPLEFT", 12, cy)
+			fs:SetText((slot and LINEUP_ST[slot] and (LINEUP_ST[slot][2] .. "[" .. LINEUP_ST[slot][1] .. "]|r ") or "")
+				.. RoleIcon(su.role, 12) .. " " .. ClassColor(su.char or p)
+				.. (sst and ("  " .. sst[2] .. sst[1] .. "|r") or ""))
+			if canLead then
+				local function setSlot(v)
+					if raid.lineup[p] == v then
+						raid.lineup[p] = nil
+						Send("LU|" .. raid.id .. "|" .. p .. "|clear")
+					else
+						raid.lineup[p] = v
+						Send("LU|" .. raid.id .. "|" .. p .. "|" .. v)
+					end
+					Bump()
+					GH:RenderTab("signups")
+				end
+				local bB = Btn(dp, 56, 15, L["Bench"])
+				bB:SetPoint("TOPRIGHT", -8, cy + 2)
+				bB:SetScript("OnClick", function() setSlot("bench") end)
+				SelBtn(bB, slot == "bench")
+				local bC = Btn(dp, 76, 15, L["Confirmed"])
+				bC:SetPoint("RIGHT", bB, "LEFT", -4, 0)
+				bC:SetScript("OnClick", function() setSlot("confirmed") end)
+				SelBtn(bC, slot == "confirmed")
 			end
+			cy = cy - 18
 		end
 		if CanI("leader") then
 			local del = Btn(dp, 110, 18, L["Delete raid"])
@@ -731,7 +625,7 @@ tabs.loot = function(self, page)
 	local srch = Edit(page, 160, 16, L["Search items"])
 	srch:SetPoint("TOPLEFT", 4, -2)
 	srch:SetText(st.search or "")
-	srch:SetScript("OnTextChanged", function(e) st.search = e:GetText() GH:RenderTab("loot") end)
+	W.OnType(srch, function(e) st.search = e:GetText() GH:RenderTab("loot") end)
 	local q = lower(st.search or "")
 	local rows = {}
 	for i = #h.loot, 1, -1 do
@@ -806,61 +700,131 @@ end
 -- TAB: Raid Groups (teams) + Raid Builder
 -------------------------------------------------------------------------------
 
+local TEAM_ROLES = { "T", "H", "D" }
+local NEXT_ROLE = { T = "H", H = "D", D = "T" }
+
+local function TeamLive(t) return t and t.name and not t.hidden end
+
+local function SyncTeams()
+	Bump()
+	Send("T|" .. Ser(Shared().teams))
+end
+
+function GH:NewTeam()
+	local h = Shared()
+	for i = 1, 9 do
+		if not TeamLive(h.teams[i]) then
+			h.teams[i] = { name = "Team " .. i, size = 40, members = {} }
+			SyncTeams()
+			return i
+		end
+	end
+	Notify(L["All 9 team slots are in use — delete one first."])
+end
+
+function GH:TeamNameDialog(slot)
+	local h = Shared()
+	local t = h.teams[slot]
+	if not TeamLive(t) then return end
+	StaticPopupDialogs["SUGH_TEAMNAME"] = {
+		text = L["Team name, size"], button1 = L["Save"], button2 = L["Cancel"], hasEditBox = true,
+		OnShow = function(s2) s2.editBox:SetText((t.name or "") .. ", " .. (t.size or 40)) end,
+		OnAccept = function(s2)
+			local nm, sz = (s2.editBox:GetText() or ""):match("^%s*(.-)%s*,%s*(%d*)")
+			nm = nm or strtrim(s2.editBox:GetText() or "")
+			if nm ~= "" then t.name = nm end
+			t.size = tonumber(sz) or t.size
+			SyncTeams()
+			GH:RenderTab(GH.tab)
+		end, timeout = 0, whileDead = true, hideOnEscape = true }
+	StaticPopup_Show("SUGH_TEAMNAME")
+end
+
+local function ToolbarButtons(page, y, x)
+	local ex = Btn(page, 70, 18, L["Export"])
+	ex:SetPoint("TOPLEFT", x, y)
+	ex:SetScript("OnClick", function() GH:ExportTeams() end)
+	local im = Btn(page, 70, 18, L["Import"])
+	im:SetPoint("LEFT", ex, "RIGHT", 4, 0)
+	im:SetScript("OnClick", function() GH:ImportTeamsDialog() end)
+	return im
+end
+
 tabs.teams = function(self, page)
 	local h = Shared()
-	if CanI("teams") or CanI("leader") then
+	local canBuild = CanI("teams") or CanI("leader")
+	local x = 4
+	if canBuild then
 		local nb = Btn(page, 110, 18, L["+ New team"])
-		nb:SetPoint("TOPRIGHT", -4, -4)
+		nb:SetPoint("TOPLEFT", 4, -2)
 		nb:SetScript("OnClick", function()
-			for i = 1, 9 do
-				if not h.teams[i] then
-					h.teams[i] = { name = "Team " .. i, size = 40, members = {} }
-					Bump() Send("T|" .. Ser(h.teams))
-					GH.bldState = GH.bldState or {}
-					GH.bldState.sel = i
-					GH:SelectTab("builder")
-					return
-				end
+			local slot = GH:NewTeam()
+			if slot then
+				GH.bldState = GH.bldState or {}
+				GH.bldState.sel = slot
+				GH:SelectTab("builder")
 			end
 		end)
+		x = 118
 	end
+	ToolbarButtons(page, -2, x)
+
 	local any = false
-	local x, y = 4, -28
+	local cx, cy = 4, -28
 	for i = 1, 9 do
 		local t = h.teams[i]
-		if t and t.name and not t.hidden then
+		if TeamLive(t) then
 			any = true
 			local card = CreateFrame("Frame", nil, page, S.BackdropTemplate)
-			card:SetPoint("TOPLEFT", x, y)
-			card:SetSize(230, 120)
+			card:SetPoint("TOPLEFT", cx, cy)
+			card:SetSize(336, 132)
 			S:SetTemplate(card, "Default")
 			local tt = Header(card, t.name)
 			tt:SetPoint("TOPLEFT", 8, -6)
-			local n = 0 for _ in pairs(t.members or {}) do n = n + 1 end
+			local n = 0
+			for _ in pairs(t.members or {}) do n = n + 1 end
 			local cnt = S:FontString(card, 10, nil, S.media.font, nil, "RIGHT")
 			cnt:SetPoint("TOPRIGHT", -8, -8)
 			cnt:SetText(format("%d/%d", n, t.size or 40))
 			local yy = -26
-			for role, label in pairs({ T = "Tanks", H = "Healers", D = "DPS" }) do
-				local line = ""
+			for _, role in ipairs(TEAM_ROLES) do
+				local names = {}
 				for nm, mr in pairs(t.members or {}) do
-					if mr == role then line = line .. ClassColor(nm) .. " " end
+					if mr == role then names[#names + 1] = nm end
 				end
-				if line ~= "" then
+				sort(names)
+				if #names > 0 then
+					local colored = {}
+					for _, nm in ipairs(names) do colored[#colored + 1] = ClassColor(nm) end
 					local fs = S:FontString(card, 10, nil, S.media.font, nil, "LEFT")
 					fs:SetPoint("TOPLEFT", 8, yy)
-					fs:SetText(RoleIcon(role, 12) .. " " .. line)
-					yy = yy - 30
+					fs:SetWidth(318)
+					fs:SetWordWrap(true)
+					fs:SetText(RoleIcon(role, 12) .. " " .. table.concat(colored, ", "))
+					yy = yy - (10 + 12 * math.ceil(#names / 5))
 				end
 			end
-			x = x + 236
-			if x > 480 then x = 4 y = y - 126 end
+			if n == 0 then
+				local fs = S:FontString(card, 10, nil, S.media.font, nil, "LEFT")
+				fs:SetPoint("TOPLEFT", 8, -28)
+				fs:SetText("|cff777777" .. L["Empty — open the Raid Builder to fill it."] .. "|r")
+			end
+			if canBuild then
+				local eb = Btn(card, 60, 16, L["Edit"])
+				eb:SetPoint("BOTTOMRIGHT", -6, 6)
+				eb:SetScript("OnClick", function()
+					GH.bldState = GH.bldState or {}
+					GH.bldState.sel = i
+					GH:SelectTab("builder")
+				end)
+			end
+			if cx == 4 then cx = 344 else cx = 4 cy = cy - 138 end
 		end
 	end
 	if not any then
 		local em = S:FontString(page, 11, nil, S.media.font, nil, "LEFT")
-		em:SetPoint("TOPLEFT", 8, -8)
-		em:SetText("|cff777777" .. L["No raid teams yet — use '+ New team' or the Raid Builder tab."] .. "|r")
+		em:SetPoint("TOPLEFT", 8, -34)
+		em:SetText("|cff777777" .. L["No raid teams yet — use '+ New team' or paste a list with Import."] .. "|r")
 	end
 end
 
@@ -874,111 +838,166 @@ tabs.builder = function(self, page)
 	end
 	local st = GH.bldState or { sel = 1 }
 	GH.bldState = st
-	-- team cards top
+	st.sel = st.sel or 1
+
+	-- row 1: the nine team slots
 	local x = 4
 	for i = 1, 9 do
 		local t = h.teams[i]
-		local label = t and t.name or ("+" .. i)
-		local b = Btn(page, 76, 18, (label or ""):sub(1, 10))
+		local b = Btn(page, 72, 18, (TeamLive(t) and t.name or ("+" .. i)):sub(1, 10))
 		b:SetPoint("TOPLEFT", x, -2)
-		b:SetScript("OnClick", function(_, btn)
-			if GH.pickup then
-				local t2 = h.teams[i] or { name = "Team " .. i, size = 40, members = {} }
-				h.teams[i] = t2
-				t2.members = t2.members or {}
-				if not t2.members[GH.pickup] then
-					t2.members[GH.pickup] = h.roles[GH.pickup] or "D"
-					Bump() Send("T|" .. Ser(h.teams))
-				end
-				GH.pickup = nil
-				if GH.chip then GH.chip:Hide() end
-			end
-			if btn ~= "RightButton" then st.sel = i end
-			GH:RenderTab("builder")
-		end)
-		b:SetScript("OnDoubleClick", function()
-			local t2 = h.teams[i] or { name = "Team " .. i, size = 40, members = {} }
-			StaticPopupDialogs["SUGH_TEAMNAME"] = {
-				text = L["Team name, size"], button1 = L["Save"], button2 = L["Cancel"], hasEditBox = true,
-				OnShow = function(s2) s2.editBox:SetText((t2.name or "") .. ", " .. (t2.size or 40)) end,
-				OnAccept = function(s2)
-					local nm, sz = (s2.editBox:GetText() or ""):match("^%s*(.-)%s*,%s*(%d*)")
-					t2.name = (nm and nm ~= "") and nm or t2.name
-					t2.size = tonumber(sz) or t2.size
-					h.teams[i] = t2 Bump()
-					Send("T|" .. Ser(h.teams))
-					GH:RenderTab("builder")
-				end, timeout = 0, whileDead = true, hideOnEscape = true }
-			StaticPopup_Show("SUGH_TEAMNAME")
-		end)
+		b:SetScript("OnClick", function() st.sel = i GH:RenderTab("builder") end)
 		SelBtn(b, st.sel == i)
-		x = x + 80
+		x = x + 75
 	end
-	local hint = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
-	hint:SetPoint("TOPLEFT", 4, -24)
-	hint:SetText("|cff777777" .. L["Click a member to pick them up, then click a team card to drop. Right-click a member removes them. Double-click a card renames."] .. "|r")
-	-- externals: add a non-guild player by name into the selected team
-	local ext = Edit(page, 110, 16, L["Non-guild name…"])
-	ext:SetPoint("TOPRIGHT", -78, -24)
-	local extBtn = Btn(page, 68, 16, L["Add"])
-	extBtn:SetPoint("LEFT", ext, "RIGHT", 4, 0)
-	extBtn:SetScript("OnClick", function()
-		local nm = (ext:GetText() or ""):match("^%s*(.-)%s*$")
-		if nm == "" or not st.sel then return end
-		local t2 = h.teams[st.sel] or { name = "Team " .. st.sel, size = 40, members = {} }
-		h.teams[st.sel] = t2
-		t2.members = t2.members or {}
-		t2.members[nm] = "D"
-		ext:SetText("")
-		Bump() Send("T|" .. Ser(h.teams))
-		GH:RenderTab("builder")
-	end)
-	local t = h.teams[st.sel]
-	if t then
-		local del = Btn(page, 90, 16, L["Hide team"])
-		del:SetPoint("TOPRIGHT", -4, -24)
-		del:SetScript("OnClick", function()
-			t.hidden = not t.hidden Bump() Send("T|" .. Ser(h.teams)) GH:RenderTab("builder")
-		end)
+
+	local t = TeamLive(h.teams[st.sel]) and h.teams[st.sel] or nil
+
+	-- row 2: toolbar
+	local tx = 4
+	local function Tool(label, w, fn, enabled)
+		local b = Btn(page, w, 18, label)
+		b:SetPoint("TOPLEFT", tx, -26)
+		if enabled == false then b:Disable() b.fs:SetTextColor(0.4, 0.4, 0.4) else b:SetScript("OnClick", fn) end
+		tx = tx + w + 4
+		return b
 	end
-	-- member list: click assigns into selected team
+	Tool(L["Create team"], 90, function()
+		h.teams[st.sel] = { name = "Team " .. st.sel, size = 40, members = {} }
+		SyncTeams() GH:RenderTab("builder")
+	end, not t)
+	Tool(L["Rename"], 70, function() GH:TeamNameDialog(st.sel) end, t ~= nil)
+	Tool(L["Delete team"], 90, function()
+		t.hidden = true SyncTeams() GH:RenderTab("builder")
+	end, t ~= nil)
+	Tool(L["Export"], 70, function() GH:ExportTeams() end)
+	Tool(L["Import"], 70, function() GH:ImportTeamsDialog() end)
+
+	-- externals (not in the guild): name [role]
+	local extBtn = Btn(page, 56, 18, L["Add"])
+	extBtn:SetPoint("TOPRIGHT", -4, -26)
+	local ext = Edit(page, 150, 18, L["Non-guild name…"])
+	ext:SetPoint("RIGHT", extBtn, "LEFT", -4, 0)
+	local function AddExternal()
+		if GH:AddExternalToTeam(st.sel, ext:GetText()) then
+			ext:SetText("")
+			GH:RenderTab("builder")
+		end
+	end
+	extBtn:SetScript("OnClick", AddExternal)
+	ext:SetScript("OnEnterPressed", function() AddExternal() end)
+
+	-- left: everyone who can be added (guild + externals already in the team)
+	local left = CreateFrame("Frame", nil, page)
+	left:SetPoint("TOPLEFT", 0, -54)
+	left:SetPoint("BOTTOMLEFT", 0, 22)
+	left:SetWidth(370)
+	local list, seen = {}, {}
 	local roster = Roster()
-	local list = {}
-	for name, e in pairs(roster) do list[#list + 1] = { n = name, e = e } end
-	sort(list, function(a, b) return a.n < b.n end)
-	ListRows(page, -44, 18, min(#list, 26), function(r, i)
-		local m = list[i]
+	for name in pairs(roster) do list[#list + 1] = { n = name, on = roster[name].online } seen[name] = true end
+	if t then
+		for name in pairs(t.members or {}) do
+			if not seen[name] then list[#list + 1] = { n = name, ext = true } end
+		end
+	end
+	local q = lower(st.search or "")
+	if q ~= "" then
+		local f = {}
+		for _, m in ipairs(list) do if lower(m.n):find(q, 1, true) then f[#f + 1] = m end end
+		list = f
+	end
+	sort(list, function(a, b)
+		if (a.ext and 1 or 0) ~= (b.ext and 1 or 0) then return a.ext and true or false end
+		if (a.on and 1 or 0) ~= (b.on and 1 or 0) then return a.on and true or false end
+		return a.n < b.n
+	end)
+	local PER = 22
+	local pages = max(1, math.ceil(#list / PER))
+	st.page = min(max(st.page or 1, 1), pages)
+	local srch = Edit(left, 120, 16, L["Search"])
+	srch:SetPoint("TOPRIGHT", -88, 0)
+	srch:SetText(st.search or "")
+	W.OnType(srch, function(e) st.search = e:GetText() st.page = 1 GH:RenderTab("builder") end)
+	local nextB = Btn(left, 20, 16, ">")
+	nextB:SetPoint("TOPRIGHT", -2, 0)
+	nextB:SetScript("OnClick", function() st.page = min(pages, st.page + 1) GH:RenderTab("builder") end)
+	local prevB = Btn(left, 20, 16, "<")
+	prevB:SetPoint("RIGHT", nextB, "LEFT", -2, 0)
+	prevB:SetScript("OnClick", function() st.page = max(1, st.page - 1) GH:RenderTab("builder") end)
+	local lh = Header(left, format("%s %d/%d", L["Members"], st.page, pages))
+	lh:SetPoint("TOPLEFT", 6, -2)
+	local first = (st.page - 1) * PER
+	ListRows(left, -22, 18, min(PER, #list - first), function(r, i)
+		local m = list[first + i]
 		if not m then return end
 		local inteam = t and t.members and t.members[m.n]
-		RowFS(r, "name", 6):SetText((inteam and ("|cff" .. ACC .. "» |r") or "") .. ClassColor(m.n))
-		RowFS(r, "role", 280):SetText(RoleIcon(h.roles[m.n] or "N", 12) .. " " .. (RoleName(h.roles[m.n] or "N") or ""))
+		local role = h.roles[m.n] or "N"
+		RowFS(r, "name", 6):SetText((inteam and ("|cff" .. ACC .. "» |r") or "   ") .. ClassColor(m.n) .. (m.ext and (" |cff888888(" .. L["external"] .. ")|r") or (m.on and "" or " |cff555555(off)|r")))
+		RowFS(r, "role", 250):SetText(RoleIcon(role, 12) .. " " .. (RoleName(role) or ""))
 		r:SetScript("OnClick", function(_, btn)
+			if not t then
+				GH:NewTeam()
+				return GH:RenderTab("builder")
+			end
+			t.members = t.members or {}
 			if btn == "RightButton" then
-				if t and t.members and t.members[m.n] then t.members[m.n] = nil Bump() Send("T|" .. Ser(h.teams)) GH:RenderTab("builder") end
-				return
+				if t.members[m.n] then t.members[m.n] = NEXT_ROLE[t.members[m.n]] or "D" end
+			elseif t.members[m.n] then
+				t.members[m.n] = nil
+			else
+				t.members[m.n] = (role == "T" or role == "H" or role == "D") and role or "D"
 			end
-			-- pick up always (even with no team yet — next card click creates it)
-			if not (t and t.members and t.members[m.n]) then
-				-- pick up the member; next card click drops them there
-				GH.pickup = m.n
-				if not GH.chip then
-					local c = CreateFrame("Frame", nil, UIParent)
-					c:SetSize(120, 18) c:SetFrameStrata("TOOLTIP")
-					c.fs = S:FontString(c, 11, "OUTLINE", S.media.font, nil, "LEFT")
-					c.fs:SetPoint("CENTER")
-					c:SetScript("OnUpdate", function()
-						local x, y = GetCursorPosition()
-						c:ClearAllPoints() c:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x / UIParent:GetEffectiveScale(), y / UIParent:GetEffectiveScale())
-					end)
-					GH.chip = c
-				end
-				GH.chip.fs:SetText("|cff" .. ACC .. "» " .. m.n .. "|r")
-				GH.chip:Show()
-				GH:RenderTab("builder")
-			end
+			SyncTeams()
+			GH:RenderTab("builder")
+		end)
+	end)
+	local hint = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
+	hint:SetPoint("BOTTOMLEFT", 4, 4)
+	hint:SetText("|cff777777" .. L["Left-click adds/removes a member in the selected team, right-click changes their role in it."] .. "|r")
+
+	-- right: the selected team
+	local dp = CreateFrame("Frame", nil, page, S.BackdropTemplate)
+	dp:SetPoint("TOPLEFT", left, "TOPRIGHT", 8, 0)
+	dp:SetPoint("BOTTOMRIGHT", 0, 22)
+	S:SetTemplate(dp, "Default")
+	if not t then
+		local fs = S:FontString(dp, 11, nil, S.media.font, nil, "LEFT")
+		fs:SetPoint("TOPLEFT", 10, -10)
+		fs:SetText("|cff777777" .. L["This slot is empty — press 'Create team'."] .. "|r")
+		return
+	end
+	local title = Header(dp, t.name)
+	title:SetPoint("TOPLEFT", 10, -8)
+	local counts = { T = 0, H = 0, D = 0 }
+	local total = 0
+	for _, r in pairs(t.members or {}) do counts[r] = (counts[r] or 0) + 1 total = total + 1 end
+	local sub = S:FontString(dp, 10, nil, S.media.font, nil, "LEFT")
+	sub:SetPoint("TOPLEFT", 10, -26)
+	sub:SetText(format("%d/%d   %s %d  %s %d  %s %d", total, t.size or 40,
+		RoleIcon("T", 12), counts.T, RoleIcon("H", 12), counts.H, RoleIcon("D", 12), counts.D))
+	local members = {}
+	for nm, r in pairs(t.members or {}) do members[#members + 1] = { n = nm, r = r } end
+	local rank = { T = 1, H = 2, D = 3 }
+	sort(members, function(a, b)
+		if rank[a.r] ~= rank[b.r] then return (rank[a.r] or 4) < (rank[b.r] or 4) end
+		return a.n < b.n
+	end)
+	ListRows(dp, -44, 18, min(#members, 20), function(r, i)
+		local m = members[i]
+		if not m then return end
+		RowFS(r, "name", 8):SetText(RoleIcon(m.r, 12) .. " " .. ClassColor(m.n))
+		RowFS(r, "role", 160):SetText(RoleName(m.r) or m.r)
+		local rm = Btn(r, 18, 14, "x")
+		rm:SetPoint("RIGHT", -4, 0)
+		rm:SetScript("OnClick", function()
+			t.members[m.n] = nil SyncTeams() GH:RenderTab("builder")
+		end)
+		r:SetScript("OnClick", function()
+			t.members[m.n] = NEXT_ROLE[m.r] or "D" SyncTeams() GH:RenderTab("builder")
 		end)
 	end)
 end
+
 
 -------------------------------------------------------------------------------
 -- TAB: Bounties
@@ -1603,6 +1622,8 @@ function GH:SetupShell()
 			Notify(L["No guildmate on that layer."])
 		elseif first == "export" then
 			GH:ExportTeams()
+		elseif first == "import" then
+			GH:ImportTeamsDialog()
 		else
 			GH:Toggle()
 		end
@@ -1670,39 +1691,218 @@ end
 -- teams export (/sgh export)
 -------------------------------------------------------------------------------
 
-function GH:ExportTeams()
+-------------------------------------------------------------------------------
+-- Raid teams: text export / import
+--   # comment
+--   [Team name | 25]
+--   Alice T
+--   Bob Healer
+--   Randy            (no role: current guild role, else DPS)
+-------------------------------------------------------------------------------
+
+local ROLE_WORDS = {
+	t = "T", tank = "T", tanks = "T",
+	h = "H", heal = "H", healer = "H", heiler = "H",
+	d = "D", dd = "D", dps = "D", damage = "D", schaden = "D",
+}
+
+local function CleanName(n)
+	n = strtrim(n or ""):gsub("%-.*$", "")
+	if n:match("^%a+$") then n = n:sub(1, 1):upper() .. n:sub(2):lower() end
+	return n
+end
+
+function GH:AddExternalToTeam(slot, text)
+	local nm, role = (text or ""):match("^%s*([^%s,;:]+)[%s,;:]*(.-)%s*$")
+	nm = CleanName(nm)
+	if nm == "" then return false end
 	local h = Shared()
-	local lines = { "SentinelGuild raid teams — " .. date("%Y-%m-%d %H:%M") }
+	if not TeamLive(h.teams[slot]) then
+		h.teams[slot] = { name = "Team " .. slot, size = 40, members = {} }
+	end
+	local t = h.teams[slot]
+	t.members = t.members or {}
+	local r = ROLE_WORDS[lower(strtrim(role or ""))] or h.roles[nm]
+	t.members[nm] = (r == "T" or r == "H" or r == "D") and r or "D"
+	SyncTeams()
+	return true
+end
+
+function GH:BuildTeamsText()
+	local h = Shared()
+	local lines = { "# SentinelGuild raid teams — " .. date("%Y-%m-%d %H:%M") }
+	local rank = { T = 1, H = 2, D = 3 }
 	for i = 1, 9 do
 		local t = h.teams[i]
 		if t and t.name and not t.hidden then
 			lines[#lines + 1] = ""
-			lines[#lines + 1] = t.name .. " (" .. (t.size or 40) .. ")"
-			for nm, mr in pairs(t.members or {}) do
-				lines[#lines + 1] = "  " .. nm .. " (" .. (RoleName(mr) or mr) .. ")"
-			end
+			lines[#lines + 1] = format("[%s | %d]", t.name, t.size or 40)
+			local names = {}
+			for nm in pairs(t.members or {}) do names[#names + 1] = nm end
+			sort(names, function(a, b)
+				local ra, rb = rank[t.members[a]] or 4, rank[t.members[b]] or 4
+				if ra ~= rb then return ra < rb end
+				return a < b
+			end)
+			for _, nm in ipairs(names) do lines[#lines + 1] = nm .. " " .. (t.members[nm] or "D") end
 		end
 	end
-	local txt = table.concat(lines, "\n")
-	local f = GH.exportFrame
-	if not f then
-		f = CreateFrame("Frame", "SentinelUIGuildExport", UIParent, S.BackdropTemplate)
-		f:SetSize(420, 320)
-		f:SetPoint("CENTER")
-		f:SetFrameStrata("DIALOG")
-		S:SetTemplate(f, "Default")
-		local eb = CreateFrame("EditBox", nil, f)
-		eb:SetMultiLine(true) eb:SetAutoFocus(false) eb:SetFontObject("GameFontHighlight")
-		eb:SetPoint("TOPLEFT", 10, -10) eb:SetPoint("BOTTOMRIGHT", -10, 10)
-		eb:SetScript("OnEscapePressed", function() f:Hide() end)
-		f.eb = eb
-		GH.exportFrame = f
-	end
-	f.eb:SetText(txt)
-	f:Show()
-	f.eb:HighlightText()
-	f.eb:SetFocus()
+	return table.concat(lines, "\n")
 end
+
+-- returns { {name=, size=, members={}} ... }, ignoredLines
+function GH:ParseTeamsText(text)
+	local h = Shared()
+	local out, cur, ignored = {}, nil, 0
+	for line in (text or ""):gmatch("[^\r\n]+") do
+		line = strtrim(line)
+		if line == "" or line:sub(1, 1) == "#" then
+			-- skip
+		elseif line:sub(1, 1) == "[" then
+			local body = line:match("^%[(.-)%]") or line:sub(2)
+			local nm, sz = body:match("^(.-)%s*|%s*(%d+)%s*$")
+			cur = { name = strtrim(nm or body), size = tonumber(sz) or 40, members = {} }
+			if cur.name == "" then cur.name = "Team " .. (#out + 1) end
+			out[#out + 1] = cur
+		elseif cur then
+			local nm, role = line:match("^([^%s,;:]+)[%s,;:]*(.-)$")
+			nm = CleanName(nm)
+			if nm ~= "" then
+				local r = ROLE_WORDS[lower(strtrim(role or ""))] or h.roles[nm] or "D"
+				if r == "N" then r = "D" end
+				cur.members[nm] = r
+			else
+				ignored = ignored + 1
+			end
+		else
+			ignored = ignored + 1
+		end
+	end
+	return out, ignored
+end
+
+function GH:ImportTeams(text, replace)
+	if not (CanI("teams") or CanI("leader")) then
+		Notify(L["You need the 'build teams' right to import."])
+		return false
+	end
+	local list, ignored = self:ParseTeamsText(text)
+	if #list == 0 then
+		Notify(L["No teams found — start each team with a [Name | size] line."])
+		return false
+	end
+	local h = Shared()
+	local slots = {}
+	for i = 1, 9 do
+		if replace or not h.teams[i] or h.teams[i].hidden or not h.teams[i].name then slots[#slots + 1] = i end
+	end
+	local used = 0
+	for idx, t in ipairs(list) do
+		local slot = slots[idx]
+		if not slot then break end
+		h.teams[slot] = { name = t.name, size = t.size, members = t.members }
+		used = used + 1
+	end
+	if replace then
+		-- slots that vanish are blanked (hidden), so the removal reaches everyone
+		for k = used + 1, 9 do
+			if h.teams[k] then h.teams[k] = { name = "Team " .. k, size = 40, members = {}, hidden = true } end
+		end
+	end
+	Bump()
+	Send("T|" .. Ser(h.teams))
+	Notify(format(L["Imported %d teams."], used))
+	if #list > used then Notify(format(L["%d teams skipped (only 9 slots)."], #list - used)) end
+	GH.bldState = GH.bldState or {}
+	GH.bldState.sel = 1
+	GH:RenderTab(GH.tab)
+	return true
+end
+
+function GH:TeamsDialog(mode)
+	local f = self.teamsIO
+	if not f then
+		f = CreateFrame("Frame", "SentinelUIGuildTeamsIO", UIParent, S.BackdropTemplate)
+		f:SetSize(500, 400)
+		f:SetPoint("CENTER")
+		f:SetFrameStrata("FULLSCREEN_DIALOG")
+		f:SetClampedToScreen(true)
+		f:SetMovable(true) f:EnableMouse(true) f:RegisterForDrag("LeftButton")
+		f:SetScript("OnDragStart", f.StartMoving)
+		f:SetScript("OnDragStop", f.StopMovingOrSizing)
+		S:SetTemplate(f, "Default")
+		tinsert(UISpecialFrames, "SentinelUIGuildTeamsIO")
+		f.title = S:FontString(f, 13, "OUTLINE", S.media.font, nil, "LEFT")
+		f.title:SetPoint("TOPLEFT", 14, -12)
+		f.hint = S:FontString(f, 10, nil, S.media.font, nil, "LEFT")
+		f.hint:SetPoint("TOPLEFT", 14, -32)
+		f.hint:SetWidth(470)
+		f.hint:SetWordWrap(true)
+		f.hint:SetTextColor(0.6, 0.6, 0.65)
+		local sf = CreateFrame("ScrollFrame", nil, f)
+		sf:SetPoint("TOPLEFT", 14, -62)
+		sf:SetPoint("BOTTOMRIGHT", -14, 48)
+		sf:EnableMouse(true)
+		sf:EnableMouseWheel(true)
+		local bg = CreateFrame("Frame", nil, f, S.BackdropTemplate)
+		bg:SetPoint("TOPLEFT", sf, -4, 4)
+		bg:SetPoint("BOTTOMRIGHT", sf, 4, -4)
+		bg:SetFrameLevel(f:GetFrameLevel() + 1)
+		S:SetTemplate(bg, "Default")
+		sf:SetFrameLevel(bg:GetFrameLevel() + 1)
+		local eb = CreateFrame("EditBox", nil, sf)
+		eb:SetMultiLine(true)
+		eb:SetAutoFocus(false)
+		eb:SetFontObject("GameFontHighlight")
+		eb:SetWidth(460)
+		eb:SetHeight(300)
+		eb:SetMaxLetters(0)
+		sf:SetScrollChild(eb)
+		eb:SetScript("OnEscapePressed", function(s) s:ClearFocus() end)
+		eb:SetScript("OnTextChanged", function(s)
+			local n = select(2, (s:GetText() or ""):gsub("\n", "\n")) + 1
+			s:SetHeight(max(300, n * 14 + 10))
+		end)
+		sf:SetScript("OnMouseDown", function() eb:SetFocus() end)
+		sf:SetScript("OnMouseWheel", function(s, d)
+			local v = s:GetVerticalScroll() - d * 28
+			s:SetVerticalScroll(max(0, min(s:GetVerticalScrollRange(), v)))
+		end)
+		f.eb = eb
+		f.close = W.StaticBtn(f, 90, 20, L["Close"])
+		f.close:SetPoint("BOTTOMRIGHT", -14, 14)
+		f.close:SetScript("OnClick", function() f:Hide() end)
+		f.replace = W.StaticBtn(f, 150, 20, L["Import: replace all"])
+		f.replace:SetPoint("BOTTOMLEFT", 14, 14)
+		f.replace:SetScript("OnClick", function()
+			if GH:ImportTeams(f.eb:GetText(), true) then f:Hide() end
+		end)
+		f.add = W.StaticBtn(f, 150, 20, L["Import: add as new"])
+		f.add:SetPoint("LEFT", f.replace, "RIGHT", 6, 0)
+		f.add:SetScript("OnClick", function()
+			if GH:ImportTeams(f.eb:GetText(), false) then f:Hide() end
+		end)
+		f.copy = S:FontString(f, 10, nil, S.media.font, nil, "LEFT")
+		f.copy:SetPoint("BOTTOMLEFT", 14, 18)
+		f.copy:SetTextColor(0.6, 0.6, 0.65)
+		self.teamsIO = f
+	end
+	local exporting = mode ~= "import"
+	f.title:SetText("|cff" .. ACC .. (exporting and L["EXPORT RAID TEAMS"] or L["IMPORT RAID TEAMS"]) .. "|r")
+	f.hint:SetText(L["Format: a [Team name | size] line starts a team, then one 'Name Role' per line (Role: T, H or D). Lines starting with # are ignored."])
+	f.replace:SetShown(not exporting)
+	f.add:SetShown(not exporting)
+	f.copy:SetShown(exporting)
+	f.copy:SetText(L["Ctrl+C copies the selected text."])
+	f.eb:SetText(exporting and self:BuildTeamsText() or "")
+	f:Show()
+	f:Raise()
+	f.eb:SetFocus()
+	if exporting then f.eb:HighlightText() end
+end
+
+function GH:ExportTeams() self:TeamsDialog("export") end
+function GH:ImportTeamsDialog() self:TeamsDialog("import") end
 
 function GH:ShareAttunements()
 	local h = Shared()

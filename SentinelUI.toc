@@ -83,6 +83,7 @@ Modules\WorldBuffs\Data.lua
 Modules\WorldBuffs.lua
 Modules\WorldBuffs\UI.lua
 Modules\GuildHub.lua
+Modules\GuildHubWidgets.lua
 Modules\GuildHubUI.lua
 Modules\GuildHubTabs.lua
 Modules\Decurse.lua

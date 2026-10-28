@@ -28,135 +28,11 @@ end
 GH.tabs = {}
 local tabs = GH.tabs
 
+local W = GH.W
+local Btn, SelBtn, Checkbox, Edit, Header, ClassColor, Ago = W.Btn, W.SelBtn, W.Checkbox, W.Edit, W.Header, W.ClassColor, W.Ago
+local ListRows, RowFS, SendWhisper, Whisper, Invite = W.ListRows, W.RowFS, W.SendWhisper, W.Whisper, W.Invite
 local ACC = S.accentHex or "ffcc00"
 local ROW_H = 20
-
-local function Btn(parent, w, h, label)
-	local b = CreateFrame("Button", nil, parent)
-	b:SetSize(w, h)
-	S:CreateBackdrop(b, "Default")
-	b.fs = S:FontString(b, 11, nil, S.media.font, nil, "CENTER")
-	b.fs:SetPoint("CENTER")
-	b.fs:SetText(label)
-	S:AddHover(b)
-	return b
-end
-
-local function SelBtn(b, on)
-	if not on then return end
-	b.fs:SetTextColor(S.accent.r, S.accent.g, S.accent.b)
-	if b.suiBackdrop then b.suiBackdrop:SetBackdropBorderColor(S.accent.r, S.accent.g, S.accent.b, 0.9) end
-	if not b.suiSelHook then
-		b.suiSelHook = true
-		-- AddHover's OnLeave resets the border to default; re-apply while selected
-		b:HookScript("OnLeave", function()
-			if b.suiBackdrop and b.fs:GetTextColor() == S.accent.r then
-				b.suiBackdrop:SetBackdropBorderColor(S.accent.r, S.accent.g, S.accent.b, 0.9)
-			end
-		end)
-	end
-end
-
-local function Checkbox(parent, label, checked, onClick)
-	local cb = CreateFrame("CheckButton", nil, parent)
-	cb:SetSize(16, 16)
-	S:SkinCheckBox(cb)
-	cb:SetChecked(checked and true or false)
-	cb.fs = S:FontString(cb, 11, nil, S.media.font, nil, "LEFT")
-	cb.fs:SetPoint("LEFT", cb, "RIGHT", 4, 0)
-	cb.fs:SetText(label)
-	cb:SetScript("OnClick", function(c) onClick(c:GetChecked() and true or false) end)
-	local hit = CreateFrame("Button", nil, parent)
-	hit:SetPoint("TOPLEFT", cb) hit:SetPoint("BOTTOMLEFT", cb)
-	hit:SetWidth(16 + (cb.fs:GetStringWidth() or 0) + 6)
-	hit:SetScript("OnClick", function()
-		if cb.IsEnabled and not cb:IsEnabled() then return end
-		cb:SetChecked(not cb:GetChecked())
-		local oc = cb:GetScript("OnClick") if oc then oc(cb) end
-	end)
-	return cb
-end
-
-local function Edit(parent, w, h, placeholder)
-	local e = CreateFrame("EditBox", nil, parent)
-	e:SetSize(w, h)
-	e:SetAutoFocus(false)
-	e:SetFontObject("GameFontHighlight")
-	S:SkinEditBox(e, h)
-	if placeholder then
-		e.ph = S:FontString(e, 11, nil, S.media.font, nil, "LEFT")
-		e.ph:SetPoint("LEFT", 6, 0)
-		e.ph:SetText("|cff777777" .. placeholder .. "|r")
-		e:SetScript("OnTextChanged", function(s) s.ph:SetShown(s:GetText() == "") end)
-	end
-	e:SetScript("OnEscapePressed", function(s) s:ClearFocus() end)
-	return e
-end
-
-local function Header(parent, text)
-	local fs = S:FontString(parent, 12, "OUTLINE", S.media.font, nil, "LEFT")
-	fs:SetText("|cff" .. ACC .. upper(text) .. "|r")
-	return fs
-end
-
-local function ClassColor(name)
-	local e = Roster()[name]
-	local c = e and e.class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[e.class]
-	if c then return format("|cff%02x%02x%02x%s|r", c.r * 255, c.g * 255, c.b * 255, name) end
-	return name
-end
-
-local function Ago(t)
-	if not t then return "?" end
-	local d = time() - t
-	if d < 60 then return L["just now"] end
-	if d < 3600 then return format(L["%d min ago"], floor(d / 60)) end
-	if d < 86400 then return format(L["%d h ago"], floor(d / 3600)) end
-	return format(L["%d d ago"], floor(d / 86400))
-end
-
-local function ListRows(page, topY, rowH, n, fill)
-	local rows = page._lrows or {}
-	page._lrows = rows
-	for _, r in ipairs(rows) do r:Hide() end
-	for i = 1, n do
-		local r = rows[i]
-		if not r then
-			r = CreateFrame("Button", nil, page)
-			r:SetHeight(rowH)
-			r.bg = r:CreateTexture(nil, "BACKGROUND")
-			r.bg:SetAllPoints()
-			r.fss = {}
-			rows[i] = r
-		end
-		r:ClearAllPoints()
-		r:SetPoint("TOPLEFT", 0, topY - (i - 1) * rowH)
-		r:SetPoint("TOPRIGHT", 0, topY - (i - 1) * rowH)
-		r.bg:SetColorTexture(1, 1, 1, (i % 2 == 1) and 0.03 or 0)
-		for _, fs in pairs(r.fss) do fs:Hide() end
-		for _, ch in ipairs({ r:GetChildren() }) do ch:Hide() end
-		r:SetScript("OnClick", nil)
-		r:SetScript("OnEnter", nil)
-		r:SetScript("OnLeave", nil)
-		fill(r, i)
-		r:Show()
-	end
-	return rows
-end
-
-local function RowFS(r, key, x, size, justify)
-	local fs = r.fss[key]
-	if not fs then
-		fs = S:FontString(r, size or 11, nil, S.media.font, nil, justify or "LEFT")
-		r.fss[key] = fs
-	end
-	fs:ClearAllPoints()
-	fs:SetPoint(justify == "RIGHT" and "RIGHT" or "LEFT", x, 0)
-	if justify == "RIGHT" then fs:SetPoint("RIGHT", x, 0) end
-	fs:SetJustifyH(justify or "LEFT")
-	fs:Show()
-	return fs
-end
 
 local function SortHeader(page, text, x, y, key, state)
 	local b = CreateFrame("Button", nil, page)
@@ -171,15 +47,6 @@ local function SortHeader(page, text, x, y, key, state)
 	end)
 	return b
 end
-
-local function SendWhisper(text, who)
-	if SendChatMessage then SendChatMessage(text, "WHISPER", nil, who) end
-end
-local function Whisper(name)
-	if ChatFrame_OpenChat then ChatFrame_OpenChat("/w " .. name .. " ")
-	elseif SendChatMessage then SendChatMessage("", "WHISPER", nil, name) end
-end
-local function Invite(name) if C_PartyInfo and C_PartyInfo.InviteUnit then C_PartyInfo.InviteUnit(name) elseif InviteUnit then InviteUnit(name) end end
 
 local function MemberMenu(name)
 	if not EasyMenu then return end
@@ -261,7 +128,7 @@ tabs.roster = function(self, page)
 	local srch = Edit(page, 120, 16, L["Search names"])
 	srch:SetPoint("TOPRIGHT", -4, -28)
 	srch:SetText(st.search or "")
-	srch:SetScript("OnTextChanged", function(e) st.search = e:GetText() GH:RenderTab("roster") end)
+	W.OnType(srch, function(e) st.search = e:GetText() GH:RenderTab("roster") end)
 
 	-- counts
 	local cnt = { T = 0, H = 0, D = 0, N = 0 }
@@ -492,7 +359,7 @@ tabs.profs = function(self, page)
 		local srch = Edit(page, 140, 16, L["Name or profession"])
 		srch:SetPoint("TOPLEFT", 4, -26)
 		srch:SetText(st.search or "")
-		srch:SetScript("OnTextChanged", function(e) st.search = e:GetText() GH:RenderTab("profs") end)
+		W.OnType(srch, function(e) st.search = e:GetText() GH:RenderTab("profs") end)
 		local cb = Checkbox(page, L["Online only"], st.onlineOnly, function(v) st.onlineOnly = v GH:RenderTab("profs") end)
 		cb:SetPoint("TOPLEFT", 152, -26)
 		local hdr = S:FontString(page, 11, "OUTLINE", S.media.font, nil, "LEFT")
@@ -538,7 +405,7 @@ tabs.profs = function(self, page)
 		local srch = Edit(page, 140, 16, L["Recipe or item"])
 		srch:SetPoint("TOPLEFT", 4, -26)
 		srch:SetText(st.search or "")
-		srch:SetScript("OnTextChanged", function(e) st.search = e:GetText() GH:RenderTab("profs") end)
+		W.OnType(srch, function(e) st.search = e:GetText() GH:RenderTab("profs") end)
 		local cb = Checkbox(page, L["Online only"], st.onlineOnly, function(v) st.onlineOnly = v GH:RenderTab("profs") end)
 		cb:SetPoint("TOPLEFT", 152, -26)
 		local roster = Roster()
@@ -598,7 +465,7 @@ tabs.profs = function(self, page)
 			req:SetPoint("TOPRIGHT", -8, -8)
 			req:SetScript("OnClick", function()
 				local id = tostring(time()) .. "-" .. MN()
-				local c = { id = id, item = g.r, prof = g.prof, qty = 1, t = time() }
+				local c = { id = id, item = g.r, prof = g.prof, qty = 1, t = time(), char = MN() }
 				Shared().crafts[id] = c Bump()
 				Send("CR|" .. (GH._Ser and GH._Ser(c) or ""))
 				Notify(format(L["Craft request posted: %s"], g.r))
@@ -677,7 +544,7 @@ tabs.gbank = function(self, page)
 	local srch = Edit(page, 160, 16, L["Search all tabs"])
 	srch:SetPoint("TOPLEFT", 4, -26)
 	srch:SetText(st.search or "")
-	srch:SetScript("OnTextChanged", function(e) st.search = e:GetText() GH:RenderTab("gbank") end)
+	W.OnType(srch, function(e) st.search = e:GetText() GH:RenderTab("gbank") end)
 
 	local td = tabsData[st.tab]
 	local q = lower(st.search or "")
