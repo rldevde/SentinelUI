@@ -7,7 +7,7 @@ Note on versions: `## Version` is SentinelUI's own release number. The embedded
 BetterItem module reports `## X-BetterItem-Version` and must always equal the
 standalone RLBetterItem release.
 
-## [1.4.7] unreleased
+## [1.4.7] - 2026-10-28
 
 ### Added
 - **GuildHub**: attunement sharing — each character broadcasts its keys/attunements; the My Characters tab now also shows which guildmates have a key (green names). Raid Builder: click a member to pick them up (follows the cursor), click a team card to drop them
@@ -22,6 +22,7 @@ standalone RLBetterItem release.
 - **GuildChronicle**: clickable member picker and "Mark as main" for the guild master; profession re-request on roster changes
 
 ### Fixed
+- **GuildHub**: sidebar shows the addon version instead of the sync protocol number; sync protocol bumped to 2 (lineup messages) so older clients are flagged as outdated
 - **GuildHub**: incoming sync no longer re-renders a tab while a search box is focused; new `/sgh focus` diagnostic prints the frame under the mouse for 15 s to track down controls that do not react
 - **GuildHub**: checkbox ticks were invisible (skin shrank the box to 6px and the tick to 0px) and labels were not clickable; right-clicks on buttons/rows never arrived (missing RegisterForClicks); search boxes lost focus after every keystroke; the Lineup (`LU`) message was never sent so confirmed/bench could not be set; group-finder detail line crashed on a wrong format argument; craft requests lacked the requester name; "Chat notices" setting had no effect; the five duplicated widget sets of the three GuildHub files are now one shared module (`GuildHubWidgets.lua`) with pooled buttons/rows so tab re-renders no longer pile up frames; non-pooled list rows in some tabs kept stale click handlers
 

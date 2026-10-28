@@ -18,7 +18,7 @@ local GameTooltip = GameTooltip
 local IsSecret = S.IsSecret
 
 local PREFIX = "SUIGHB"
-local VERSION = 1
+local VERSION = 2
 
 local myName, myRealm
 
@@ -743,7 +743,7 @@ local function BuildWindow()
 	-- version tag bottom of sidebar
 	f.ver = S:FontString(f.side, 9, nil, S.media.font, nil, "LEFT")
 	f.ver:SetPoint("BOTTOMLEFT", 12, 8)
-	f.ver:SetText("|cff555544v" .. VERSION .. "|r")
+	f.ver:SetText("|cff555544v" .. (S.version or VERSION) .. "|r")
 
 	-- content: inset panel
 	f.content = CreateFrame("Frame", nil, f, S.BackdropTemplate)
