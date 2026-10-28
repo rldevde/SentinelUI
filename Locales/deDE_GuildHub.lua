@@ -162,3 +162,4 @@ L["This slot is empty — press 'Create team'."] = "Dieser Platz ist leer — 'T
 L["You are not in a guild."] = "Du bist in keiner Gilde."
 L["You need the 'build teams' right to import."] = "Zum Importieren brauchst du das Recht 'Raid-Gruppen erstellen'."
 L["external"] = "extern"
+L["Move the mouse over the control that does not react — the frame under it is printed for 15 seconds."] = "Maus über das Element halten, das nicht reagiert — das Frame darunter wird 15 Sekunden lang ausgegeben."

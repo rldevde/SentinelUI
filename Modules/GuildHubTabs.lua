@@ -1624,6 +1624,27 @@ function GH:SetupShell()
 			GH:ExportTeams()
 		elseif first == "import" then
 			GH:ImportTeamsDialog()
+		elseif first == "focus" then
+			-- diagnostic: for 15s print what is under the mouse (frame, type, level, parent chain)
+			local last
+			local n = 0
+			local ticker
+			ticker = C_Timer.NewTicker(0.4, function()
+				n = n + 1
+				local f = GetMouseFoci and GetMouseFoci()[1] or GetMouseFocus and GetMouseFocus()
+				local desc = "nil"
+				if f and f.GetObjectType then
+					local chain, p = {}, f
+					while p and #chain < 5 do
+						chain[#chain + 1] = (p.GetName and p:GetName()) or p:GetObjectType()
+						p = p.GetParent and p:GetParent()
+					end
+					desc = format("%s lvl %d strata %s  <  %s", f:GetObjectType(), f:GetFrameLevel(), f:GetFrameStrata(), table.concat(chain, " < "))
+				end
+				if desc ~= last then last = desc Notify("focus: " .. desc) end
+				if n >= 38 then ticker:Cancel() end
+			end)
+			Notify(L["Move the mouse over the control that does not react — the frame under it is printed for 15 seconds."])
 		else
 			GH:Toggle()
 		end

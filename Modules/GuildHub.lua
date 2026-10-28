@@ -773,7 +773,11 @@ function GH:IsShown(key)
 end
 
 function GH:MaybeRefresh(key)
-	if self:IsShown(key) then self:RenderTab(key) end
+	if not self:IsShown(key) then return end
+	-- incoming sync must not tear down a search box the user is typing in
+	local ed = self.W and self.W.editing
+	if ed and ed:IsVisible() then self._pendingRefresh = key return end
+	self:RenderTab(key)
 end
 
 function GH:SelectTab(key)

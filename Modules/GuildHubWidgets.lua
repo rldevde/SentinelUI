@@ -165,6 +165,15 @@ function W.Edit(parent, w, h, placeholder)
 		end
 	end
 	e:SetScript("OnEscapePressed", function(s) s:ClearFocus() end)
+	e:SetScript("OnEditFocusGained", function(s) W.editing = s end)
+	e:SetScript("OnEditFocusLost", function(s)
+		if W.editing == s then W.editing = nil end
+		if GH._pendingRefresh then
+			local k = GH._pendingRefresh
+			GH._pendingRefresh = nil
+			C_Timer.After(0, function() GH:MaybeRefresh(k) end)
+		end
+	end)
 	return e
 end
 
