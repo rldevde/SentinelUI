@@ -173,6 +173,37 @@ end
 
 S.IsSpellKnown = (C_Spell and C_Spell.IsSpellKnown) or IsSpellKnown
 
+-- Resurrection spells per class: normal (out-of-combat) and battle (in-combat)
+-- variants. Spell ids the client does not know are filtered by IsSpellKnown, so
+-- one table covers every client flavor.
+S.REZ_SPELLS = {
+	PRIEST = { 2006, 212036 },               -- Resurrection, Mass Resurrection
+	PALADIN = { 7328, 212056 },              -- Redemption, Absolution
+	DRUID = { 50769, 212040 },               -- Revive, Revitalize
+	SHAMAN = { 2008, 212048 },               -- Ancestral Spirit, Ancestral Vision
+	MONK = { 115178, 212051 },               -- Resuscitate, Reawaken
+	EVOKER = { 361227, 361178 },             -- Return, Mass Return
+}
+S.REZ_BATTLE = {
+	DRUID = { 20484 },                       -- Rebirth
+	DEATHKNIGHT = { 61999 },                 -- Raise Ally
+	WARLOCK = { 20707 },                     -- Soulstone (a true rez on later clients)
+}
+
+-- localized names of the class resurrection spells: normal rez, battle rez
+-- (each nil when unknown). The battle rez is usable out of combat too, so
+-- classes without a normal rez (e.g. TBC druids) still get a dead-click rez.
+function S.ClassRezSpells()
+	local normal, battle
+	for _, id in ipairs(S.REZ_SPELLS[S.myClass] or {}) do
+		if S.IsSpellKnown and S.IsSpellKnown(id) then normal = S.GetSpellInfo(id) break end
+	end
+	for _, id in ipairs(S.REZ_BATTLE[S.myClass] or {}) do
+		if S.IsSpellKnown and S.IsSpellKnown(id) then battle = S.GetSpellInfo(id) break end
+	end
+	return normal, battle
+end
+
 -- Durability
 function S.GetDurabilityPercent()
 	local lowest = 1

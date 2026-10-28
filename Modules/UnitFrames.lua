@@ -2020,12 +2020,59 @@ end
 -- applied out of combat. mod-prefixed attrs ("shift-type2") take precedence
 -- over the default *type attrs only for that modifier combination.
 local CC_VALUE_ATTR = { spell = "spell", macro = "macrotext", item = "item" }
+
+-- rez-on-dead: right click on a dead friendly unit resurrects it (battle rez in
+-- combat) instead of opening the unit menu. The menu stays available through a
+-- hidden proxy the macro /clicks when the unit is alive.
+local rezProxyN = 0
+local function RezMenuProxy(f)
+	if not f.rezMenuProxy then
+		rezProxyN = rezProxyN + 1
+		local p = CreateFrame("Button", "SUIRezMenu" .. rezProxyN, f, "SecureActionButtonTemplate")
+		p:SetAttribute("type", "togglemenu")
+		p:SetAttribute("useparent-unit", true)
+		p:RegisterForClicks("AnyUp", "AnyDown")
+		p:SetSize(1, 1)
+		p:SetAlpha(0)
+		p:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT")
+		f.rezMenuProxy = p
+	end
+	local p = f.rezMenuProxy
+	p:SetAttribute("unit", f:GetAttribute("unit")) -- fallback when useparent-unit is missing
+	return p
+end
+
+local function RezMacro(normal, battle, spell)
+	local parts = {}
+	if battle then parts[#parts + 1] = format("[dead,combat,help] %s", battle) end
+	-- the battle rez is usable out of combat too: classes without a normal rez
+	-- (TBC druids only know Rebirth) still get a working dead-click
+	local ooc = normal or battle
+	if ooc then parts[#parts + 1] = format("[dead,help] %s", ooc) end
+	if spell and spell ~= "" then parts[#parts + 1] = format("[help] %s", spell) end
+	return "/cast " .. table.concat(parts, "; ")
+end
+
 function UF:ApplyClickCastTo(f)
 	if not f.ccKeys then f.ccKeys = {} end
 	if InCombatLockdown() then return S:RunOutOfCombat(self.ApplyClickCastTo, self, f) end
 	for _, k in ipairs(f.ccKeys) do f:SetAttribute(k, nil) end
 	wipe(f.ccKeys)
 	local cc = self.db.clickCast
+	local normal, battle
+	if not cc or cc.rezOnDead ~= false then normal, battle = S.ClassRezSpells() end
+	if normal or battle then
+		-- dead units: right click rezzes instead of the unit menu; on live units
+		-- the macro falls through to the proxy click which opens the menu.
+		-- Set before the user bindings so an explicit button-2 binding still wins.
+		local proxy = RezMenuProxy(f)
+		f:SetAttribute("type2", "macro")
+		f:SetAttribute("macrotext2", format("%s
+/stopmacro [dead,help]
+/click %s", RezMacro(normal, battle), proxy:GetName()))
+		f.ccKeys[#f.ccKeys + 1] = "type2"
+		f.ccKeys[#f.ccKeys + 1] = "macrotext2"
+	end
 	if not cc or not cc.enable or not cc.bindings then return end
 	for _, b in ipairs(cc.bindings) do
 		local btn = tonumber(b.button) or 1
@@ -2034,9 +2081,24 @@ function UF:ApplyClickCastTo(f)
 		f:SetAttribute(tattr, b.type or "spell")
 		f.ccKeys[#f.ccKeys + 1] = tattr
 		local vname = CC_VALUE_ATTR[b.type or ""]
-		if vname and b.value and b.value ~= "" then
+		local value = b.value
+		if (normal or battle) and (b.type == "spell" or b.type == "togglemenu") then
+			-- dead units take the class rez on any spell/menu binding
+			local vattr = mod .. "macrotext" .. btn
+			local m = RezMacro(normal, battle, b.type == "spell" and value or nil)
+			if b.type == "togglemenu" then
+				m = format("%s
+/stopmacro [dead,help]
+/click %s", m, RezMenuProxy(f):GetName())
+			end
+			f:SetAttribute(tattr, "macro")
+			f:SetAttribute(vattr, m)
+			f.ccKeys[#f.ccKeys + 1] = vattr
+			value = nil
+		end
+		if vname and value and value ~= "" then
 			local vattr = mod .. vname .. btn
-			f:SetAttribute(vattr, b.value)
+			f:SetAttribute(vattr, value)
 			f.ccKeys[#f.ccKeys + 1] = vattr
 		end
 	end
@@ -2125,6 +2187,10 @@ function UF:Initialize()
 	self:RegisterEvent("READY_CHECK", "ReadyCheck")
 	self:RegisterEvent("READY_CHECK_CONFIRM", "ReadyCheck")
 	self:RegisterEvent("READY_CHECK_FINISHED", "ReadyCheckFinished")
+	-- click-cast + rez-on-dead attributes (Update() only runs on option changes);
+	-- re-apply once the spellbook is loaded so the class rez resolves
+	self:RegisterEvent("SPELLS_CHANGED", function() UF:ApplyClickCast() end)
+	self:ApplyClickCast()
 end
 
 function UF:ReadyCheck()

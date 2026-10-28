@@ -140,7 +140,7 @@ S.defaults = {
 		},
 		unitframes = {
 			smoothBars = true, cutaway = true, statusbar = "Sentinel", font = "Sentinel Sans", fontOutline = "OUTLINE",
-			clickCast = { enable = false, bindings = {} },
+			clickCast = { enable = false, rezOnDead = true, bindings = {} },
 			-- aura filter lists: spells = { [spellID or lower-case name] = true }
 			filters = {
 				Blacklist = { type = "Blacklist", spells = { [8326] = true, [57723] = true, [57724] = true, [80354] = true, [95809] = true, [15007] = true, [26013] = true, [71041] = true, [206151] = true } },

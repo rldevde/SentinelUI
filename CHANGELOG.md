@@ -7,6 +7,15 @@ Note on versions: `## Version` is SentinelUI's own release number. The embedded
 BetterItem module reports `## X-BetterItem-Version` and must always equal the
 standalone RLBetterItem release.
 
+## [1.4.8] - 2026-10-28
+
+### Added
+- **Resurrect on dead-click** — clicking a dead friendly unit frame or raid-grid cell now casts your class resurrection spell instead of the unit menu or the normal binding: battle rez while in combat (Druid Rebirth, DK Raise Ally, Warlock Soulstone), normal rez out of combat (Resurrection, Redemption, Ancestral Spirit, ...). The unit menu still opens on live targets via a hidden proxy. Works on unit frames (player/party/raid/target) and the SentinelUI heal grid; toggle under Unit Frames -> Click Cast -> "Rez On Dead" (default on)
+
+### Fixed
+- **RaidGrid**: dead-click resurrection was an attribute swap, which is blocked in combat — a player dying mid-fight could not be battle-rezzed until combat ended. Bindings are now hybrid macros (`/cast [dead,combat] Brez; [dead] Rez; <spell>`) so the button picks the right spell at click time
+- **RaidGrid**: a `togglemenu` binding on a dead cell opened the unit menu — it now resurrects like every other binding
+
 ## [1.4.7] - 2026-10-28
 
 ### Added

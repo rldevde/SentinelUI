@@ -573,6 +573,11 @@ local function ClickCastOptions(getCC)
 			type = "toggle", order = 1, name = L["Enable Click Casting"],
 			get = function() return CC().enable end, set = function(_, v) CC().enable = v Refresh() end,
 		},
+		rezOnDead = {
+			type = "toggle", order = 1.5, name = L["Rez On Dead"],
+			desc = L["Clicking a dead friendly unit casts your resurrection spell (battle rez in combat) instead of its binding or the unit menu."],
+			get = function() return CC().rezOnDead ~= false end, set = function(_, v) CC().rezOnDead = v Refresh() end,
+		},
 		add = {
 			type = "execute", order = 2, name = L["Add Binding"],
 			func = function()
