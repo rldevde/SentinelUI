@@ -2067,9 +2067,7 @@ function UF:ApplyClickCastTo(f)
 		-- Set before the user bindings so an explicit button-2 binding still wins.
 		local proxy = RezMenuProxy(f)
 		f:SetAttribute("type2", "macro")
-		f:SetAttribute("macrotext2", format("%s
-/stopmacro [dead,help]
-/click %s", RezMacro(normal, battle), proxy:GetName()))
+		f:SetAttribute("macrotext2", format("%s\n/stopmacro [dead,help]\n/click %s", RezMacro(normal, battle), proxy:GetName()))
 		f.ccKeys[#f.ccKeys + 1] = "type2"
 		f.ccKeys[#f.ccKeys + 1] = "macrotext2"
 	end
@@ -2087,9 +2085,7 @@ function UF:ApplyClickCastTo(f)
 			local vattr = mod .. "macrotext" .. btn
 			local m = RezMacro(normal, battle, b.type == "spell" and value or nil)
 			if b.type == "togglemenu" then
-				m = format("%s
-/stopmacro [dead,help]
-/click %s", m, RezMenuProxy(f):GetName())
+				m = format("%s\n/stopmacro [dead,help]\n/click %s", m, RezMenuProxy(f):GetName())
 			end
 			f:SetAttribute(tattr, "macro")
 			f:SetAttribute(vattr, m)
