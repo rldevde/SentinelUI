@@ -1659,6 +1659,24 @@ tabs.member = function(self, page)
 		ry = ry - 8
 	end
 
+	-- wishlist (imported, account-wide)
+	local wish = {}
+	for _, ch in ipairs(chars) do
+		for _, it in ipairs((h.wish and h.wish[ch]) or {}) do wish[#wish + 1] = it end
+	end
+	if #wish > 0 then
+		Header(page, L["Wishlist"]):SetPoint("TOPLEFT", rx, ry)
+		ry = ry - 18
+		for i, it in ipairs(wish) do
+			if i > 6 then break end
+			local fs = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
+			fs:SetPoint("TOPLEFT", rx + 4, ry)
+			fs:SetText(it)
+			ry = ry - 15
+		end
+		ry = ry - 8
+	end
+
 	Header(page, L["Recent loot"]):SetPoint("TOPLEFT", rx, ry)
 	ry = ry - 18
 	local n = 0
@@ -1929,6 +1947,33 @@ tabs.sres = function(self, page)
 	end
 	ey = ey - 8
 
+	-- buff coverage from this raid's signups (classes -> shared raid buffs)
+	local COVER = {
+		{ "Fort", "PRIEST" }, { "ShadowProt", "PRIEST" }, { "Spirit", "PRIEST" },
+		{ "MotW", "DRUID" }, { "AI", "MAGE" }, { "Blessings", "PALADIN" },
+		{ "Bloodlust", "SHAMAN" },
+	}
+	local have = {}
+	for who in pairs(h.signups[rid] or {}) do
+		local cls = (Roster()[who] or {}).class or (Priv() and Priv().myChars[who] and Priv().myChars[who].class)
+		if cls then have[cls] = true end
+	end
+	local parts = {}
+	for _, b in ipairs(COVER) do
+		parts[#parts + 1] = have[b[2]] and ("|cff44dd44" .. b[1] .. "|r") or ("|cff884444" .. b[1] .. "|r")
+	end
+	local cov = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
+	cov:SetPoint("TOPLEFT", 4, ey)
+	cov:SetText(L["Buff coverage:"] .. " " .. table.concat(parts, "  "))
+	ey = ey - 18
+	if CanI("leader") then
+		local imp = Btn(page, 130, 18, L["Import wishlist…"])
+		imp:SetPoint("TOPLEFT", 4, ey)
+		imp:SetScript("OnClick", function() GH:WishlistDialog() end)
+		ey = ey - 24
+	end
+	ey = ey - 4
+
 	-- everybody's reserves
 	Header(page, L["All reserves"]):SetPoint("TOPLEFT", 4, ey)
 	ey = ey - 18
@@ -2012,6 +2057,165 @@ tabs.gchat = function(self, page)
 	end
 	snd:SetScript("OnClick", Go)
 	ed:SetScript("OnEnterPressed", function(e2) Go() e2:ClearFocus() end)
+end
+
+-------------------------------------------------------------------------------
+-- Discord bridge (DiscordData.lua -> SENTINEL_DISCORD; spec: Tools/api.md)
+-------------------------------------------------------------------------------
+
+function GH:ApplyDiscordData(manual)
+	local d = SENTINEL_DISCORD
+	local h = Shared()
+	if not (h and type(d) == "table" and d.ver == 1) then
+		if manual then Notify(L["No Discord data found."]) end
+		return
+	end
+	if type(d.stamp) ~= "number" or (h.discordStamp or 0) >= d.stamp then
+		if manual then Notify(L["Discord data is already applied."]) end
+		return
+	end
+	h.discordStamp = d.stamp
+	local made, signed, lined = 0, 0, 0
+	local unknown = {}
+	for _, r in ipairs(d.raids or {}) do
+		if type(r) == "table" and type(r.id) == "string" and type(r.epoch) == "number" then
+			local e = h.raids[r.id]
+			if not e then e = {} h.raids[r.id] = e made = made + 1 end
+			e.id, e.title = r.id, r.title or e.title or r.id
+			e.epoch, e.dur = r.epoch, r.dur or e.dur or 3
+			e.status = r.status or e.status or "open"
+			e.discord = true
+			if type(r.lineup) == "table" then
+				e.lineup = e.lineup or {}
+				for who, slot in pairs(r.lineup) do
+					if slot == "confirmed" or slot == "bench" then
+						e.lineup[who] = slot
+						lined = lined + 1
+					end
+				end
+			end
+		end
+	end
+	local map = type(d.map) == "table" and d.map or {}
+	for rid, list in pairs(d.signups or {}) do
+		local raid = h.raids[rid]
+		if raid and type(list) == "table" then
+			h.signups[rid] = h.signups[rid] or {}
+			for _, su in ipairs(list) do
+				if type(su) == "table" and type(su.player) == "string" then
+					local who = Ambiguate(map[su.player] or su.player, "short")
+					local st2 = su.status
+					if st2 == "coming" or st2 == "tentative" or st2 == "late" or st2 == "no" then
+						local member = IsMember(who)
+						if member or su.external then
+							local key = member and MainOf(who) or who
+							h.signups[rid][key] = {
+								status = st2,
+								role = (su.role == "T" or su.role == "H") and su.role or "D",
+								char = su.char or who,
+								note = su.note,
+								ext = su.external and true or nil,
+								via = "discord",
+								t = time(),
+							}
+							signed = signed + 1
+						else
+							unknown[who] = true
+						end
+					end
+				end
+			end
+		end
+	end
+	Bump()
+	Notify(format(L["Discord sync: %d new raid(s), %d signups, %d lineup slots applied."], made, signed, lined))
+	if next(unknown) then
+		local names = {}
+		for w in pairs(unknown) do names[#names + 1] = w end
+		sort(names)
+		Notify(format(L["Unknown names skipped: %s"], table.concat(names, ", ")))
+	end
+	GH:MaybeRefresh("signups")
+end
+
+-------------------------------------------------------------------------------
+-- wishlist import ("Player; Item" per line — TMB-style), leader pushes doc
+-------------------------------------------------------------------------------
+
+function GH:WishlistImport(text)
+	if not CanI("leader") then
+		Notify(L["You need the 'leader' right to import a wishlist."])
+		return false
+	end
+	local h = Shared()
+	local n = 0
+	for line in (text or ""):gmatch("[^\r\n]+") do
+		local who, item = line:match("^%s*(.-)%s*[;,:=\t]%s*(.+)%s*$")
+		if who and item and who ~= "" and item ~= "" then
+			who = Ambiguate(who, "short")
+			h.wish[who] = h.wish[who] or {}
+			h.wish[who][#h.wish[who] + 1] = item
+			n = n + 1
+		end
+	end
+	if n == 0 then
+		Notify(L["No wishlist lines found — one 'Player; Item' per line."])
+		return false
+	end
+	Send("WL|" .. Ser(h.wish))
+	Bump()
+	Notify(format(L["Imported %d wishlist entries."], n))
+	return true
+end
+
+function GH:WishlistDialog()
+	local f = self.wishIO
+	if not f then
+		f = CreateFrame("Frame", "SentinelUIGuildWishIO", UIParent, S.BackdropTemplate)
+		f:SetSize(480, 340)
+		f:SetPoint("CENTER")
+		f:SetFrameStrata("FULLSCREEN_DIALOG")
+		f:SetClampedToScreen(true)
+		f:SetMovable(true) f:EnableMouse(true) f:RegisterForDrag("LeftButton")
+		f:SetScript("OnDragStart", f.StartMoving)
+		f:SetScript("OnDragStop", f.StopMovingOrSizing)
+		S:SetTemplate(f, "Default")
+		tinsert(UISpecialFrames, "SentinelUIGuildWishIO")
+		f.title = S:FontString(f, 13, "OUTLINE", S.media.font, nil, "LEFT")
+		f.title:SetPoint("TOPLEFT", 14, -12)
+		f.title:SetText("|cff" .. ACC .. L["IMPORT WISHLIST"] .. "|r")
+		f.hint = S:FontString(f, 10, nil, S.media.font, nil, "LEFT")
+		f.hint:SetPoint("TOPLEFT", 14, -32)
+		f.hint:SetWidth(450)
+		f.hint:SetText("|cff999999" .. L["One 'Player; Item' per line (works with ; , : = or TAB)."] .. "|r")
+		local sf = CreateFrame("ScrollFrame", nil, f)
+		sf:SetPoint("TOPLEFT", 14, -56)
+		sf:SetPoint("BOTTOMRIGHT", -14, 48)
+		sf:EnableMouse(true)
+		local eb = CreateFrame("EditBox", nil, sf)
+		eb:SetMultiLine(true)
+		eb:SetAutoFocus(false)
+		eb:SetFontObject("GameFontHighlight")
+		eb:SetWidth(440)
+		eb:SetHeight(260)
+		sf:SetScrollChild(eb)
+		eb:SetScript("OnEscapePressed", function(s2) s2:ClearFocus() end)
+		sf:SetScript("OnMouseDown", function() eb:SetFocus() end)
+		f.eb = eb
+		f.imp = W.StaticBtn(f, 140, 20, L["Import"])
+		f.imp:SetPoint("BOTTOMLEFT", 14, 14)
+		f.imp:SetScript("OnClick", function()
+			if GH:WishlistImport(f.eb:GetText()) then f:Hide() GH:RenderTab(GH.tab) end
+		end)
+		f.close = W.StaticBtn(f, 90, 20, L["Close"])
+		f.close:SetPoint("BOTTOMRIGHT", -14, 14)
+		f.close:SetScript("OnClick", function() f:Hide() end)
+		self.wishIO = f
+	end
+	f.eb:SetText("")
+	f:Show()
+	f:Raise()
+	f.eb:SetFocus()
 end
 
 -------------------------------------------------------------------------------
@@ -2129,6 +2333,7 @@ function GH:Initialize()
 	self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", function() GH:ShareEquip() end)
 	self:RegisterEvent("UNIT_MAXHEALTH", function(_, _, u) if u == "player" then GH:ShareEquip() end end)
 	GH:Delay(6, GH.ShareEquip, GH)
+	GH:Delay(4, GH.ApplyDiscordData, GH)
 	GH.users[myName] = GetTime()
 	-- guild chat feed for the Guild Chat tab
 	self:RegisterEvent("CHAT_MSG_GUILD", function(_, _, msg, sender)
@@ -2210,6 +2415,8 @@ function GH:SetupShell()
 			GH:ExportTeams()
 		elseif first == "import" then
 			GH:ImportTeamsDialog()
+		elseif first == "discord" then
+			GH:ApplyDiscordData(true)
 		elseif first == "focus" then
 			-- diagnostic: for 15s print what is under the mouse (frame, type, level, parent chain)
 			local last

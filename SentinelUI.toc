@@ -86,6 +86,7 @@ Modules\GuildHub.lua
 Modules\GuildHubWidgets.lua
 Modules\GuildHubUI.lua
 Modules\GuildHubTabs.lua
+DiscordData.lua
 Modules\Decurse.lua
 Modules\Reputation.lua
 Modules\ItemSync.lua

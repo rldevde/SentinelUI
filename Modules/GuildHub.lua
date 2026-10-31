@@ -69,6 +69,8 @@ local function Shared()
 	h.epgp = h.epgp or {}               -- member -> { ep, gp }
 	h.epgpLog = h.epgpLog or {}         -- { t, who, kind, amt, reason, by }
 	h.sres = h.sres or {}               -- raidId -> player -> { item names }
+	h.wish = h.wish or {}               -- player -> { wished items } (imported)
+	h.discordStamp = h.discordStamp or 0 -- last applied DiscordData.lua stamp
 	h.ver = h.ver or 0
 	return h
 end
@@ -651,6 +653,15 @@ appliers.SR2 = function(rest, sender)       -- soft reserves (own list): "SR2|<r
 	end
 	Bump()
 	GH:MaybeRefresh("sres")
+end
+
+appliers.WL = function(rest, sender)        -- wishlist doc (leader): "WL|<ser>"
+	if not HasRight(sender, "leader") then return end
+	local t = Unser(rest)
+	if type(t) ~= "table" then return end
+	Shared().wish = t Bump()
+	GH:MaybeRefresh("sres")
+	GH:MaybeRefresh("member")
 end
 
 appliers.SRX = function(rest, sender)       -- leader clears a member's reserves
