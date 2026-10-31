@@ -25,6 +25,11 @@ local function MN()
 	return myName
 end
 
+function GH:ShowMember(name)
+	self.memberOf = name
+	self:SelectTab("member")
+end
+
 GH.tabs = {}
 local tabs = GH.tabs
 
@@ -147,10 +152,11 @@ tabs.roster = function(self, page)
 	-- header
 	local hy = -70
 	SortHeader(page, L["NAME"], 26, hy, "name", st)
-	SortHeader(page, L["LEVEL"], 240, hy, "level", st)
-	SortHeader(page, L["RANK"], 300, hy, "rank", st)
+	SortHeader(page, L["LEVEL"], 210, hy, "level", st)
+	SortHeader(page, L["RANK"], 260, hy, "rank", st)
+	SortHeader(page, L["ILVL"], 360, hy, "ilvl", st)
 	SortHeader(page, L["ROLE"], 420, hy, "role", st)
-	SortHeader(page, L["ZONE"], 510, hy, "zone", st)
+	SortHeader(page, L["ZONE"], 500, hy, "zone", st)
 
 	-- build rows
 	local list = {}
@@ -166,7 +172,8 @@ tabs.roster = function(self, page)
 			and (not st.mainsOnly or not isAlt)
 		then
 			list[#list + 1] = { name = name, e = e, role = role, isAlt = isAlt, main = main,
-				nAlts = #AltsOf(name), linked = st2 == "linked" }
+				nAlts = #AltsOf(name), linked = st2 == "linked",
+				ilvl = (h.equip and h.equip[name] and h.equip[name].ilvl) or 0 }
 		end
 	end
 	local roleIdx = { T = 1, H = 2, D = 3, N = 4 }
@@ -176,6 +183,7 @@ tabs.roster = function(self, page)
 		if k == "level" then va, vb = a.e.level or 0, b.e.level or 0
 		elseif k == "rank" then va, vb = a.e.rank or 99, b.e.rank or 99
 		elseif k == "role" then va, vb = roleIdx[a.role], roleIdx[b.role]
+		elseif k == "ilvl" then va, vb = a.ilvl or 0, b.ilvl or 0
 		elseif k == "zone" then va, vb = a.e.zone or "", b.e.zone or ""
 		else va, vb = a.name, b.name end
 		if va == vb then return a.name < b.name end
@@ -201,24 +209,28 @@ tabs.roster = function(self, page)
 		if m.isAlt then label = "    " .. label .. " |cff777777" .. format(L["alt of %s"], m.main or "?") .. "|r"
 		elseif m.nAlts > 0 then label = label .. format(" |cff777777+%d %s|r", m.nAlts, L["alts"]) end
 		RowFS(r, "name", 22):SetText(label)
-		RowFS(r, "level", 240):SetText(tostring(e.level or ""))
-		RowFS(r, "rank", 300):SetText(e.rankName or "")
+		RowFS(r, "level", 210):SetText(tostring(e.level or ""))
+		RowFS(r, "rank", 260):SetText(e.rankName or "")
+		RowFS(r, "ilvl", 360):SetText(m.ilvl > 0 and tostring(m.ilvl) or "|cff555555—|r")
 		local rfs = RowFS(r, "role", 420)
 		rfs:SetText(role ~= "N" and (RoleIcon(role, 13) .. " " .. RoleName(role)) or "|cff555555—|r")
-		RowFS(r, "zone", 510):SetText(e.online and (e.zone or "") or "|cff666666" .. L["offline"] .. "|r")
+		RowFS(r, "zone", 500):SetText(e.online and (e.zone or "") or "|cff666666" .. L["offline"] .. "|r")
 		if not e.online then r.bg:SetColorTexture(0, 0, 0, 0) end
 		if name == MN() then
 			r.bg:SetColorTexture(S.accent.r, S.accent.g, S.accent.b, 0.10)
 		end
 		r:SetScript("OnClick", function(_, btn)
 			if btn == "RightButton" then MemberMenu(name)
-			elseif (CanI("roles") or CanI("leader")) and name ~= MN() then MemberMenu(name)
-			else MemberMenu(name) end
+			else GH:ShowMember(name) end
 		end)
 	end)
+	local nOn, nAddon = 0, 0
+	for _, e in pairs(Roster()) do if e.online then nOn = nOn + 1 end end
+	for u in pairs(GH.users or {}) do if Roster()[u] then nAddon = nAddon + 1 end end
+	nAddon = nAddon + 1 -- self
 	local foot = S:FontString(page, 10, nil, S.media.font, nil, "RIGHT")
 	foot:SetPoint("BOTTOMRIGHT", -4, 4)
-	foot:SetText("|cff888888" .. format(L["%d members · roster by GuildChronicle + live data"], #list) .. "|r")
+	foot:SetText("|cff888888" .. format(L["%d members · %d online · %d with addon"], #list, nOn, nAddon) .. "|r")
 end
 
 -------------------------------------------------------------------------------

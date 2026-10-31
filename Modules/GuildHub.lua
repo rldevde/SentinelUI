@@ -65,6 +65,10 @@ local function Shared()
 	h.attun = h.attun or {}
 	h.profs = h.profs or {}
 	h.rosterSnap = h.rosterSnap or {}
+	h.equip = h.equip or {}             -- member -> { slots, ilvl, hp, mp, stats, t } (self-reported)
+	h.epgp = h.epgp or {}               -- member -> { ep, gp }
+	h.epgpLog = h.epgpLog or {}         -- { t, who, kind, amt, reason, by }
+	h.sres = h.sres or {}               -- raidId -> player -> { item names }
 	h.ver = h.ver or 0
 	return h
 end
@@ -243,12 +247,14 @@ end
 
 local appliers = {}
 local inbox = {}
+GH.users = {}                                    -- sender -> last-seen (members running the addon)
 
 local function OnComm(_, _, prefix, msg, dist, sender)
 	if prefix ~= PREFIX or type(msg) ~= "string" then return end
 	if IsSecret and IsSecret(msg) then return end
 	sender = Ambiguate(sender or "", "short")
 	if sender == myName or not IsMember(sender) then return end
+	GH.users[sender] = GetTime()        -- any protocol message = member runs the addon
 	local kind, rest = msg:match("^(%a+)|(.*)$")
 	if not kind then return end
 	if kind == "C" then
@@ -607,6 +613,100 @@ appliers.LI = function(rest, sender)         -- loot record (leader): "LI|<ser>"
 	end
 end
 
+appliers.EQ = function(rest, sender)        -- equipment + stats: "EQ|<ser>"
+	local t = Unser(rest)
+	if type(t) ~= "table" or type(t.slots) ~= "table" then return end
+	local h = Shared()
+	h.equip[sender] = t Bump()
+	GH:MaybeRefresh("roster")
+	GH:MaybeRefresh("member")
+end
+
+appliers.EP = function(rest, sender)        -- EPGP doc (leader): "EP|<ser {e,l}>"
+	if not HasRight(sender, "leader") then return end
+	local t = Unser(rest)
+	if type(t) ~= "table" then return end
+	local h = Shared()
+	if type(t.e) == "table" then h.epgp = t.e end
+	if type(t.l) == "table" then h.epgpLog = t.l end
+	Bump()
+	GH:MaybeRefresh("epgp")
+end
+
+appliers.SR2 = function(rest, sender)       -- soft reserves (own list): "SR2|<rid>|<ser {names}>"
+	local rid, ser = rest:match("^(.-)|(.*)$")
+	local t = ser and Unser(ser)
+	local h = Shared()
+	if not (rid and h.raids[rid]) then return end
+	h.sres[rid] = h.sres[rid] or {}
+	if type(t) ~= "table" or not next(t) then
+		h.sres[rid][sender] = nil
+	else
+		local items = {}
+		for i, v in ipairs(t) do
+			if type(v) == "string" and v ~= "" then items[#items + 1] = v end
+			if i >= 2 then break end                    -- max two reserves
+		end
+		h.sres[rid][sender] = items
+	end
+	Bump()
+	GH:MaybeRefresh("sres")
+end
+
+appliers.SRX = function(rest, sender)       -- leader clears a member's reserves
+	if not HasRight(sender, "leader") then return end
+	local rid, who = rest:match("^(.-)|(.*)$")
+	local h = Shared()
+	if rid and h.sres[rid] then
+		h.sres[rid][strtrim(who or "")] = nil Bump()
+		GH:MaybeRefresh("sres")
+	end
+end
+
+-------------------------------------------------------------------------------
+-- equipment + stats sharing (own snapshot, throttled broadcast)
+-------------------------------------------------------------------------------
+
+local EQUIP_SLOTS = { 1, 2, 3, 15, 5, 9, 10, 6, 7, 8, 11, 12, 13, 14, 16, 17, 18 }
+GH.ENCHANT_SLOTS = { [1] = true, [3] = true, [5] = true, [7] = true, [8] = true,
+	[9] = true, [10] = true, [15] = true, [16] = true, [17] = true }
+
+function GH:CollectEquip()
+	local doc = { slots = {} }
+	local sum, n = 0, 0
+	for _, slot in ipairs(EQUIP_SLOTS) do
+		local link = GetInventoryItemLink and GetInventoryItemLink("player", slot)
+		if link then
+			local iid = GetInventoryItemID and GetInventoryItemID("player", slot)
+			local ilvl = (S.GetDetailedItemLevelInfo and iid and S.GetDetailedItemLevelInfo(iid))
+				or (S.GetItemInfo and select(4, S.GetItemInfo(link))) or 0
+			doc.slots[slot] = { id = iid, l = link, i = ilvl or 0,
+				e = tonumber(link:match("item:%d+:(%d+)") or "") or 0 }
+			sum, n = sum + (ilvl or 0), n + 1
+		end
+	end
+	doc.ilvl = n > 0 and floor(sum / n + 0.5) or 0
+	doc.hp = UnitHealthMax and UnitHealthMax("player") or 0
+	doc.mp = UnitPowerMax and UnitPowerMax("player", 0) or 0
+	local STAT_KEYS = { "str", "agi", "sta", "int", "spi" }
+	for i, k in ipairs(STAT_KEYS) do
+		doc[k] = UnitStat and select(2, UnitStat("player", i)) or 0
+	end
+	doc.t = time()
+	return doc
+end
+
+local equipAt = 0
+function GH:ShareEquip(force)
+	if not Shared() then return end
+	if not force and GetTime() - equipAt < 25 then return end
+	equipAt = GetTime()
+	local h = Shared()
+	local doc = self:CollectEquip()
+	h.equip[myName] = doc
+	Send("EQ|" .. Ser(doc))
+end
+
 -------------------------------------------------------------------------------
 -- window shell
 -------------------------------------------------------------------------------
@@ -616,9 +716,11 @@ local NAV = {
 		{ "finder", L["Group Finder"] }, { "gbank", L["Guild Bank"] }, { "roster", L["Guild Roster"] },
 		{ "layers", L["Layers"] }, { "chars", L["My Characters"] }, { "profs", L["Professions"] },
 		{ "builder", L["Raid Builder"] }, { "teams", L["Raid Groups"] },
+		{ "gchat", L["Guild Chat"] },
 	} },
 	{ group = L["Raids"], items = {
 		{ "att", L["Attendance"] }, { "loot", L["Loot History"] }, { "signups", L["Raid Signups"] },
+		{ "epgp", L["EPGP"] }, { "sres", L["Soft Reserves"] },
 	} },
 	{ group = L["PvP"], items = {
 		{ "bgf", L["BG Finder"] }, { "bounties", L["Bounties"] }, { "mbounties", L["Manage Bounties"] },

@@ -10,6 +10,7 @@ standalone RLBetterItem release.
 ## [1.4.8] - 2026-10-28
 
 ### Added
+- **GuildHub — GuildOS-style expansion**: member detail panel (click any roster row: 17-slot gear view with quality colors, item levels and missing-enchant audit, character stats, professions with skill bars, account-wide attunements, linked alts, recent loot); equipment/stats sharing synced guild-wide (iLvl column + sorting in the roster, stats bar with online/addon counts); **EPGP tab** (EP/GP per member with priority ranking, leader awards — selected member or whole raid, 10% decay, full audit log, synced); **Soft Reserves tab** (per-raid item reserves, max 2 per member, synced, leader can clear); **Guild Chat tab** (guild + officer feed inside the window with class colors, send via Enter or button)
 - **Resurrect on dead-click** — clicking a dead friendly unit frame or raid-grid cell now casts your class resurrection spell instead of the unit menu or the normal binding: battle rez while in combat (Druid Rebirth, DK Raise Ally, Warlock Soulstone), normal rez out of combat (Resurrection, Redemption, Ancestral Spirit, ...). The unit menu still opens on live targets via a hidden proxy. Works on unit frames (player/party/raid/target) and the SentinelUI heal grid; toggle under Unit Frames -> Click Cast -> "Rez On Dead" (default on)
 
 ### Fixed

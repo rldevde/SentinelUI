@@ -1441,6 +1441,580 @@ local function CheckRaidAlerts()
 end
 
 -------------------------------------------------------------------------------
+-- TAB: Member detail (gear, stats, professions, attunements, loot)
+-------------------------------------------------------------------------------
+
+local GEAR_COLS = {
+	{ 1, 2, 3, 15, 5, 9 },          -- head neck shoulder back chest wrist
+	{ 10, 6, 7, 8, 11, 12, 13, 14 },-- hands waist legs feet rings trinkets
+}
+local GEAR_BOT = { 16, 17, 18 }     -- main, off, ranged
+local SLOT_NAME = {
+	[1] = "Head", [2] = "Neck", [3] = "Shoulder", [15] = "Back", [5] = "Chest",
+	[9] = "Wrist", [10] = "Hands", [6] = "Waist", [7] = "Legs", [8] = "Feet",
+	[11] = "Finger", [12] = "Finger", [13] = "Trinket", [14] = "Trinket",
+	[16] = "Main Hand", [17] = "Off Hand", [18] = "Ranged",
+}
+local QUALITY_HEX = { [0] = "9d9d9d", [1] = "ffffff", [2] = "1eff00", [3] = "0070dd",
+	[4] = "a335ee", [5] = "ff8000", [6] = "e6cc80", [7] = "00ccff" }
+
+local function ItemIcon(id)
+	if C_Item and C_Item.GetItemIconByID then return C_Item.GetItemIconByID(id) end
+	if S.GetItemInfoInstant then return select(5, S.GetItemInfoInstant(id)) end
+end
+
+local function GearSlot(page, x, y, w, slot, d)
+	local row = CreateFrame("Button", nil, page)
+	row:SetPoint("TOPLEFT", x, y)
+	row:SetSize(w, 20)
+	row.icon = row:CreateTexture(nil, "ARTWORK")
+	row.icon:SetPoint("LEFT", 2, 0)
+	row.icon:SetSize(16, 16)
+	row.fs = S:FontString(row, 10, nil, S.media.font, nil, "LEFT")
+	row.fs:SetPoint("LEFT", row.icon, "RIGHT", 5, 0)
+	row.fs:SetPoint("RIGHT", row, "RIGHT", -4, 0)
+	row.fs:SetJustifyH("LEFT")
+	if d then
+		local q = (S.GetItemInfo and select(3, S.GetItemInfo(d.l or ""))) or 1
+		local hex = QUALITY_HEX[q] or "ffffff"
+		row.icon:SetTexture(ItemIcon(d.id or 0) or "Interface\\Icons\\INV_Misc_QuestionMark")
+		local ench = (GH.ENCHANT_SLOTS[slot] and (d.e or 0) == 0) and "  |cffff4444!ench|r" or ""
+		row.fs:SetText(format("|cff%s%s|r  |cff888888%d|r%s", hex,
+			(S.GetItemInfo and S.GetItemInfo(d.l or "")) or L[SLOT_NAME[slot]] or "?", d.i or 0, ench))
+		row:SetScript("OnEnter", function()
+			GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+			GameTooltip:SetHyperlink(d.l)
+			GameTooltip:Show()
+		end)
+		row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+		row:SetScript("OnClick", function() if IsModifiedClick and IsModifiedClick("CHATLINK") then ChatEdit_InsertLink(d.l) end end)
+	else
+		row.icon:SetColorTexture(0.16, 0.16, 0.16, 1)
+		row.fs:SetText("|cff555555" .. (L[SLOT_NAME[slot]] or "?") .. "|r")
+	end
+	return row
+end
+
+tabs.member = function(self, page)
+	local h = Shared()
+	local name = GH.memberOf or myName
+	local e = Roster()[name] or {}
+
+	local back = Btn(page, 92, 18, "< " .. L["Guild Roster"])
+	back:SetPoint("TOPLEFT", 4, -4)
+	back:SetScript("OnClick", function() GH:SelectTab("roster") end)
+	local wsp = Btn(page, 70, 18, L["Whisper"])
+	wsp:SetPoint("TOPLEFT", 100, -4)
+	wsp:SetScript("OnClick", function() Whisper(name) end)
+
+	local title = S:FontString(page, 15, "OUTLINE", S.media.font, nil, "LEFT")
+	title:SetPoint("TOPLEFT", 4, -28)
+	title:SetText(ClassColor(name) .. (name == myName and (" |cff888888(" .. L["you"] .. ")|r") or ""))
+	local st, mName = AltStatus(name)
+	local seen = e.online and ("|cff44dd44" .. L["Online"] .. "|r  " .. (e.zone or ""))
+		or (e.lastOnline and format("|cff888888%s %s|r", L["last seen"], Ago(time() - e.lastOnline)) or "|cff888888" .. L["offline"] .. "|r")
+	local sub = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
+	sub:SetPoint("TOPLEFT", 4, -44)
+	sub:SetText(format("%s  ·  %s %d  ·  %s%s", e.rankName or "?", L["Level"], e.level or 0, seen,
+		st == "linked" and ("  ·  |cff777777" .. format(L["alt of %s"], mName)) or ""))
+
+	-- equipment
+	local gy = -64
+	Header(page, L["Equipment"]):SetPoint("TOPLEFT", 4, gy)
+	local eq = h.equip and h.equip[name]
+	if eq and eq.slots then
+		local ilfs = S:FontString(page, 10, nil, S.media.font, nil, "RIGHT")
+		ilfs:SetPoint("TOPRIGHT", -8, gy - 1)
+		ilfs:SetText(format(L["Item level |cff%s%d|r  ·  %s"], ACC, eq.ilvl or 0, Ago(time() - (eq.t or time()))))
+		gy = gy - 20
+		local colW, colX = 205, { 8, 232 }
+		for ci, slots in ipairs(GEAR_COLS) do
+			local yy = gy
+			for _, slot in ipairs(slots) do
+				GearSlot(page, colX[ci], yy, colW, slot, eq.slots[slot])
+				yy = yy - 20
+			end
+		end
+		local bx = 8
+		for _, slot in ipairs(GEAR_BOT) do
+			GearSlot(page, bx, gy - 6 * 20 - 4, 140, slot, eq.slots[slot])
+			bx = bx + 145
+		end
+		local missEnch = 0
+		for slot in pairs(GH.ENCHANT_SLOTS) do
+			local d = eq.slots[slot]
+			if d and (d.e or 0) == 0 then missEnch = missEnch + 1 end
+		end
+		if missEnch > 0 then
+			local wf = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
+			wf:SetPoint("TOPLEFT", 8, gy - 6 * 20 - 28)
+			wf:SetText("|cffff4444" .. format(L["%d slots missing an enchant."], missEnch) .. "|r")
+		end
+	else
+		local fs = S:FontString(page, 11, nil, S.media.font, nil, "LEFT")
+		fs:SetPoint("TOPLEFT", 10, gy - 18)
+		fs:SetText("|cff777777" .. L["No gear data yet — this member has to log in once with the addon."] .. "|r")
+	end
+
+	-- right column: stats / professions / attunements / alts / loot
+	local rx, ry = 452, -64
+	Header(page, L["Stats"]):SetPoint("TOPLEFT", rx, ry)
+	ry = ry - 18
+	if eq then
+		local st2 = { { "HP", eq.hp }, { "Mana", eq.mp }, { "STR", eq.str }, { "AGI", eq.agi },
+			{ "STA", eq.sta }, { "INT", eq.int }, { "SPI", eq.spi } }
+		for i, kv in ipairs(st2) do
+			if kv[2] and kv[2] > 0 then
+				local fs = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
+				fs:SetPoint("TOPLEFT", rx + 4 + ((i - 1) % 4) * 80, ry - floor((i - 1) / 4) * 15)
+				fs:SetText(format("|cff888888%s|r  %d", kv[1], kv[2]))
+			end
+		end
+		ry = ry - 32
+	else
+		ry = ry - 4
+	end
+
+	Header(page, L["Professions"]):SetPoint("TOPLEFT", rx, ry)
+	ry = ry - 18
+	local pset = h.profs and h.profs[name]
+	if pset and next(pset) then
+		for prof, pp in pairs(pset) do
+			local fs = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
+			fs:SetPoint("TOPLEFT", rx + 4, ry)
+			fs:SetText(format("%s  |cff888888%d/%s|r", prof, pp.skill or 0, tostring(pp.max or "?")))
+			local bar = CreateFrame("StatusBar", nil, page)
+			bar:SetPoint("TOPLEFT", rx + 190, ry - 2)
+			bar:SetSize(110, 9)
+			bar:SetMinMaxValues(0, pp.max or 1)
+			bar:SetValue(pp.skill or 0)
+			bar:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
+			bar:SetStatusBarColor(S.accent.r, S.accent.g, S.accent.b, 0.8)
+			local bg = bar:CreateTexture(nil, "BACKGROUND")
+			bg:SetAllPoints() bg:SetColorTexture(0, 0, 0, 0.5)
+			ry = ry - 16
+		end
+	else
+		local fs = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
+		fs:SetPoint("TOPLEFT", rx + 4, ry)
+		fs:SetText("|cff555555" .. L["no data"] .. "|r")
+		ry = ry - 16
+	end
+	ry = ry - 8
+
+	Header(page, L["Attunements"]):SetPoint("TOPLEFT", rx, ry)
+	ry = ry - 18
+	local ATTL = {
+		mcAttune = "Molten Core", onyAttune = "Onyxia", bwlAttune = "Blackwing Lair",
+		naxxAttune = "Naxxramas", karaAttune = "Karazhan", shatteredHallsAttune = "Shattered Halls",
+		serpentshrineAttune = "Serpentshrine", blackMorassAttune = "Black Morass",
+		hyjalAttune = "Hyjal", blackTempleAttune = "Black Temple",
+		hellfireCitadelAttune = "HC heroic", coilfangAttune = "Coilfang heroic",
+		auchindounAttune = "Auchindoun heroic", shadowLabAttune = "Shadow Labyrinth",
+		tempestKeepAttune = "Tempest Keep heroic", cavernsAttune = "CoT heroic", arcatrazAttune = "Arcatraz",
+	}
+	-- account-wide: the char's keys merged with main + every linked alt
+	local main = MainOf(name)
+	local chars = { name }
+	if main and main ~= name then chars[#chars + 1] = main end
+	for _, alt in ipairs(AltsOf(main or name)) do chars[#chars + 1] = alt end
+	local keys = {}
+	for _, ch in ipairs(chars) do
+		for k in pairs((h.attun and h.attun[ch]) or {}) do keys[k] = true end
+	end
+	local any = false
+	for _, a in ipairs((ns.InstanceTrackerData and ns.InstanceTrackerData.attunements) or {}) do
+		if keys[a.key] then
+			any = true
+			local fs = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
+			fs:SetPoint("TOPLEFT", rx + 4, ry)
+			fs:SetText("|cff44dd44" .. (ATTL[a.key] or a.key) .. "|r")
+			ry = ry - 15
+		end
+	end
+	if not any then
+		local fs = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
+		fs:SetPoint("TOPLEFT", rx + 4, ry)
+		fs:SetText("|cff555555" .. L["no data"] .. "|r")
+		ry = ry - 15
+	end
+	ry = ry - 8
+
+	local alts = AltsOf(name)
+	if #alts > 0 or (MainOf(name) ~= name) then
+		Header(page, L["Linked characters"]):SetPoint("TOPLEFT", rx, ry)
+		ry = ry - 18
+		if MainOf(name) ~= name then
+			local fs = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
+			fs:SetPoint("TOPLEFT", rx + 4, ry)
+			fs:SetText(L["Main:"] .. " " .. ClassColor(MainOf(name)))
+			ry = ry - 15
+		end
+		for _, alt in ipairs(alts) do
+			local fs = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
+			fs:SetPoint("TOPLEFT", rx + 4, ry)
+			fs:SetText(ClassColor(alt))
+			ry = ry - 15
+		end
+		ry = ry - 8
+	end
+
+	Header(page, L["Recent loot"]):SetPoint("TOPLEFT", rx, ry)
+	ry = ry - 18
+	local n = 0
+	for i = #h.loot, 1, -1 do
+		local l2 = h.loot[i]
+		if l2.char == name then
+			n = n + 1
+			local fs = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
+			fs:SetPoint("TOPLEFT", rx + 4, ry)
+			fs:SetText(format("%s  |cff777777%s|r", l2.item or "?", Ago(time() - (l2.t or time()))))
+			ry = ry - 15
+			if n >= 6 then break end
+		end
+	end
+	if n == 0 then
+		local fs = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
+		fs:SetPoint("TOPLEFT", rx + 4, ry)
+		fs:SetText("|cff555555" .. L["none recorded"] .. "|r")
+	end
+end
+
+-------------------------------------------------------------------------------
+-- TAB: EPGP (effort points / gear points)
+-------------------------------------------------------------------------------
+
+local function EPGPSync()
+	local h = Shared()
+	local tail = {}
+	for i = max(1, #h.epgpLog - 59), #h.epgpLog do tail[#tail + 1] = h.epgpLog[i] end
+	Send("EP|" .. Ser({ e = h.epgp, l = tail }))
+	Bump()
+end
+
+local function EPGPLogEntry(who, kind, amt, reason)
+	local h = Shared()
+	h.epgpLog[#h.epgpLog + 1] = { t = time(), who = who, kind = kind, amt = amt, reason = reason, by = myName }
+	if #h.epgpLog > 200 then tremove(h.epgpLog, 1) end
+end
+
+function GH:AwardEPGP(who, kind, amt, reason)
+	local h = Shared()
+	amt = floor(tonumber(amt) or 0)
+	if amt == 0 or not who or who == "" then return end
+	local e = h.epgp[who] or { ep = 0, gp = 0 }
+	h.epgp[who] = e
+	if kind == "ep" then e.ep = max(0, (e.ep or 0) + amt) else e.gp = max(0, (e.gp or 0) + amt) end
+	EPGPLogEntry(who, kind, amt, reason)
+	EPGPSync()
+end
+
+StaticPopupDialogs["SENTGH_EPGP"] = {
+	text = "%s",
+	button1 = L["OK"], button2 = L["Cancel"], hasEditBox = true, maxLetters = 60,
+	OnAccept = function(self, data)
+		local v = self.editBox:GetText()
+		if data and data.fn then data.fn(v) end
+	end,
+	whileDead = 1, hideOnEscape = 1, preferredIndex = 3,
+}
+
+tabs.epgp = function(self, page)
+	local h = Shared()
+	local st = GH.epgpState or { search = "", hideAlts = false }
+	GH.epgpState = st
+	local isLead = CanI("leader")
+
+	local hdr = S:FontString(page, 11, "OUTLINE", S.media.font, nil, "LEFT")
+	hdr:SetPoint("TOPLEFT", 4, -4)
+	hdr:SetText("|cff" .. ACC .. L["EPGP — effort points / gear points / priority"] .. "|r")
+
+	-- leader controls
+	local x = 4
+	if isLead then
+		local function AwardDlg(title, kind, mass)
+			local d = StaticPopup_Show("SENTGH_EPGP", title)
+			if d then d.data = { fn = function(v)
+				local amt, reason = v:match("^(%S+)%s*(.*)$")
+				amt = tonumber(amt)
+				if not amt then return end
+				reason = strtrim(reason or "")
+				if mass then
+					local n = 0
+					-- mass award goes to every signup of the newest open raid, else all members
+					local targets = {}
+					local newest, nt = nil, 0
+					for id, r in pairs(h.raids) do if (r.epoch or 0) > nt then newest, nt = r, r.epoch end end
+					if newest and h.signups[newest.id] then
+						for p2, su in pairs(h.signups[newest.id]) do
+							if su.status == "coming" or su.status == "late" or su.status == "tentative" then targets[MainOf(p2)] = true end
+						end
+					end
+					if not next(targets) then for name in pairs(Roster()) do targets[MainOf(name)] = true end end
+					for who in pairs(targets) do GH:AwardEPGP(who, kind, amt, reason) n = n + 1 end
+					Notify(format(L["Awarded %d %s to %d members."], amt, upper(kind), n))
+				else
+					local who = GH.epgpPicked
+					if not who then return end
+					GH:AwardEPGP(who, kind, amt, reason)
+					Notify(format(L["Awarded %d %s to %s."], amt, upper(kind), who))
+				end
+				GH:RenderTab("epgp")
+			end } end
+		end
+		local b1 = Btn(page, 88, 18, L["Award EP…"])
+		b1:SetPoint("TOPLEFT", x, -26)
+		b1:SetScript("OnClick", function() AwardDlg(L["EP amount (and reason)"], "ep", not GH.epgpPicked) end)
+		x = x + 92
+		local b2 = Btn(page, 88, 18, L["Award GP…"])
+		b2:SetPoint("TOPLEFT", x, -26)
+		b2:SetScript("OnClick", function() AwardDlg(L["GP amount (and reason)"], "gp", not GH.epgpPicked) end)
+		x = x + 92
+		local b3 = Btn(page, 80, 18, L["Decay 10%"])
+		b3:SetPoint("TOPLEFT", x, -26)
+		b3:SetScript("OnClick", function()
+			for _, e in pairs(h.epgp) do e.ep = floor((e.ep or 0) * 0.9) e.gp = floor((e.gp or 0) * 0.9) end
+			EPGPLogEntry(nil, "decay", 10, L["Decay"])
+			EPGPSync()
+			Notify(L["EPGP decayed by 10%."])
+			GH:RenderTab("epgp")
+		end)
+		x = x + 88
+		local hint = S:FontString(page, 10, nil, S.media.font, nil, "LEFT")
+		hint:SetPoint("TOPLEFT", x, -28)
+		hint:SetText("|cff777777" .. L["Click a member first — no selection awards the raid (or everyone)."] .. "|r")
+	end
+	local cbx = Checkbox(page, L["Mains only"], st.hideAlts, function(v) st.hideAlts = v GH:RenderTab("epgp") end)
+	cbx:SetPoint("TOPRIGHT", -170, -26)
+	local srch = Edit(page, 130, 16, L["Search names"])
+	srch:SetPoint("TOPRIGHT", -4, -26)
+	srch:SetText(st.search or "")
+	W.OnType(srch, function(ed) st.search = ed:GetText() GH:RenderTab("epgp") end)
+
+	-- list
+	local list, seen = {}, {}
+	for name, e2 in pairs(h.epgp) do
+		local m = st.hideAlts and MainOf(name) or name
+		if not seen[m] then
+			seen[m] = true
+			local gp = max(e2.gp or 0, 1)
+			list[#list + 1] = { name = m, ep = e2.ep or 0, gp = e2.gp or 0, pr = (e2.ep or 0) / gp }
+		end
+	end
+	sort(list, function(a, b) return a.pr == b.pr and a.name < b.name or a.pr > b.pr end)
+	local q = lower(st.search or "")
+	local shown = {}
+	for _, r2 in ipairs(list) do
+		if q == "" or lower(r2.name):find(q, 1, true) then shown[#shown + 1] = r2 end
+	end
+
+	local hy = -50
+	local cols = { { L["NAME"], 8 }, { "EP", 250 }, { "GP", 330 }, { "PR", 410 } }
+	for _, c in ipairs(cols) do
+		local fs = S:FontString(page, 10, "OUTLINE", S.media.font, nil, "LEFT")
+		fs:SetPoint("TOPLEFT", c[2], hy)
+		fs:SetText("|cff" .. ACC .. c[1] .. "|r")
+	end
+	ListRows(page, hy - 16, 18, min(#shown, 22), function(r, i)
+		local m = shown[i]
+		if not m then return end
+		local sel = GH.epgpPicked == m.name
+		RowFS(r, "name", 10):SetText(ClassColor(m.name))
+		RowFS(r, "ep", 250):SetText(tostring(m.ep))
+		RowFS(r, "gp", 330):SetText(tostring(m.gp))
+		RowFS(r, "pr", 410):SetText(format("%.2f", m.pr))
+		if sel then r.bg:SetColorTexture(S.accent.r, S.accent.g, S.accent.b, 0.12) end
+		r:SetScript("OnClick", function()
+			GH.epgpPicked = (GH.epgpPicked == m.name) and nil or m.name
+			GH:RenderTab("epgp")
+		end)
+	end)
+	if #shown == 0 then
+		local fs = S:FontString(page, 11, nil, S.media.font, nil, "LEFT")
+		fs:SetPoint("TOPLEFT", 8, hy - 30)
+		fs:SetText("|cff777777" .. L["No EPGP data yet — a leader can award EP/GP here."] .. "|r")
+	end
+
+	-- log
+	local ly = hy - 16 - min(#shown, 22) * 18 - 24
+	Header(page, L["Log"]):SetPoint("TOPLEFT", 4, ly)
+	ly = ly - 16
+	local n = 0
+	for i = #h.epgpLog, 1, -1 do
+		local le = h.epgpLog[i]
+		n = n + 1
+		local fs = S:FontString(page, 9, nil, S.media.font, nil, "LEFT")
+		fs:SetPoint("TOPLEFT", 8, ly)
+		fs:SetText(format("|cff777777%s|r  %s%s %s%d  %s%s", Ago(time() - (le.t or time())),
+			le.who and ClassColor(le.who) or "", le.who and "  " or "", le.kind == "decay" and "-" or "+",
+			le.amt or 0, le.kind == "decay" and "% " .. (le.reason or "") or upper(le.kind or "?") .. " ",
+			(le.reason and le.reason ~= "") and ("— " .. le.reason) or ""))
+		ly = ly - 14
+		if n >= 8 then break end
+	end
+end
+
+-------------------------------------------------------------------------------
+-- TAB: Soft reserves
+-------------------------------------------------------------------------------
+
+tabs.sres = function(self, page)
+	local h = Shared()
+	local st = GH.sresState or {}
+	GH.sresState = st
+
+	-- raid picker
+	local raids = {}
+	for id, r in pairs(h.raids) do raids[#raids + 1] = r end
+	sort(raids, function(a, b) return (a.epoch or 0) < (b.epoch or 0) end)
+	if #raids == 0 then
+		local fs = S:FontString(page, 11, nil, S.media.font, nil, "LEFT")
+		fs:SetPoint("TOPLEFT", 8, -10)
+		fs:SetText("|cff777777" .. L["No raids yet — create one under Raid Signups."] .. "|r")
+		return
+	end
+	if not st.rid or not h.raids[st.rid] then st.rid = raids[1].id end
+	local x = 4
+	for _, r in ipairs(raids) do
+		local b = Btn(page, 150, 18, (r.title or r.id) .. "  |cff888888" .. date("%d.%m", r.epoch or 0) .. "|r")
+		b:SetPoint("TOPLEFT", x, -4)
+		b:SetScript("OnClick", function() st.rid = r.id GH:RenderTab("sres") end)
+		SelBtn(b, st.rid == r.id)
+		x = x + 154
+		if x > 700 then break end
+	end
+	local rid = st.rid
+	local raid = h.raids[rid]
+	h.sres[rid] = h.sres[rid] or {}
+	local res = h.sres[rid]
+
+	-- own reserves
+	local hdr = S:FontString(page, 11, "OUTLINE", S.media.font, nil, "LEFT")
+	hdr:SetPoint("TOPLEFT", 4, -30)
+	hdr:SetText("|cff" .. ACC .. format(L["Your reserves for %s (max 2)"], raid.title or rid) .. "|r")
+	local mine = res[myName] or {}
+	local ey = -50
+	for i, it in ipairs(mine) do
+		local fs = S:FontString(page, 11, nil, S.media.font, nil, "LEFT")
+		fs:SetPoint("TOPLEFT", 8, ey)
+		fs:SetText(i .. ". " .. it)
+		local del = Btn(page, 18, 14, "x")
+		del:SetPoint("TOPLEFT", 230, ey - 2)
+		del:SetScript("OnClick", function()
+			tremove(mine, i)
+			res[myName] = #mine > 0 and mine or nil
+			Send("SR2|" .. rid .. "|" .. Ser(mine))
+			Bump()
+			GH:RenderTab("sres")
+		end)
+		ey = ey - 17
+	end
+	if #mine < 2 then
+		local ed = Edit(page, 220, 16, L["Item name or paste link"])
+		ed:SetPoint("TOPLEFT", 8, ey)
+		local add = Btn(page, 50, 18, L["Add"])
+		add:SetPoint("TOPLEFT", 232, ey - 1)
+		add:SetScript("OnClick", function()
+			local v = strtrim(ed:GetText() or "")
+			local link = v:match("(|Hitem:.-|h%[.-%]|h)") or v:match("(%[.-%])")
+			v = link or v
+			if v == "" then return end
+			mine[#mine + 1] = v
+			res[myName] = mine
+			Send("SR2|" .. rid .. "|" .. Ser(mine))
+			Bump()
+			GH:RenderTab("sres")
+		end)
+		ey = ey - 24
+	end
+	ey = ey - 8
+
+	-- everybody's reserves
+	Header(page, L["All reserves"]):SetPoint("TOPLEFT", 4, ey)
+	ey = ey - 18
+	local isLead = CanI("leader")
+	local rows = {}
+	for who, items in pairs(res) do
+		local signed = h.signups[rid] and h.signups[rid][who] and h.signups[rid][who].status or nil
+		rows[#rows + 1] = { who = who, items = items, signed = signed }
+	end
+	sort(rows, function(a, b) return a.who < b.who end)
+	ListRows(page, ey, 18, min(#rows, 18), function(r, i)
+		local m = rows[i]
+		if not m then return end
+		local sufs = m.signed and ("  |cff777777(" .. m.signed .. ")|r") or "  |cffff8844(" .. L["not signed"] .. ")|r"
+		RowFS(r, "who", 8):SetText(ClassColor(m.who) .. sufs)
+		RowFS(r, "items", 240):SetText(table.concat(m.items, "  +  "))
+		if isLead or m.who == myName then
+			local del = Btn(r, 18, 14, "x")
+			del:SetPoint("RIGHT", r, "RIGHT", -4, 0)
+			del:SetScript("OnClick", function()
+				res[m.who] = nil
+				if m.who == myName then
+					Send("SR2|" .. rid .. "|" .. Ser({}))
+				else
+					Send("SRX|" .. rid .. "|" .. m.who)
+				end
+				Bump()
+				GH:RenderTab("sres")
+			end)
+		end
+	end)
+	if #rows == 0 then
+		local fs = S:FontString(page, 11, nil, S.media.font, nil, "LEFT")
+		fs:SetPoint("TOPLEFT", 8, ey - 20)
+		fs:SetText("|cff777777" .. L["Nobody has reserved anything for this raid yet."] .. "|r")
+	end
+end
+
+-------------------------------------------------------------------------------
+-- TAB: Guild chat
+-------------------------------------------------------------------------------
+
+GH.chatLog = GH.chatLog or {}
+
+local function ChatLogPush(name, msg, kind)
+	local log = GH.chatLog
+	log[#log + 1] = { n = name, m = msg, c = kind, t = time() }
+	if #log > 120 then tremove(log, 1) end
+	GH:MaybeRefresh("gchat")
+end
+GH._ChatLogPush = ChatLogPush
+
+tabs.gchat = function(self, page)
+	local log = GH.chatLog
+	local list = {}
+	for i = max(1, #log - 26), #log do list[#list + 1] = log[i] end
+	local y = -6
+	if #list == 0 then
+		local fs = S:FontString(page, 11, nil, S.media.font, nil, "LEFT")
+		fs:SetPoint("TOPLEFT", 8, -10)
+		fs:SetText("|cff777777" .. L["Guild chat shows here while the window is open."] .. "|r")
+	end
+	for i = #list, 1, -1 do
+		local m = list[i]
+		local fs = S:FontString(page, 11, nil, S.media.font, nil, "LEFT")
+		fs:SetPoint("TOPLEFT", 6, y)
+		fs:SetWidth(690)
+		fs:SetJustifyH("LEFT")
+		local tag = m.c == "OFFICER" and "|cffff8844[O]|r " or ""
+		fs:SetText(tag .. ClassColor(m.n or "?") .. ": " .. (m.m or ""))
+		y = y - 16
+	end
+
+	local ed = Edit(page, 620, 20, L["Message"])
+	ed:SetPoint("BOTTOMLEFT", 6, 8)
+	local snd = Btn(page, 70, 20, L["Send"])
+	snd:SetPoint("BOTTOMLEFT", 630, 8)
+	local function Go()
+		local v = strtrim(ed:GetText() or "")
+		if v ~= "" then SendChatMessage(v, "GUILD") ed:SetText("") end
+	end
+	snd:SetScript("OnClick", Go)
+	ed:SetScript("OnEnterPressed", function(e2) Go() e2:ClearFocus() end)
+end
+
+-------------------------------------------------------------------------------
 -- Initialize
 -------------------------------------------------------------------------------
 
@@ -1551,6 +2125,18 @@ function GH:Initialize()
 	self:RegisterEvent("TRADE_SKILL_SHOW", function() GH:Delay(0.7, GH.ScanTradeRecipes, GH) end)
 	GH:Delay(8, GH.ScanAndShareProfs, GH)
 	GH:Delay(10, GH.ShareAttunements, GH)
+	-- equipment/stats snapshot for the member panel + roster iLvl
+	self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", function() GH:ShareEquip() end)
+	self:RegisterEvent("UNIT_MAXHEALTH", function(_, _, u) if u == "player" then GH:ShareEquip() end end)
+	GH:Delay(6, GH.ShareEquip, GH)
+	GH.users[myName] = GetTime()
+	-- guild chat feed for the Guild Chat tab
+	self:RegisterEvent("CHAT_MSG_GUILD", function(_, _, msg, sender)
+		GH._ChatLogPush(Ambiguate(sender or "", "short"), msg, "GUILD")
+	end)
+	self:RegisterEvent("CHAT_MSG_OFFICER", function(_, _, msg, sender)
+		GH._ChatLogPush(Ambiguate(sender or "", "short"), msg, "OFFICER")
+	end)
 	-- broadcast own state
 	self:Delay(5, function()
 		local h = Shared()
