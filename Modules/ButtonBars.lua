@@ -242,7 +242,7 @@ function BB:SimilarCollected(name)
 end
 
 function BB:GrabButton(btn, name, autoDefault)
-	if self.grabbed[btn] or not self.db.enabled then return end
+	if self.grabbed[btn] or not (self.db and self.db.enabled) then return end
 	if type(btn) ~= "table" or type(btn[0]) ~= "userdata" then return end
 	if btn.IsProtected and btn:IsProtected() then return end
 	local oType = btn:GetObjectType()
@@ -616,6 +616,12 @@ function BB:Rescan()
 	self:GrabBlizzard()
 	self:ScanLDB()
 	self:CustomGrab()
+	-- explicitly registered SUI buttons (GuildHub Call to Arms): collected even
+	-- when collectSUI is off and regardless of creation timing
+	for _, n in ipairs({ "SentinelUIMinimapButton_cta" }) do
+		local b = _G[n]
+		if b and b:GetParent() == Minimap then self:GrabButton(b, n) end
+	end
 	-- drop created LDB stand-ins once the addon's real button got collected
 	local seen = {}
 	for i = #self.buttons, 1, -1 do

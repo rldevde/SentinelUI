@@ -15,6 +15,8 @@ standalone RLBetterItem release.
 - **Resurrect on dead-click** — clicking a dead friendly unit frame or raid-grid cell now casts your class resurrection spell instead of the unit menu or the normal binding: battle rez while in combat (Druid Rebirth, DK Raise Ally, Warlock Soulstone), normal rez out of combat (Resurrection, Redemption, Ancestral Spirit, ...). The unit menu still opens on live targets via a hidden proxy. Works on unit frames (player/party/raid/target) and the SentinelUI heal grid; toggle under Unit Frames -> Click Cast -> "Rez On Dead" (default on)
 
 ### Fixed
+- **Call to Arms button**: the grab into the ButtonBars panel only ran once at GuildHub init, before ButtonBars was ready — the horn stayed on the minimap ring. ButtonBars' rescan now collects the named CTA button whenever it exists, and GrabButton no longer errors when called before the module is initialised
+- **Outfit bar** drifted over the Layer datatext: it anchored to the left panel's edge while long slot texts extend past it — it now docks after the last visible slot
 - **Announcer**: resuming timers after a reload (or editing the interval) re-posted every active message immediately; only a manual start posts right away now
 - **Dead-click rez**: the committed macro strings contained literal newlines (unfinished-string load errors in RaidGrid/HealGrid — the whole modules failed to load); rewritten as escaped `
 ` sequences

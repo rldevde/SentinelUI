@@ -197,7 +197,15 @@ function addon:RefreshOutfitBar()
         bar:ClearAllPoints()
         local leftPanel = _G.SentinelUILeftChatDataPanel
         if leftPanel and leftPanel:IsShown() then
-            bar:SetPoint("BOTTOMLEFT", leftPanel, "BOTTOMRIGHT", 8, 0)
+            -- anchor after the last visible datatext slot, not the panel edge:
+            -- long slot texts (e.g. the Layer list) extend past the panel
+            -- bounds and the bar used to slide over them
+            local last, lastR = leftPanel, -1
+            for _, child in ipairs({ leftPanel:GetChildren() }) do
+                local r = child.IsShown and child:IsShown() and child.GetRight and child:GetRight()
+                if r and r > lastR then lastR, last = r, child end
+            end
+            bar:SetPoint("BOTTOMLEFT", last, "BOTTOMRIGHT", 8, 0)
         else
             bar:SetPoint("BOTTOM", dock, "BOTTOM", 90, 0)
         end
