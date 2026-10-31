@@ -69,7 +69,7 @@ function AN:PostMessage(msg)
 	end
 end
 
-function AN:StartMessage(msg)
+function AN:StartMessage(msg, immediate)
 	self:StopMessage(msg)
 	msg.active = true
 	msg.interval = tonumber(msg.interval) or 5
@@ -79,8 +79,9 @@ function AN:StartMessage(msg)
 		S:SafeCall("Announcer:Post", AN.PostMessage, AN, msg)
 	end)
 	msg.nextPost = GetTime() + msg.interval * 60
-	-- first post right away so the user gets feedback it is running
-	self:PostMessage(msg)
+	-- only post right away when the user just toggled it on — resume after a
+	-- reload and interval edits must not re-post the message
+	if immediate then self:PostMessage(msg) end
 end
 
 function AN:StopMessage(msg)
@@ -361,7 +362,7 @@ function AN:RefreshRows()
 
 		row.toggle:SetText(msg.active and "|cff66ff66" .. L["On"] .. "|r" or "|cff888888" .. L["Off"] .. "|r")
 		row.toggle:SetScript("OnClick", function()
-			if msg.active then AN:StopMessage(msg) else AN:StartMessage(msg) end
+			if msg.active then AN:StopMessage(msg) else AN:StartMessage(msg, true) end
 			AN:RefreshRows()
 		end)
 
